@@ -1,0 +1,254 @@
+# PourOverFlow v1 - TODO wdrozeniowe
+
+## Zasady ogolne
+
+- Najpierw dokumenty i kontrakty, potem scaffold i implementacja.
+- Nie omijac `zeus build`.
+- Nie wdrazac background engine jako "pewnego", dopoki nie przejdzie osobnego spike.
+- Nie dodawac funkcji spoza scope v1 tylko dlatego, ze "moga sie przydac".
+
+## Etap 1 - zamrozenie dokumentacji
+
+### Cel
+
+Miec komplet dokumentow, na ktorych moze pracowac kolejny agent bez zgadywania modelu danych i sync.
+
+### Deliverables
+
+- `docs/00-product-goals.md`
+- `docs/01-zepp-architecture.md`
+- `docs/02-domain-model.md`
+- `docs/03-sync-and-storage.md`
+- `docs/04-watch-and-phone-flows.md`
+- `docs/TODO.md`
+
+### Acceptance
+
+- katalog narzedzi jest jawny i zamkniety,
+- wszystkie klucze storage sa nazwane,
+- wszystkie typy wiadomosci sync sa nazwane,
+- aktywna sesja, historia i snapshot receptury sa opisane.
+
+## Etap 2 - scaffold Zepp
+
+### Cel
+
+Postawic minimalny repo scaffold zgodny z dokumentami.
+
+### Tasks
+
+- utworzyc `app.json`, `app.js`, `package.json`,
+- skonfigurowac `configVersion: "v3"` i `runtime.apiVersion.target: "4.0"`,
+- zarejestrowac target `common` dla `round` i `square`,
+- dodac strony `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
+- dodac `setting/index.jsx`,
+- dodac `app-side/index.js`,
+- dodac `shared/*`,
+- dodac puste asset directories `assets/common.r` i `assets/common.s`.
+
+### Acceptance
+
+- `zeus build` przechodzi,
+- simulator uruchamia pusta appke bez crasha,
+- routing stron dziala,
+- `AppSettingsPage(...)` sie buduje.
+
+### Ryzyka
+
+- niepoprawny manifest,
+- niepoprawna rejestracja stron,
+- rozjazd layout files round vs square.
+
+## Etap 3 - storage i phone CRUD
+
+### Cel
+
+Uruchomic kanoniczna warstwe danych po stronie telefonu.
+
+### Tasks
+
+- zaimplementowac `shared/constants/tool-catalog.js`,
+- seedowac `pof_tools_v1`,
+- zaimplementowac `RecipeRecord`, `RecipeSummary`, `HistoryEntry` i walidatory,
+- zrobic `setting/` z widokami:
+  - `library-home`
+  - `recipe-list`
+  - `recipe-editor`
+  - `history-list`
+  - `history-detail`
+- zaimplementowac CRUD receptur,
+- zaimplementowac odczyt i edycje historii,
+- pilnowac zasady "delete recipe keeps history".
+
+### Acceptance
+
+- mozna utworzyc recepte dla wspieranego `toolId`,
+- nie da sie zapisac recepty dla niewspieranego `toolId`,
+- mozna usunac recepte bez utraty historii,
+- historia i receptury sa rozlozone na `index + records`.
+
+### Testy
+
+- testy walidatorow rekordow,
+- testy delete policy,
+- testy serializacji JSON.
+
+## Etap 4 - `app-side/` i synchronizacja
+
+### Cel
+
+Zrobic bootstrap i push danych z telefonu do zegarka.
+
+### Tasks
+
+- seed przy pierwszym uruchomieniu,
+- implementacja `messaging.peerSocket`,
+- `REQUEST_BOOTSTRAP`,
+- `PUSH_TOOL_CATALOG`,
+- `PUSH_CATALOG_SNAPSHOT`,
+- `PUSH_HISTORY_SNAPSHOT`,
+- `UPSERT_HISTORY_ENTRY`,
+- `ACK_HISTORY_ENTRY`,
+- kodowanie i dekodowanie przez `stringToBuffer` i `bufferToString`.
+
+### Acceptance
+
+- watch dostaje katalog narzedzi i receptur po bootstrappie,
+- watch dostaje ostatni wynik,
+- `UPSERT_HISTORY_ENTRY` zapisuje historie po stronie telefonu,
+- `ACK_HISTORY_ENTRY` czysci pending queue na zegarku.
+
+### Testy
+
+- encode/decode message envelopes,
+- replay `pendingHistoryQueue`,
+- walidacja rewizji i fallback na uszkodzony payload.
+
+## Etap 5 - watch browse i recipe engine
+
+### Cel
+
+Uruchomic glowny flow `tool -> recipe -> active brew`.
+
+### Tasks
+
+- `home` z resume gate,
+- `tool-list` z whitelist katalogu,
+- `recipe-list` filtrowane po `toolId`,
+- start sesji na `RecipeSnapshot`,
+- `recipe-engine` i `session-reducer`,
+- UI dla `instruction`, `timed_action`, `timed_wait`, `confirm`, `finish`,
+- feedback layer dla haptyki i opcjonalnie audio,
+- zapis `active_session_v1` i `last_result_v1`.
+
+### Acceptance
+
+- user moze przejsc przez cala sesje,
+- timer kroku i timer calosci sa widoczne rownolegle,
+- `confirm` wymaga recznego przejscia,
+- `finish` zapisuje wynik i czysci aktywna sesje.
+
+### Testy
+
+- logika reducera,
+- przejscia miedzy typami krokow,
+- serializacja `ActiveBrewSession`,
+- simulator round i square.
+
+## Etap 6 - resume, offline i twarde testy
+
+### Cel
+
+Upewnic sie, ze v1 zachowuje sie sensownie po przerwaniu.
+
+### Tasks
+
+- `setWakeUpRelaunch(true)` na `brew-active`,
+- `setPageBrightTime(...)` na `brew-active`,
+- resume z `active_session_v1`,
+- obsluga `pendingHistoryQueue`,
+- last result summary,
+- fallbacki dla pustego albo uszkodzonego cache.
+
+### Acceptance
+
+- po wyjsciu i powrocie do aplikacji sesja daje sie wznowic,
+- brak telefonu nie blokuje dalszego flow,
+- offline-complete trafia do `pendingHistoryQueue`,
+- po odzyskaniu sync wpis trafia do telefonu.
+
+### Testy
+
+- mocked resume,
+- replay kolejki,
+- testy na prawdziwym urzadzeniu dla wygaszania, haptyki i dzwieku.
+
+## Etap 7 - eksperymentalny spike background reminders
+
+### Cel
+
+Zweryfikowac, czy `AppService` i `createSysTimer()` sa warte rozwijania po v1 core.
+
+### Tasks
+
+- zbadac `AppService` z `device:os.bg_service`,
+- sprawdzic realne ograniczenia timers/background na konkretnym sprzecie,
+- zbadac, czy reminder po wygaszeniu ma sens UX-owo i technicznie,
+- nie laczyc tego z glowna logika timera, dopoki spike nie przejdzie.
+
+### Acceptance
+
+- pisemna decyzja `go / no-go`,
+- osobny dokument techniczny albo ADR,
+- brak regresji w baseline v1.
+
+## Lista testow obowiazkowych
+
+### Pure logic
+
+- walidacja `toolId` whitelisty,
+- walidacja krokow receptury,
+- budowanie snapshotu sesji,
+- budowanie `HistoryEntry`,
+- encode/decode sync messages.
+
+### Mocked runtime
+
+- lifecycle stron,
+- bootstrap z cache,
+- update katalogu po sync,
+- zapis i replay `pendingHistoryQueue`.
+
+### Simulator
+
+- `round`,
+- `square`,
+- flow `tool -> recipe -> brew`,
+- `confirm` i `finish`,
+- resume po restarcie aplikacji.
+
+### Real device
+
+- wibracja,
+- opcjonalny dzwiek,
+- wygaszanie ekranu,
+- wake-up relaunch,
+- komfort uzycia podczas realnego parzenia.
+
+## Explicitly not now
+
+- backend,
+- cloud sync,
+- import zewnetrznych receptur,
+- widgets/cards,
+- BLE integrations,
+- band layout,
+- pelna historia na zegarku.
+
+## Decision log dla kolejnego agenta
+
+- `Tool` jest read-only.
+- `setting/` nie ma CRUD dla narzedzi.
+- Historia zostaje po delete receptury.
+- `PUSH_HISTORY_SNAPSHOT` to tylko ostatni wynik.
+- `AppService` jest spike, nie baseline.
