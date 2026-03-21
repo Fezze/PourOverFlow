@@ -6,6 +6,24 @@
 - Nie omijac `zeus build`.
 - Nie wdrazac background engine jako "pewnego", dopoki nie przejdzie osobnego spike.
 - Nie dodawac funkcji spoza scope v1 tylko dlatego, ze "moga sie przydac".
+- Ten plik ma byc utrzymywany na biezaco: wykonane punkty usuwaj albo oznaczaj jednoznacznie, nowe zadania dopisuj od razu.
+- Jesli w trakcie pracy wyjdzie nowy problem, debt, ograniczenie albo follow-up, dodaj go tutaj lub do odpowiedniego dokumentu architektonicznego jeszcze w tej samej sesji.
+
+## Workflow utrzymania backlogu
+
+Kazdy agent startujacy prace w repo ma:
+
+1. przeczytac ten plik przed implementacja,
+2. wybrac najlepszy nastepny krok na podstawie aktualnego stanu repo,
+3. zakomunikowac userowi te rekomendacje,
+4. po wykonaniu pracy zaktualizowac ten plik.
+
+Przy aktualizacji backlogu:
+
+- usuwaj lub przepisuj punkty juz wykonane,
+- dopisuj nowe follow-upy wynikajace z implementacji,
+- nie duplikuj tego samego zadania w kilku miejscach bez powodu,
+- jesli zadanie zmienia sie z "do zrobienia" w stale ograniczenie architektury, przenies je do odpowiedniego dokumentu i zostaw tu tylko odnośnik lub krotki follow-up.
 
 ## Etap 1 - zamrozenie dokumentacji
 
