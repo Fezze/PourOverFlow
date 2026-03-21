@@ -6,9 +6,9 @@ Ten plik jest instrukcja repo-level dla kolejnego agenta AI. Traktuj go jako war
 
 ## Stan repo
 
-- Repo ma zakonczony Etap 3.
-- Istnieje scaffold Zepp app, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD w `setting/`, podstawowe testy logiki i przechodzace `zeus build`.
-- Aktualny zakres prac to Etap 4: runtime sync `setting/ -> app-side/ -> messaging.peerSocket -> watch`.
+- Repo ma zakonczone Etapy 3 i 4.
+- Istnieje scaffold Zepp app, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD w `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache w `LocalStorage`, podstawowe testy logiki i przechodzace `zeus build`.
+- Aktualny zakres prac to Etap 5: watch browse i recipe engine na zsynchronizowanych snapshotach.
 - To repo jest projektem Zepp OS, wiec przy kazdym zadaniu dotyczacym implementacji, architektury, debugowania albo walidacji nalezy uzyc skilla `zepp-miniapp-builder` jako podstawowego workflow.
 
 ## Obowiazkowa kolejnosc czytania
@@ -113,19 +113,21 @@ Nie traktuj simulatora jako dowodu poprawnosci feedbacku lub zachowania przy wyg
 
 ## Co zrobic jako pierwsze
 
-Pierwsze zadanie implementacyjne po obecnym stanie repo to Etap 4:
+Pierwsze zadanie implementacyjne po obecnym stanie repo to Etap 5:
 
-- zaimplementowac runtime messaging przez `messaging.peerSocket`,
-- zrobic `REQUEST_BOOTSTRAP` i push snapshotow z telefonu do zegarka,
-- przelaczyc watch browse z lokalnego seed preview na zsynchronizowany katalog telefonu,
+- rozwinac watch pages z placeholderowego Stage 4 do realnego browse flow opartego o zsynchronizowany katalog,
+- zastapic scaffold session engine bardziej docelowym reducerem i obsluga typow krokow,
+- przygotowac grunt pod feedback runtime i storage-backed `active_session_v1`,
 - utrzymac `npm test` i `zeus build` w stanie zielonym po kazdej wiekszej zmianie.
 
 ## Odkryte niuanse toolchainu
 
 - Dla target-based scaffoldu `configVersion: "v3"` Zeus oczekuje ikon rowniez pod `assets/<target>.<shape>/icon.png`, nie tylko logicznej nazwy `icon.png` w `app.json`.
 - Entry `setting.path` jest najbezpieczniej wystawiac przez `setting/index.js`; jesli zrodlo jest w `.jsx`, zostaw cienki shim JS zamiast polegac wylacznie na bezposrednim `index.jsx`.
-- Obecny scaffold watch runtime trzyma stan tylko w pamieci aplikacji. To jest swiadomy etapowy kompromis Etapu 2, nie docelowa implementacja `LocalStorage`.
+- Obecny watch runtime ma hybrydowy stan: `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` sa juz storage-backed, ale `active_session_v1` nadal pozostaje follow-upem kolejnych etapow.
 - `setting/` zapisuje w `settingsStorage` pomocniczy klucz `pof_settings_ui_state_v1`; `app-side` i przyszly sync musza go ignorowac, bo nie jest czescia kanonicznego modelu domenowego.
+- Etap 4 zapisuje `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` po stronie watch, ale `active_session_v1` nadal nie jest jeszcze storage-backed.
+- Placeholderowe watch pages czytaja juz zsynchronizowany cache, ale nie maja jeszcze pelnego reaktywnego rerenderu po przyjsciu snapshotu w trakcie otwartej strony.
 
 ## Kiedy aktualizowac dokumenty
 

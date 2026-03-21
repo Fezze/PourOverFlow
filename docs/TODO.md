@@ -162,11 +162,14 @@ Zrobic bootstrap i push danych z telefonu do zegarka.
 - replay `pendingHistoryQueue`,
 - walidacja rewizji i fallback na uszkodzony payload.
 
-### Najblizszy krok
+### Status
 
-- podlaczyc `app-side/index.js` do rzeczywistego bootstrap flow i wysylania snapshotow,
-- przestawic watch router z lokalnego seed preview na katalog przychodzacy z telefonu,
-- utrzymac `npm test` i `zeus build` w stanie zielonym po kazdej iteracji.
+- wykonane: `app-side` obsluguje `REQUEST_BOOTSTRAP`, `UPSERT_HISTORY_ENTRY` i wysylanie `PUSH_*`,
+- wykonane: watch most korzysta z BLE po stronie device i `peerSocket` po stronie phone,
+- wykonane: `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` sa zapisywane lokalnie na watch,
+- wykonane: watch router czyta receptury ze zsynchronizowanego katalogu telefonu,
+- wykonane: podstawowe testy kontraktow sync i normalizacji snapshotow,
+- follow-up: placeholderowe watch pages nie maja jeszcze pelnego live rerenderu po przyjsciu snapshotu podczas otwartej strony.
 
 ## Etap 5 - watch browse i recipe engine
 
@@ -184,6 +187,7 @@ Uruchomic glowny flow `tool -> recipe -> active brew`.
 - UI dla `instruction`, `timed_action`, `timed_wait`, `confirm`, `finish`,
 - feedback layer dla haptyki i opcjonalnie audio,
 - zapis `active_session_v1` i `last_result_v1`.
+- dorobic sensowny refresh aktualnie otwartej strony po przyjsciu nowych snapshotow z telefonu.
 
 ### Acceptance
 
@@ -298,5 +302,6 @@ Zweryfikowac, czy `AppService` i `createSysTimer()` sa warte rozwijania po v1 co
 - `AppService` jest spike, nie baseline.
 - Zeus target-based scaffold potrzebuje ikon pod `assets/<target>.<shape>/icon.png`.
 - `setting/index.js` zostal dodany jako JS shim do kodu Settings App, bo sam `index.jsx` nie byl wystarczajacym entrypointem dla builda.
-- Obecny watch state jest tylko scaffoldem in-memory i ma zostac zastapiony docelowym storage-backed flow w dalszych etapach.
+- Watch cache i sync meta sa juz storage-backed, ale `active_session_v1` nadal pozostaje follow-upem dalszych etapow.
 - `pof_settings_ui_state_v1` jest kluczem pomocniczym Settings App i nie nalezy do kanonicznego modelu sync.
+- Etap 4 ma juz runtime sync i storage-backed cache, ale `active_session_v1` nadal czeka na docelowa implementacje i resume hardening.

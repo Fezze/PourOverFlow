@@ -1,5 +1,5 @@
 import * as hmUI from "@zos/ui";
-import { getToolList, selectTool } from "../../shared/watch/router";
+import { getToolList, refreshPhoneSnapshot, selectTool } from "../../shared/watch/router";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -20,16 +20,27 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Closed catalog"
+      text: "Closed synced catalog"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      text: "Stage 2 renders the locked tool whitelist from the docs."
+      text: tools.length
+        ? "Choose a brewer. Recipes now come from the phone-owned catalog snapshot."
+        : "No tool catalog on watch yet. Trigger a phone refresh first."
     });
 
     BUTTONS.forEach((buttonStyle, index) => {
-      const tool = tools[index];
+      const tool = index < tools.length ? tools[index] : null;
       if (!tool) {
+        if (index === tools.length || (!tools.length && index === 0)) {
+          hmUI.createWidget(hmUI.widget.BUTTON, {
+            ...buttonStyle,
+            text: "Refresh phone sync",
+            click_func: () => {
+              refreshPhoneSnapshot();
+            }
+          });
+        }
         return;
       }
 
@@ -44,7 +55,7 @@ Page({
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Real catalog cache and sync arrive in Stage 4."
+      text: `Visible tools: ${tools.length}`
     });
   }
 });

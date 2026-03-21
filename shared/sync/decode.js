@@ -3,5 +3,10 @@ export function fromSyncEnvelopeJson(rawValue) {
     return null;
   }
 
-  return JSON.parse(rawValue);
+  try {
+    return JSON.parse(rawValue);
+  } catch (error) {
+    console.log("Failed to decode sync envelope JSON", error);
+    return null;
+  }
 }

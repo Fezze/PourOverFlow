@@ -4,7 +4,7 @@ PourOverFlow to planowana aplikacja Zepp OS do prowadzenia uzytkownika przez rec
 
 ## Aktualny status
 
-Repo ma juz zrealizowany Etap 3. Istnieje scaffold Zepp app z przechodzacym `zeus build`, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD receptur w `setting/`, edycja notatek historii i podstawowe testy logiki. Przed nami pozostaje runtime sync do zegarka, storage-backed watch cache i kolejne etapy watch engine.
+Repo ma juz zrealizowane Etapy 3 i 4. Istnieje scaffold Zepp app z przechodzacym `zeus build`, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD receptur w `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache w `LocalStorage`, ACK-owanie historii i podstawowe testy logiki.
 
 ## Co ma zrobic produkt
 
@@ -50,14 +50,14 @@ Repo ma juz zrealizowany Etap 3. Istnieje scaffold Zepp app z przechodzacym `zeu
 
 ## Zakres etapu nastepnego
 
-Nastepny praktyczny etap to Etap 4 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): runtime sync `setting/ -> app-side/ -> messaging.peerSocket -> watch`.
+Nastepny praktyczny etap to Etap 5 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): domkniecie watch browse i recipe engine na zsynchronizowanych snapshotach, z lepszym UI krokow, reducerem sesji i feedbackiem runtime.
 
 ## Czego nie ma jeszcze w repo
 
-- runtime messaging przez `messaging.peerSocket`,
-- storage-backed watch cache i resume,
-- pelnego engine'u receptur i feedbacku runtime,
-- watch browse opartego o zsynchronizowany katalog telefonu zamiast lokalnego seed preview.
+- storage-backed resume dla `active_session_v1`,
+- pelnego engine'u receptur z realnymi timerami krokow,
+- reaktywnego odswiezania placeholderowego watch UI natychmiast po przyjsciu snapshotu,
+- feedbacku haptycznego i audio runtime.
 
 ## Wazne ograniczenia techniczne
 

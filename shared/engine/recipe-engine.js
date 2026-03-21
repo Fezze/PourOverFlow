@@ -1,23 +1,31 @@
 import { getToolById } from "../constants/tool-catalog";
 import {
   CURRENT_SCHEMA_VERSION,
+  createLastResultSummary,
   createGeneratedId,
   createRecipeSnapshot
 } from "../domain/schema";
 
-export function createScaffoldSession(recipeRecord) {
-  const tool = getToolById(recipeRecord.toolId);
-  const steps = (recipeRecord.steps || []).map((step) => ({ ...step }));
+export function createScaffoldSession(recipeDefinition) {
+  const tool = getToolById(recipeDefinition.toolId);
+  const steps = (recipeDefinition.steps || []).map((step) => ({ ...step }));
   const startedAt = Date.now();
+  const recipeSnapshot =
+    recipeDefinition.recipeUpdatedAt !== undefined
+      ? {
+          ...recipeDefinition,
+          steps
+        }
+      : createRecipeSnapshot(recipeDefinition);
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     sessionId: createGeneratedId("sess", startedAt),
-    recipeId: recipeRecord.recipeId,
-    recipeName: recipeRecord.name,
-    recipeSnapshot: createRecipeSnapshot(recipeRecord),
-    toolId: recipeRecord.toolId,
-    toolLabel: tool ? tool.label : recipeRecord.toolId,
+    recipeId: recipeDefinition.recipeId,
+    recipeName: recipeDefinition.name,
+    recipeSnapshot,
+    toolId: recipeDefinition.toolId,
+    toolLabel: tool ? tool.label : recipeDefinition.toolId,
     status: "running",
     currentStepIndex: 0,
     stepCount: steps.length,
@@ -37,20 +45,45 @@ export function getCurrentScaffoldStep(activeSession) {
 }
 
 export function buildScaffoldResult(activeSession) {
+  const historyEntry = buildHistoryEntryFromSession(activeSession);
+
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    historyId: createGeneratedId("hist"),
-    recipeId: activeSession.recipeId,
-    recipeName: activeSession.recipeName,
-    toolId: activeSession.toolId,
-    colorToken: activeSession.recipeSnapshot.colorToken,
-    status: activeSession.status,
-    endedAt: Date.now(),
-    elapsedMs: activeSession.elapsedMs,
-    totalDeltaMs: 0,
+    ...createLastResultSummary(historyEntry),
     summary:
       activeSession.status === "aborted"
-        ? "Seed preview session aborted before phone persistence and sync land."
-        : "Seed preview session completed. Full phone history sync lands in the next stage."
+        ? "Session aborted. Watch will sync the result back to the phone when the bridge is connected."
+        : "Session completed. Result is ready for phone history sync."
+  };
+}
+
+export function buildHistoryEntryFromSession(activeSession) {
+  const endedAt = Date.now();
+  const completedSteps =
+    activeSession.status === "completed"
+      ? activeSession.stepCount
+      : Math.max(0, Math.min(activeSession.currentStepIndex, activeSession.stepCount));
+
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    historyId: createGeneratedId("hist", endedAt),
+    sessionId: activeSession.sessionId,
+    recipeId: activeSession.recipeId,
+    toolId: activeSession.toolId,
+    recipeSnapshot: activeSession.recipeSnapshot,
+    status: activeSession.status,
+    startedAt: activeSession.startedAt,
+    endedAt,
+    elapsedMs: activeSession.elapsedMs,
+    stepRunResults: [],
+    deviationSummary: {
+      totalDeltaMs: 0,
+      worstStepDeltaMs: 0,
+      completedSteps,
+      totalSteps: activeSession.stepCount
+    },
+    syncedFrom: "watch",
+    createdAt: endedAt,
+    updatedAt: endedAt
   };
 }

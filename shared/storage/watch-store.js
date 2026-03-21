@@ -1,12 +1,117 @@
+import { LocalStorage } from "@zos/storage";
 import { TOOL_CATALOG } from "../constants/tool-catalog";
+import { CURRENT_SCHEMA_VERSION } from "../domain/schema";
+import { WATCH_STORAGE_KEYS } from "./keys";
+
+const watchStorage = new LocalStorage();
+const PENDING_HISTORY_LIMIT = 20;
+
+function safeParseJson(rawValue, fallbackValue) {
+  if (rawValue === null || rawValue === undefined || rawValue === "") {
+    return fallbackValue;
+  }
+
+  if (typeof rawValue !== "string") {
+    return rawValue;
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch (error) {
+    console.log("Failed to parse watch storage JSON", error);
+    return fallbackValue;
+  }
+}
+
+function readWatchJson(key, fallbackValue) {
+  return safeParseJson(watchStorage.getItem(key), fallbackValue);
+}
+
+function writeWatchJson(key, value) {
+  watchStorage.setItem(key, JSON.stringify(value));
+  return value;
+}
+
+function removeWatchKey(key) {
+  watchStorage.removeItem(key);
+}
+
+function createDefaultCatalogCache() {
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    toolCatalogRevision: 0,
+    recipeCatalogRevision: 0,
+    tools: [...TOOL_CATALOG],
+    recipesByTool: TOOL_CATALOG.reduce((accumulator, tool) => {
+      accumulator[tool.toolId] = [];
+      return accumulator;
+    }, {}),
+    recipeSnapshotsById: {},
+    cachedAt: 0
+  };
+}
+
+function normalizeCatalogCache(catalogCache = {}) {
+  const tools =
+    Array.isArray(catalogCache.tools) && catalogCache.tools.length ? catalogCache.tools : [...TOOL_CATALOG];
+  const normalizedRecipesByTool = tools.reduce((accumulator, tool) => {
+    accumulator[tool.toolId] = Array.isArray(catalogCache.recipesByTool && catalogCache.recipesByTool[tool.toolId])
+      ? [...catalogCache.recipesByTool[tool.toolId]]
+      : [];
+    return accumulator;
+  }, {});
+
+  return {
+    ...createDefaultCatalogCache(),
+    ...catalogCache,
+    tools,
+    recipesByTool: normalizedRecipesByTool,
+    recipeSnapshotsById:
+      catalogCache.recipeSnapshotsById && typeof catalogCache.recipeSnapshotsById === "object"
+        ? { ...catalogCache.recipeSnapshotsById }
+        : {}
+  };
+}
+
+function createDefaultWatchSyncMeta() {
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    toolCatalogRevision: 0,
+    recipeCatalogRevision: 0,
+    historyRevision: 0,
+    pendingHistoryQueue: []
+  };
+}
+
+function normalizeWatchSyncMeta(syncMeta = {}) {
+  return {
+    ...createDefaultWatchSyncMeta(),
+    ...syncMeta,
+    pendingHistoryQueue: Array.isArray(syncMeta.pendingHistoryQueue) ? [...syncMeta.pendingHistoryQueue] : []
+  };
+}
+
+function getInitialSelectedToolId(catalogCache) {
+  const tools = catalogCache && Array.isArray(catalogCache.tools) && catalogCache.tools.length
+    ? catalogCache.tools
+    : TOOL_CATALOG;
+
+  return tools[0] ? tools[0].toolId : null;
+}
 
 function createDefaultRuntimeState() {
+  const catalogCache = normalizeCatalogCache(readWatchJson(WATCH_STORAGE_KEYS.catalogCache, createDefaultCatalogCache()));
+  const syncMeta = normalizeWatchSyncMeta(readWatchJson(WATCH_STORAGE_KEYS.syncMeta, createDefaultWatchSyncMeta()));
+
   return {
-    selectedToolId: TOOL_CATALOG[0] ? TOOL_CATALOG[0].toolId : null,
+    selectedToolId: getInitialSelectedToolId(catalogCache),
     selectedRecipeId: null,
     activeSession: null,
-    lastResult: null,
-    catalogReady: false
+    lastResult: readWatchJson(WATCH_STORAGE_KEYS.lastResult, null),
+    catalogCache,
+    syncMeta,
+    catalogReady: Number.isFinite(catalogCache.cachedAt) && catalogCache.cachedAt > 0,
+    connected: false
   };
 }
 
@@ -57,7 +162,143 @@ export function readLastResult() {
 
 export function writeLastResult(lastResult) {
   getRuntimeState().lastResult = lastResult;
+
+  if (lastResult) {
+    writeWatchJson(WATCH_STORAGE_KEYS.lastResult, lastResult);
+  } else {
+    removeWatchKey(WATCH_STORAGE_KEYS.lastResult);
+  }
+
   return lastResult;
+}
+
+export function readCatalogCache() {
+  return getRuntimeState().catalogCache;
+}
+
+export function writeCatalogCache(catalogCache) {
+  const runtimeState = getRuntimeState();
+  const nextCatalogCache = normalizeCatalogCache(catalogCache);
+  runtimeState.catalogCache = nextCatalogCache;
+  runtimeState.catalogReady = true;
+  writeWatchJson(WATCH_STORAGE_KEYS.catalogCache, nextCatalogCache);
+
+  if (!nextCatalogCache.tools.find((tool) => tool.toolId === runtimeState.selectedToolId)) {
+    runtimeState.selectedToolId = getInitialSelectedToolId(nextCatalogCache);
+    runtimeState.selectedRecipeId = null;
+  }
+
+  return nextCatalogCache;
+}
+
+export function readWatchSyncMeta() {
+  return getRuntimeState().syncMeta;
+}
+
+export function writeWatchSyncMeta(syncMeta) {
+  const nextSyncMeta = normalizeWatchSyncMeta(syncMeta);
+  getRuntimeState().syncMeta = nextSyncMeta;
+  writeWatchJson(WATCH_STORAGE_KEYS.syncMeta, nextSyncMeta);
+  return nextSyncMeta;
+}
+
+export function getToolCatalog() {
+  return readCatalogCache().tools || [];
+}
+
+export function getRecipesForTool(toolId) {
+  const catalogCache = readCatalogCache();
+  return catalogCache.recipesByTool && Array.isArray(catalogCache.recipesByTool[toolId])
+    ? [...catalogCache.recipesByTool[toolId]]
+    : [];
+}
+
+export function getRecipeSnapshotById(recipeId) {
+  const catalogCache = readCatalogCache();
+  return catalogCache.recipeSnapshotsById ? catalogCache.recipeSnapshotsById[recipeId] || null : null;
+}
+
+export function applyToolCatalogSnapshot(payload) {
+  const currentCatalogCache = readCatalogCache();
+  const nextCatalogCache = {
+    ...currentCatalogCache,
+    toolCatalogRevision: payload.toolCatalogRevision,
+    tools: payload.tools,
+    cachedAt: Date.now()
+  };
+
+  writeCatalogCache(nextCatalogCache);
+  writeWatchSyncMeta({
+    ...readWatchSyncMeta(),
+    toolCatalogRevision: payload.toolCatalogRevision,
+    lastBootstrapAt: Date.now()
+  });
+
+  return nextCatalogCache;
+}
+
+export function applyCatalogSnapshot(payload) {
+  const currentCatalogCache = readCatalogCache();
+  const nextCatalogCache = {
+    ...currentCatalogCache,
+    recipeCatalogRevision: payload.recipeCatalogRevision,
+    recipesByTool: payload.recipesByTool,
+    recipeSnapshotsById: payload.recipeSnapshotsById,
+    cachedAt: Date.now()
+  };
+
+  writeCatalogCache(nextCatalogCache);
+  writeWatchSyncMeta({
+    ...readWatchSyncMeta(),
+    recipeCatalogRevision: payload.recipeCatalogRevision,
+    lastBootstrapAt: Date.now()
+  });
+
+  return nextCatalogCache;
+}
+
+export function applyHistorySnapshot(payload) {
+  writeLastResult(payload.latestResult || null);
+  return writeWatchSyncMeta({
+    ...readWatchSyncMeta(),
+    historyRevision: payload.historyRevision,
+    lastBootstrapAt: Date.now()
+  });
+}
+
+export function enqueuePendingHistoryEntry(historyEntry) {
+  const syncMeta = readWatchSyncMeta();
+  const nextQueue = syncMeta.pendingHistoryQueue.filter(
+    (pendingEntry) => pendingEntry.historyId !== historyEntry.historyId
+  );
+
+  nextQueue.push(historyEntry);
+
+  if (nextQueue.length > PENDING_HISTORY_LIMIT) {
+    nextQueue.splice(0, nextQueue.length - PENDING_HISTORY_LIMIT);
+  }
+
+  return writeWatchSyncMeta({
+    ...syncMeta,
+    pendingHistoryQueue: nextQueue
+  });
+}
+
+export function ackPendingHistoryEntry(historyId, historyRevision) {
+  const syncMeta = readWatchSyncMeta();
+
+  return writeWatchSyncMeta({
+    ...syncMeta,
+    historyRevision: Number.isFinite(historyRevision) ? historyRevision : syncMeta.historyRevision,
+    lastAckedHistoryId: historyId,
+    pendingHistoryQueue: syncMeta.pendingHistoryQueue.filter(
+      (pendingEntry) => pendingEntry.historyId !== historyId
+    )
+  });
+}
+
+export function getPendingHistoryQueue() {
+  return [...readWatchSyncMeta().pendingHistoryQueue];
 }
 
 export function markCatalogReady() {
@@ -66,4 +307,12 @@ export function markCatalogReady() {
 
 export function isCatalogReady() {
   return Boolean(getRuntimeState().catalogReady);
+}
+
+export function setConnectionStatus(connected) {
+  getRuntimeState().connected = Boolean(connected);
+}
+
+export function isWatchConnected() {
+  return Boolean(getRuntimeState().connected);
 }

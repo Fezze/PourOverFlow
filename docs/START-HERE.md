@@ -25,14 +25,16 @@ Kazdy agent pracujacy nad tym repo ma traktowac `zepp-miniapp-builder` jako domy
 - scaffold Zepp app z przechodzacym `zeus build`,
 - seed danych w `settingsStorage`,
 - prawdziwy CRUD receptur i notatek historii w `setting/`,
-- podstawowe testy logiki dla walidatorow i phone storage.
+- runtime sync `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
+- watch cache w `LocalStorage` dla katalogu, ostatniego wyniku i metadanych sync,
+- podstawowe testy logiki dla walidatorow, phone storage i kontraktow sync.
 
 ## Czego jeszcze nie ma
 
-- runtime sync przez `messaging.peerSocket`,
-- watch persistence w `LocalStorage`,
 - docelowego engine'u krokow i feedbacku runtime,
-- mockowanego runtime Zepp i testow sync.
+- storage-backed `active_session_v1`,
+- pelnego live rerenderu placeholderowych stron watch po przyjsciu snapshotu,
+- mockowanego runtime Zepp i testow lifecycle / replay kolejki.
 
 ## Przeczytaj najpierw
 
@@ -111,7 +113,7 @@ Pomocniczy klucz telefonu, niekanoniczny dla sync:
 
 ## Najblizszy cel
 
-Zrealizowac Etap 4 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), czyli uruchomic runtime sync `setting/ -> app-side/ -> messaging.peerSocket -> watch` i przelaczyc watch browse na zsynchronizowany katalog telefonu.
+Zrealizowac Etap 5 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), czyli dopracowac watch browse i recipe engine na danych przychodzacych z telefonu, z czytelniejszym flow krokow i przygotowaniem pod runtime feedback.
 
 ## Utrzymanie TODO i dokumentow
 
@@ -119,19 +121,20 @@ Zrealizowac Etap 4 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md
 - Po zakonczeniu pracy agent ma usunac albo zaktualizowac wykonane punkty.
 - `TODO.md` ma byc zywym backlogiem, a nie magazynem nieaktualnych notatek.
 
-## Definition of done dla Etapu 3
+## Definition of done dla Etapu 4
 
-- istnieje seed library zgodna z `docs/05-seed-library.md`,
-- telefon seeduje `pof_tools_v1`, `pof_recipe_index_v1`, rekordy `pof_recipe_<id>_v1`, pusta historie i `pof_sync_meta_v1`,
-- `setting/` ma widoki `library-home`, `recipe-list`, `recipe-editor`, `history-list`, `history-detail`, `about-sync`,
-- CRUD receptur dziala na `index + records`,
-- delete receptury nie usuwa historii,
-- istnieja podstawowe testy logiki,
+- istnieje `REQUEST_BOOTSTRAP` oraz odpowiedzi `PUSH_TOOL_CATALOG`, `PUSH_CATALOG_SNAPSHOT`, `PUSH_HISTORY_SNAPSHOT`,
+- watch wysyla `UPSERT_HISTORY_ENTRY` i przyjmuje `ACK_HISTORY_ENTRY`,
+- `app-side` ignoruje `pof_settings_ui_state_v1`,
+- watch zapisuje `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1`,
+- watch browse korzysta z danych zsynchronizowanych z telefonu zamiast lokalnego seed preview,
+- istnieja podstawowe testy kontraktow sync,
 - `npm test` i `zeus build` przechodza.
 
-## Wazne odkrycia z Etapu 2 i 3
+## Wazne odkrycia z Etapu 2, 3 i 4
 
 - Zeus v4 scaffold poprawnie buduje target-based ikony z `assets/common.r/icon.png` i `assets/common.s/icon.png`.
 - `setting/index.js` jest praktycznym entrypointem dla toolchainu, nawet jesli glowny kod Settings App trzymamy w `.jsx`.
-- Obecny watch flow nadal dziala jako scaffold na stanie in-memory. To ma zostac zastapione storage-backed implementacja i prawdziwym sync w kolejnych etapach.
+- Obecny watch flow nie jest juz lokalnym seed preview, ale session engine nadal pozostaje scaffoldowy i `activeSession` dalej siedzi w pamieci procesu.
 - `setting/` uzywa pomocniczego klucza `pof_settings_ui_state_v1` do zapisu stanu widokow i draftow. Klucz ma byc ignorowany przez `app-side` i przyszly runtime sync.
+- Przy aktualnym placeholderowym UI watch przychodzacy snapshot odswieza cache od razu, ale nie wymusza jeszcze pelnego rerenderu aktualnie otwartej strony.

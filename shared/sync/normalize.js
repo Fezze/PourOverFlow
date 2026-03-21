@@ -1,10 +1,9 @@
-import { getSupportedTools } from "../constants/tool-catalog";
-import { buildRecipeSnapshotsById } from "../storage/phone-store";
+import { buildRecipeSnapshotsById } from "../storage/phone-store.js";
 
 export function buildPhoneToolCatalogSnapshot(phoneSnapshot) {
   return {
     toolCatalogRevision: phoneSnapshot.syncMeta.toolCatalogRevision,
-    tools: getSupportedTools()
+    tools: phoneSnapshot.tools
   };
 }
 

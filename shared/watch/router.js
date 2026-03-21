@@ -1,20 +1,31 @@
 import { push, replace } from "@zos/router";
-import { getSupportedTools, getToolById } from "../constants/tool-catalog";
-import { buildScaffoldResult, createScaffoldSession } from "../engine/recipe-engine";
-import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../domain/seed-library";
-import { createRecipeSummary } from "../domain/schema";
+import { getSupportedTools } from "../constants/tool-catalog";
+import {
+  buildHistoryEntryFromSession,
+  createScaffoldSession
+} from "../engine/recipe-engine";
 import { advanceSession, abortSession } from "../engine/session-reducer";
+import { createLastResultSummary } from "../domain/schema";
 import {
   clearActiveSession,
+  enqueuePendingHistoryEntry,
+  getPendingHistoryQueue,
+  getRecipeSnapshotById,
+  getRecipesForTool,
   getRuntimeState,
+  getToolCatalog,
+  isCatalogReady,
+  isWatchConnected,
   readActiveSession,
   readLastResult,
   readSelectedToolId,
+  readWatchSyncMeta,
   writeActiveSession,
   writeLastResult,
   writeSelectedRecipeId,
   writeSelectedToolId
 } from "../storage/watch-store";
+import { flushPendingHistoryQueue, requestBootstrap } from "./sync-bridge";
 
 export const PAGE_URLS = {
   home: "page/home/index",
@@ -25,21 +36,26 @@ export const PAGE_URLS = {
 };
 
 export function getToolList() {
-  return getSupportedTools();
+  const syncedTools = getToolCatalog();
+  return syncedTools.length ? syncedTools : getSupportedTools();
 }
 
 export function getSelectedTool() {
   const selectedToolId = readSelectedToolId();
-  return getToolById(selectedToolId) || getToolList()[0] || null;
+  return getToolList().find((tool) => tool.toolId === selectedToolId) || getToolList()[0] || null;
 }
 
 export function getRecipeListForSelectedTool() {
   const selectedTool = getSelectedTool();
-  return selectedTool
-    ? getSeedRecipeRecords(0)
-        .filter((recipeRecord) => recipeRecord.toolId === selectedTool.toolId && !recipeRecord.archived)
-        .map((recipeRecord) => createRecipeSummary(recipeRecord))
-    : [];
+  return selectedTool ? getRecipesForTool(selectedTool.toolId) : [];
+}
+
+export function refreshPhoneSnapshot() {
+  return requestBootstrap();
+}
+
+export function retryPendingHistorySync() {
+  return flushPendingHistoryQueue();
 }
 
 export function goHome() {
@@ -61,16 +77,17 @@ export function selectTool(toolId) {
 }
 
 export function startRecipe(recipeSummary) {
-  const recipeRecord = getSeedRecipeRecordById(recipeSummary.recipeId, Date.now());
+  const recipeSnapshot = getRecipeSnapshotById(recipeSummary.recipeId);
 
-  if (!recipeRecord) {
-    return;
+  if (!recipeSnapshot) {
+    return false;
   }
 
   writeSelectedToolId(recipeSummary.toolId);
   writeSelectedRecipeId(recipeSummary.recipeId);
-  writeActiveSession(createScaffoldSession(recipeRecord));
+  writeActiveSession(createScaffoldSession(recipeSnapshot));
   push({ url: PAGE_URLS.brewActive });
+  return true;
 }
 
 export function resumeActiveSession() {
@@ -82,6 +99,12 @@ export function resumeActiveSession() {
   return true;
 }
 
+function persistCompletedHistoryEntry(historyEntry) {
+  writeLastResult(createLastResultSummary(historyEntry));
+  enqueuePendingHistoryEntry(historyEntry);
+  flushPendingHistoryQueue();
+}
+
 export function advanceOrCompleteActiveSession() {
   const activeSession = readActiveSession();
   if (!activeSession) {
@@ -90,7 +113,8 @@ export function advanceOrCompleteActiveSession() {
 
   const nextSession = advanceSession(activeSession);
   if (nextSession.status === "completed") {
-    writeLastResult(buildScaffoldResult(nextSession));
+    const historyEntry = buildHistoryEntryFromSession(nextSession);
+    persistCompletedHistoryEntry(historyEntry);
     clearActiveSession();
     replace({ url: PAGE_URLS.resultSummary });
     return { completed: true };
@@ -105,7 +129,8 @@ export function abortActiveBrew() {
   const activeSession = readActiveSession();
   if (activeSession) {
     const abortedSession = abortSession(activeSession);
-    writeLastResult(buildScaffoldResult(abortedSession));
+    const historyEntry = buildHistoryEntryFromSession(abortedSession);
+    persistCompletedHistoryEntry(historyEntry);
     clearActiveSession();
   }
 
@@ -114,9 +139,18 @@ export function abortActiveBrew() {
 
 export function getHomeScaffoldState() {
   const runtimeState = getRuntimeState();
+  const selectedTool = getSelectedTool();
+  const syncMeta = readWatchSyncMeta();
+  const recipeCount = selectedTool ? getRecipesForTool(selectedTool.toolId).length : 0;
+
   return {
     activeSession: runtimeState.activeSession,
     lastResult: readLastResult(),
-    selectedTool: getSelectedTool()
+    selectedTool,
+    recipeCount,
+    pendingHistoryCount: getPendingHistoryQueue().length,
+    syncMeta,
+    connected: isWatchConnected(),
+    catalogReady: isCatalogReady()
   };
 }

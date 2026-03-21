@@ -3,6 +3,7 @@ import {
   getRecipeListForSelectedTool,
   getSelectedTool,
   goHome,
+  refreshPhoneSnapshot,
   startRecipe
 } from "../../shared/watch/router";
 import {
@@ -26,12 +27,13 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Seed recipe list"
+      text: "Phone-synced recipes"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      text:
-        "Watch preview now uses the real seed library from docs/05. Phone-edited recipes join this list after sync lands."
+      text: recipes.length
+        ? "These recipes are coming from the phone snapshot. Pick one to start the scaffold session."
+        : "No recipes are cached yet for this brewer. Refresh the phone bridge or add recipes in Settings."
     });
 
     BUTTONS.forEach((buttonStyle, index) => {
@@ -49,9 +51,14 @@ Page({
       if (index === 2) {
         hmUI.createWidget(hmUI.widget.BUTTON, {
           ...buttonStyle,
-          text: "Back home",
+          text: recipes.length ? "Back home" : "Refresh sync",
           click_func: () => {
-            goHome();
+            if (recipes.length) {
+              goHome();
+              return;
+            }
+
+            refreshPhoneSnapshot();
           }
         });
       }
@@ -59,7 +66,7 @@ Page({
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: selectedTool ? `toolId: ${selectedTool.toolId}` : "toolId unavailable"
+      text: selectedTool ? `toolId: ${selectedTool.toolId} | recipes: ${recipes.length}` : "toolId unavailable"
     });
   }
 });

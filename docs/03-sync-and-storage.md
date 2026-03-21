@@ -22,6 +22,11 @@ Zegarek przechowuje tylko dane operacyjne:
 - ostatni wynik,
 - metadane synchronizacji wraz z kolejka niezsynchronizowanych wpisow historii.
 
+Stan implementacyjny po Etapie 4:
+
+- `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` sa juz zapisywane lokalnie na watch,
+- `active_session_v1` pozostaje jeszcze follow-upem kolejnych etapow.
+
 ## Klucze storage po stronie telefonu
 
 | key | zawartosc | uwagi |
@@ -127,11 +132,13 @@ Seed ma byc idempotentny. Kolejne uruchomienia nie nadpisuja danych usera.
 
 ### Watch start
 
-1. `home` czyta `catalog_cache_v1`, `active_session_v1`, `sync_meta_v1`.
+1. `home` czyta `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1`; `active_session_v1` pozostaje jeszcze follow-upem kolejnych etapow.
 2. UI rusza od razu z cache, jesli istnieje.
 3. Watch wysyla `REQUEST_BOOTSTRAP`.
 4. `app-side/` odczytuje telefoniczne rekordy i wysyla snapshoty.
 5. Watch aktualizuje `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1`.
+
+Na obecnym etapie placeholderowe strony watch moga wymagac przebudowania strony, zeby w pelni pokazac nowy snapshot przychodzacy juz po pierwszym renderze.
 
 ### Phone answer order
 
@@ -308,7 +315,7 @@ To jest celowe. Aktywna sesja zyje na snapshotcie.
 
 ## Resume policy
 
-Resume opiera sie na `active_session_v1`, nie na sync z telefonu.
+Docelowo resume ma opierac sie na `active_session_v1`, nie na sync z telefonu. Po Etapie 4 `activeSession` nadal pozostaje runtime-only, a storage-backed resume jest praca kolejnych etapow.
 
 Przy resume:
 
@@ -321,7 +328,7 @@ Przy resume:
 ### Brak telefonu
 
 - watch dziala z `catalog_cache_v1`,
-- watch moze wznowic `active_session_v1`,
+- watch moze korzystac z lokalnego cache i kontynuowac aktualna sesje, jesli runtime nadal zyje,
 - wyniki sa buforowane do `pendingHistoryQueue`.
 
 ### Uszkodzony cache

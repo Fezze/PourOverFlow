@@ -23,7 +23,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "Seed preview"
+      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "No synced result"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -32,9 +32,10 @@ Page({
             lastResult.recipeName,
             `Status: ${lastResult.status}`,
             `Elapsed: ${Math.round(lastResult.elapsedMs / 1000)}s`,
-            lastResult.summary
+            `Delta: ${lastResult.totalDeltaMs} ms`,
+            lastResult.summary || "Latest result is stored on watch and mirrored back to phone history via sync."
           ].join("\n")
-        : "Run a seed preview brew to create a temporary result."
+        : "Run a brew or wait for a phone bootstrap to populate the latest result."
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
@@ -52,7 +53,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Phone-side CRUD is live. History sync and real last-result handoff arrive in Stage 4."
+      text: "Watch now keeps the latest result summary and reconciles it with phone history snapshots."
     });
   }
 });

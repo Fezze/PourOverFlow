@@ -4,6 +4,8 @@ import {
   getHomeScaffoldState,
   goToResultSummary,
   goToToolList,
+  refreshPhoneSnapshot,
+  retryPendingHistorySync,
   resumeActiveSession
 } from "../../shared/watch/router";
 import {
@@ -17,7 +19,16 @@ import {
 
 Page({
   build() {
-    const { activeSession, lastResult, selectedTool } = getHomeScaffoldState();
+    const {
+      activeSession,
+      catalogReady,
+      connected,
+      lastResult,
+      pendingHistoryCount,
+      recipeCount,
+      selectedTool,
+      syncMeta
+    } = getHomeScaffoldState();
     const supportedTools = getToolList();
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
@@ -27,7 +38,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Stage 3 seed preview"
+      text: connected ? "Phone bridge connected" : "Waiting for phone bridge"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -37,7 +48,11 @@ Page({
           : "No active session yet.",
         `Tool catalog: ${supportedTools.length} brewers`,
         selectedTool ? `Current tool: ${selectedTool.label}` : "Current tool: n/a",
-        lastResult ? `Last result: ${lastResult.recipeName}` : "Last result: none"
+        selectedTool ? `Recipes on watch: ${recipeCount}` : "Recipes on watch: 0",
+        lastResult ? `Last result: ${lastResult.recipeName}` : "Last result: none",
+        `Pending sync: ${pendingHistoryCount}`,
+        `Revisions: T${syncMeta.toolCatalogRevision}/R${syncMeta.recipeCatalogRevision}/H${syncMeta.historyRevision}`,
+        catalogReady ? "Catalog cache ready." : "Catalog cache not ready yet."
       ].join("\n")
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -54,9 +69,10 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: "Browse tools",
+      text: connected ? "Refresh sync" : "Retry sync",
       click_func: () => {
-        goToToolList();
+        refreshPhoneSnapshot();
+        retryPendingHistorySync();
       }
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -68,7 +84,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Phone CRUD now lives in Settings. Watch sync and persistence land in Stages 4 to 6."
+      text: "Phone CRUD is live in Settings. This screen now boots from watch cache and requests a phone refresh."
     });
   }
 });

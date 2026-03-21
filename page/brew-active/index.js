@@ -45,7 +45,7 @@ Page({
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
-        text: "Timer hardening, bright time and resume land later."
+        text: "Catalog sync is live. Resume hardening and real timers land in the next stages."
       });
       return;
     }
@@ -87,7 +87,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "The real timer engine and storage-backed resume arrive in Stages 5 and 6."
+      text: "This scaffold session now persists a watch-side result and queues phone history sync."
     });
   }
 });
