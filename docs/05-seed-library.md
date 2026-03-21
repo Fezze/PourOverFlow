@@ -1,35 +1,35 @@
 # PourOverFlow v1 - seed library
 
-## Cel tego dokumentu
+## Purpose of this document
 
-Ten dokument zamraza startowa biblioteke receptur dla v1. To nie jest import z zewnetrznego serwisu ani agregacja community recipes. To jest kuratorowany, produktowy zestaw receptur startowych, ktory ma:
+This document freezes the starter recipe library for v1. This is not an import from an external service or a community recipe aggregation. It is a curated product seed set that should:
 
-- pokryc wszystkie wspierane `toolId`,
-- dac uzytkownikowi sensowny start bez pustej biblioteki,
-- pozostac w granicach modelu `RecipeRecord` i `RecipeStep`,
-- byc w pelni edytowalny i klonowalny po seedzie.
+- cover all supported `toolId` values,
+- give the user a sensible start instead of an empty library,
+- stay within the `RecipeRecord` and `RecipeStep` model,
+- remain fully editable and clonable after seeding.
 
-## Zasady seed library
+## Seed library rules
 
-- Wszystkie seed recipes maja `source: "seed"`.
-- Kazda seed recipe jest normalnym `RecipeRecord`, nie specjalnym bytem.
-- User moze seed recipe edytowac, duplikowac albo usunac.
-- Seed recipe nie sa nadpisywane przy kolejnych uruchomieniach aplikacji.
-- Seed recipe nie sa importowane z internetu.
+- All seed recipes use `source: "seed"`.
+- Every seed recipe is a normal `RecipeRecord`, not a special entity.
+- The user may edit, duplicate, or delete seed recipes.
+- Seed recipes are not overwritten on later app launches.
+- Seed recipes are not imported from the internet.
 
-## Priorytet implementacyjny
+## Implementation priority
 
-### Release target v1
+### V1 release target
 
-Pelny target produktowy to 12 receptur, po 2 na kazde wspierane narzedzie.
+The full product target is 12 recipes, 2 per supported tool.
 
-### Minimalny target do pierwszej dzialajacej wersji runtime
+### Minimum target for the first runnable runtime version
 
-Jesli kolejnosc prac bedzie wymagac etapowania, implementacja moze najpierw zakodowac po 1 recepcie na `toolId`, ale finalny backlog v1 ma doprowadzic seed library do kompletu 12 receptur z tego dokumentu.
+If the work order needs staging, implementation may first ship 1 recipe per `toolId`, but the final v1 backlog should still bring the seed library to the full set of 12 recipes from this document.
 
-## Format identyfikatorow seed
+## Seed ID format
 
-Seed recipe ids sa stale i nie powinny byc generowane losowo:
+Seed recipe ids are stable and should not be generated randomly:
 
 - `seed_ap_daily_clean`
 - `seed_ap_inverted_sweet`
@@ -61,9 +61,9 @@ Seed recipe ids sa stale i nie powinny byc generowane losowo:
 | `seed_fp_clean_classic` | `tool_french_press` | French Press Clean Classic | `slate` | 30 | 500 | 94 | 300000 |
 | `seed_fp_quick_350` | `tool_french_press` | French Press Quick 350 | `indigo` | 22 | 350 | 93 | 240000 |
 
-## Receptury seed
+## Seed recipes
 
-Kazda receptura ponizej ma byc zaimplementowana dokladnie z podanym zestawem krokow.
+Each recipe below should be implemented exactly with the listed set of steps.
 
 ### `seed_ap_daily_clean`
 
@@ -639,15 +639,15 @@ Kazda receptura ponizej ma byc zaimplementowana dokladnie z podanym zestawem kro
    `requiresConfirm`: `false`
    `feedbackCue`: `combo_short`
 
-## Implementacyjne reguly seedowania
+## Seed implementation rules
 
-- `createdAt` i `updatedAt` dla seed recipes ustawiac na czas seedu telefonu.
-- `archived` dla seed recipes ma startowac jako `false`.
-- Kolejnosc seedowania nie ma znaczenia funkcjonalnego, ale w kodzie utrzymywac grupowanie po `toolId`.
-- `RecipeSummary` dla seed recipes generowac z pelnego rekordu, nie utrzymywac recznie w drugim miejscu.
+- Set `createdAt` and `updatedAt` for seed recipes to the phone seed time.
+- `archived` for seed recipes must start as `false`.
+- Seeding order does not matter functionally, but keep the code grouped by `toolId`.
+- Generate `RecipeSummary` for seed recipes from the full record; do not maintain it manually in a second place.
 
-## Follow-upi, jesli seed library bedzie rozszerzane
+## Follow-ups if the seed library is expanded
 
-- Nie zmieniac istniejacych `recipeId`.
-- Nowe seed recipes dopisywac, nie podmieniac po cichu starych.
-- Jesli seed recipe musi zostac wycofana, lepiej oznaczyc ja jako `archived` w migracji niz usunac bez sladu.
+- Do not change existing `recipeId` values.
+- Add new seed recipes; do not silently replace old ones.
+- If a seed recipe must be retired, prefer marking it as `archived` in a migration instead of deleting it without a trace.

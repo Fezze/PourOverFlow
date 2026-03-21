@@ -1,42 +1,52 @@
 # Start Here
 
-## Po co jest ten plik
+## Why this file exists
 
-To jest skondensowany handoff dla kolejnego agenta lub developera. Ma pozwolic wejsc w repo bez czytania wszystkiego naraz, ale bez gubienia najwazniejszych decyzji.
+This is a condensed handoff for the next agent or developer. It is meant to help someone enter the repo without reading everything at once, but without losing the most important decisions.
 
-## Repo w jednym zdaniu
+## The repo in one sentence
 
-Budujemy Zepp mini-app do prowadzenia parzenia kawy na zegarku, gdzie telefon zarzadza recepturami i historia, a zegarek wykonuje sesje i umie je wznowic.
+We are building a Zepp mini-app for guided coffee brewing on the watch, where the phone manages recipes and history and the watch executes and resumes brewing sessions.
 
-## Obowiazkowy skill
+## Mandatory skill
 
-Kazdy agent pracujacy nad tym repo ma traktowac `zepp-miniapp-builder` jako domyslny skill roboczy. To nie jest opcjonalna wskazowka. Projekt ma byc prowadzony zgodnie z ograniczeniami, routingiem wersji i architektura Zepp OS.
+Every agent working on this repo must treat `zepp-miniapp-builder` as the default working skill. This is not optional guidance. The project must be run according to Zepp OS constraints, version routing, and surface architecture.
 
-## Co juz jest gotowe
+## Project language
 
-- dokumentacja produktu,
-- architektura Zepp,
-- model domeny,
-- kontrakty storage i sync,
-- flow watch/phone,
-- etapowy plan implementacji,
+This project must be run in English.
+
+- Repo documentation must stay in English.
+- Backlog updates must stay in English.
+- Persistent handoff notes and repo-facing agent instructions must stay in English.
+
+## What is already done
+
+- product documentation,
+- Zepp architecture,
+- domain model,
+- storage and sync contracts,
+- watch/phone flows,
+- staged implementation plan,
 - seed library,
-- kontrakt manifestu i Settings UI,
-- scaffold Zepp app z przechodzacym `zeus build`,
-- seed danych w `settingsStorage`,
-- prawdziwy CRUD receptur i notatek historii w `setting/`,
-- runtime sync `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
-- watch cache w `LocalStorage` dla katalogu, ostatniego wyniku i metadanych sync,
-- podstawowe testy logiki dla walidatorow, phone storage i kontraktow sync.
-
-## Czego jeszcze nie ma
-
-- docelowego engine'u krokow i feedbacku runtime,
+- manifest and Settings UI contract,
+- Zepp app scaffold with passing `zeus build`,
+- seed data in `settingsStorage`,
+- real CRUD for recipes and history notes in `setting/`,
+- runtime sync with `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
+- watch cache in `LocalStorage` for catalog, latest result, and sync metadata,
 - storage-backed `active_session_v1`,
-- pelnego live rerenderu placeholderowych stron watch po przyjsciu snapshotu,
-- mockowanego runtime Zepp i testow lifecycle / replay kolejki.
+- a more production-shaped session reducer with timed and confirm step semantics,
+- baseline logic tests for validators, phone storage, sync contracts, and the session reducer.
 
-## Przeczytaj najpierw
+## What is still missing
+
+- resume hardening after restart or screen sleep,
+- `setWakeUpRelaunch(true)` and `setPageBrightTime(...)`,
+- hard feedback validation on a real device,
+- mocked Zepp runtime tests and lifecycle / queue replay coverage.
+
+## Read first
 
 1. [README.md](c:\Users\krzys\Projects\PourOverFlow\README.md)
 2. [AGENTS.md](c:\Users\krzys\Projects\PourOverFlow\AGENTS.md)
@@ -48,27 +58,27 @@ Kazdy agent pracujacy nad tym repo ma traktowac `zepp-miniapp-builder` jako domy
 8. [06-manifest-and-ui-contract.md](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md)
 9. [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 
-## Startup protocol dla nowego agenta
+## Startup protocol for a new agent
 
-Kazdy nowy agent zaczynajacy prace ma wykonac te kroki w tej kolejnosci:
+Every new agent starting work must do these steps in this order:
 
-1. przeczytac dokumenty z listy powyzej,
-2. przejrzec [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md),
-3. posprzatac przeterminowane albo wykonane punkty, jesli backlog jest nieaktualny,
-4. wskazac najlepszy nastepny krok,
-5. dopiero potem wejsc w implementacje.
+1. read the documents from the list above,
+2. review [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md),
+3. clean up stale or completed items if the backlog is outdated,
+4. point out the best next step,
+5. only then move into implementation.
 
-Nie wolno rozpoczynac pracy od losowego zadania bez przegladu backlogu i dokumentacji.
+Do not start from a random task without reviewing the backlog and documentation first.
 
-## Twarde zasady
+## Hard rules
 
-- Nie dodawaj nowych typow narzedzi poza whitelist.
-- Nie traktuj zegarka jako zrodla prawdy dla historii.
-- Nie lacz CRUD receptur z watch UI.
-- Nie opieraj timera sesji na `AppService`.
-- Nie dodawaj funkcji spoza v1 bez aktualizacji dokumentow i jawnej decyzji.
+- Do not add new tool types outside the whitelist.
+- Do not treat the watch as the source of truth for history.
+- Do not mix recipe CRUD with watch UI.
+- Do not build the session timer on top of `AppService`.
+- Do not add features outside v1 without updating the documents and getting an explicit decision.
 
-## Najwazniejsze byty
+## Most important entities
 
 - `ToolDefinition`
 - `RecipeRecord`
@@ -78,11 +88,11 @@ Nie wolno rozpoczynac pracy od losowego zadania bez przegladu backlogu i dokumen
 - `HistoryEntry`
 - `SyncEnvelope`
 
-Jesli ktorykolwiek z tych bytow zmienia ksztalt, aktualizacja dokumentacji jest obowiazkowa.
+If any of these entities changes shape, documentation updates are mandatory.
 
-## Najwazniejsze klucze storage
+## Most important storage keys
 
-Telefon:
+Phone:
 
 - `pof_tools_v1`
 - `pof_recipe_index_v1`
@@ -91,18 +101,18 @@ Telefon:
 - `pof_history_<id>_v1`
 - `pof_sync_meta_v1`
 
-Zegarek:
+Watch:
 
 - `active_session_v1`
 - `catalog_cache_v1`
 - `last_result_v1`
 - `sync_meta_v1`
 
-Pomocniczy klucz telefonu, niekanoniczny dla sync:
+Helper phone key, non-canonical for sync:
 
 - `pof_settings_ui_state_v1`
 
-## Najwazniejsze wiadomosci sync
+## Most important sync messages
 
 - `REQUEST_BOOTSTRAP`
 - `PUSH_TOOL_CATALOG`
@@ -111,30 +121,32 @@ Pomocniczy klucz telefonu, niekanoniczny dla sync:
 - `UPSERT_HISTORY_ENTRY`
 - `ACK_HISTORY_ENTRY`
 
-## Najblizszy cel
+## Nearest goal
 
-Zrealizowac Etap 5 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), czyli dopracowac watch browse i recipe engine na danych przychodzacych z telefonu, z czytelniejszym flow krokow i przygotowaniem pod runtime feedback.
+Execute Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), which means hardening resume, offline queue replay, and active-session behavior under real watch usage.
 
-## Utrzymanie TODO i dokumentow
+## TODO and document maintenance
 
-- Kazde nowe odkryte zadanie, ryzyko albo follow-up ma trafic do [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) lub do odpowiedniego dokumentu architektonicznego.
-- Po zakonczeniu pracy agent ma usunac albo zaktualizowac wykonane punkty.
-- `TODO.md` ma byc zywym backlogiem, a nie magazynem nieaktualnych notatek.
+- Every newly discovered task, risk, or follow-up must go into [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) or the relevant architecture document.
+- When work finishes, the agent must remove or update completed items.
+- `TODO.md` should stay a living backlog, not a storage place for stale notes.
 
-## Definition of done dla Etapu 4
+## Definition of done for Stage 5
 
-- istnieje `REQUEST_BOOTSTRAP` oraz odpowiedzi `PUSH_TOOL_CATALOG`, `PUSH_CATALOG_SNAPSHOT`, `PUSH_HISTORY_SNAPSHOT`,
-- watch wysyla `UPSERT_HISTORY_ENTRY` i przyjmuje `ACK_HISTORY_ENTRY`,
-- `app-side` ignoruje `pof_settings_ui_state_v1`,
-- watch zapisuje `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1`,
-- watch browse korzysta z danych zsynchronizowanych z telefonu zamiast lokalnego seed preview,
-- istnieja podstawowe testy kontraktow sync,
-- `npm test` i `zeus build` przechodza.
+- `home` shows a resume gate,
+- `tool-list` and `recipe-list` use the synced catalog and recipe data,
+- `active_session_v1` is persisted locally,
+- timed steps, confirm steps, and finish steps have separate reducer semantics,
+- `brew-active` shows both the step timer and session timer,
+- the feedback layer is best-effort and capability-gated,
+- baseline session reducer tests exist,
+- `npm test` and `zeus build` pass.
 
-## Wazne odkrycia z Etapu 2, 3 i 4
+## Important discoveries from Stages 2, 3, 4, and 5
 
-- Zeus v4 scaffold poprawnie buduje target-based ikony z `assets/common.r/icon.png` i `assets/common.s/icon.png`.
-- `setting/index.js` jest praktycznym entrypointem dla toolchainu, nawet jesli glowny kod Settings App trzymamy w `.jsx`.
-- Obecny watch flow nie jest juz lokalnym seed preview, ale session engine nadal pozostaje scaffoldowy i `activeSession` dalej siedzi w pamieci procesu.
-- `setting/` uzywa pomocniczego klucza `pof_settings_ui_state_v1` do zapisu stanu widokow i draftow. Klucz ma byc ignorowany przez `app-side` i przyszly runtime sync.
-- Przy aktualnym placeholderowym UI watch przychodzacy snapshot odswieza cache od razu, ale nie wymusza jeszcze pelnego rerenderu aktualnie otwartej strony.
+- The Zeus v4 scaffold builds target-based icons correctly from `assets/common.r/icon.png` and `assets/common.s/icon.png`.
+- `setting/index.js` is a practical toolchain entrypoint even when the main Settings App code lives in `.jsx`.
+- The current watch flow is no longer a local seed preview, and `active_session_v1` is already storage-backed; the remaining follow-up is resume hardening, not session persistence itself.
+- The session reducer is already much closer to the target model, but real resume and screen-sleep behavior still need confirmation in Stage 6.
+- `setting/` uses the helper key `pof_settings_ui_state_v1` to persist view state and drafts. That key must be ignored by `app-side` and future runtime sync.
+- With the current watch UI, lists and summary screens already refresh on runtime events, but this is not yet a fully reactive rendering system.

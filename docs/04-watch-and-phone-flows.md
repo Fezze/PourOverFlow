@@ -1,244 +1,249 @@
-# PourOverFlow v1 - flow zegarka i telefonu
+# PourOverFlow v1 - watch and phone flows
 
-## Mapa flow
+## Flow map
 
-Produkt ma dwa glowne runtime'y:
+The product has two primary runtimes:
 
-- watch runtime: wykonanie i resume sesji,
-- phone runtime: edycja i archiwizacja.
+- watch runtime: session execution and resume,
+- phone runtime: editing and archiving.
 
-## Watch flow 1 - start aplikacji
+## Watch flow 1 - app start
 
-### Cel
+### Goal
 
-Wystartowac szybko nawet bez telefonu.
+Start quickly even when the phone is unavailable.
 
-### Kroki
+### Steps
 
-1. `page/home` odczytuje `active_session_v1`.
-2. `page/home` odczytuje `catalog_cache_v1`.
-3. Jesli istnieje aktywna sesja o statusie `running` albo `waiting_for_confirm`, pokazac ekran resume gate.
-4. Jesli nie ma aktywnej sesji, przejsc do `tool-list`.
-5. Niezaleznie od powyzszego wyslac `REQUEST_BOOTSTRAP`.
+1. `page/home` reads `active_session_v1`.
+2. `page/home` reads `catalog_cache_v1`.
+3. If an active session exists with status `running` or `waiting_for_confirm`, show the resume gate.
+4. If there is no active session, navigate to `tool-list`.
+5. Independently from the above, send `REQUEST_BOOTSTRAP`.
 
 ### Resume gate
 
-Resume gate nie jest osobna strona. To prosty stan `home`, ktory daje dwa przyciski:
+The resume gate is not a separate page. It is a simple `home` state with two buttons:
 
 - `Resume brew`
 - `Discard session`
 
-`Discard session` czyta snapshot tylko do zbudowania `HistoryEntry` ze statusem `aborted`, a nastepnie czysci `active_session_v1`.
+`Discard session` reads the snapshot only to build a `HistoryEntry` with status `aborted`, and then clears `active_session_v1`.
 
-## Watch flow 2 - wybor narzedzia
+## Watch flow 2 - tool selection
 
-### Ekran
+### Screen
 
 `tool-list`
 
-### Zachowanie
+### Behavior
 
-- pokazac tylko narzedzia z `supported: true`,
-- sortowanie po `sortOrder`,
-- kazdy row pokazuje ikone, label i liczbe dostepnych receptur dla danego `toolId`,
-- klik na narzedzie otwiera `recipe-list` z router param `toolId`.
+- show only tools with `supported: true`,
+- sort by `sortOrder`,
+- each row shows icon, label, and the number of available recipes for that `toolId`,
+- tapping a tool opens `recipe-list` with router param `toolId`.
 
 ### Empty state
 
-Jesli dane dla narzedzia nie maja zadnej receptury:
+If a tool has no recipes:
 
-- nadal pokazac narzedzie w liscie,
-- w `recipe-list` pokazac pusty stan z CTA `Create on phone`.
+- still show the tool in the list,
+- in `recipe-list`, show an empty state with CTA `Create on phone`.
 
-## Watch flow 3 - wybor receptury
+## Watch flow 3 - recipe selection
 
-### Ekran
+### Screen
 
 `recipe-list`
 
-### Zachowanie
+### Behavior
 
-- pobrac `toolId` z router params,
-- wyrenderowac `RecipeSummary[]` tylko dla tego narzedzia,
-- kazdy row pokazuje nazwe, kolor, update recency i skrot podstawowych parametrow,
-- klik na recepture otwiera ekran potwierdzenia startu albo od razu `brew-active`.
+- read `toolId` from router params,
+- render `RecipeSummary[]` only for that tool,
+- each row shows name, color, update recency, and a short summary of key brew parameters,
+- tapping a recipe opens a start confirmation screen or goes directly to `brew-active`.
 
-### Dane wiersza receptury
+### Recipe row data
 
-Minimalny zestaw w UI:
+Minimum UI set:
 
-- nazwa,
-- kolor receptury,
+- name,
+- recipe color,
 - `coffeeDoseG`,
 - `totalWaterMl`,
 - `estimatedTotalDurationMs`.
 
-## Watch flow 4 - start sesji
+## Watch flow 4 - session start
 
-### Scenariusz
+### Scenario
 
-1. uzytkownik wybiera recepture,
-2. watch odczytuje `RecipeSnapshot` z `catalog_cache_v1.recipeSnapshotsById`,
-3. tworzy `ActiveBrewSession`,
-4. zapisuje `active_session_v1`,
-5. ustawia `setWakeUpRelaunch(true)`,
-6. ustawia `setPageBrightTime(...)`,
-7. przechodzi do aktywnego widoku sesji.
+1. the user selects a recipe,
+2. the watch reads `RecipeSnapshot` from `catalog_cache_v1.recipeSnapshotsById`,
+3. it creates `ActiveBrewSession`,
+4. it saves `active_session_v1`,
+5. it enables `setWakeUpRelaunch(true)`,
+6. it enables `setPageBrightTime(...)`,
+7. it transitions to the active session view.
 
-### Wazna regula
+### Important rule
 
-Po starcie sesji nie wolno juz czytac `RecipeRecord` z cache, aby "dociagac" zmiany. Sesja zawsze jedzie na snapshotcie startowym.
+After session start, do not read `RecipeRecord` from cache again in order to "pull in" changes. The session always runs on the startup snapshot.
 
-## Watch flow 5 - aktywne parzenie
+## Watch flow 5 - active brew
 
-### Ekran
+### Screen
 
 `brew-active`
 
-### Sekcje ekranu
+### Screen sections
 
-- header: nazwa receptury i nazwa narzedzia,
-- current step: tytul i opis,
-- primary timer: timer kroku, jesli krok jest czasowy,
-- secondary timer: timer calej sesji,
-- brew metadata: `waterMl` i `targetTotalWaterMl`, jesli istnieja,
+- header: recipe name and tool name,
+- current step: title and description,
+- primary timer: step timer when the step is timed,
+- secondary timer: total session timer,
+- brew metadata: `waterMl` and `targetTotalWaterMl` when present,
 - CTA:
   - `Next`
   - `Abort`
 
-### Zachowanie dla krokow
+### Behavior by step type
 
 #### `instruction`
 
-- nie ma odliczania,
-- przejscie dalej tylko po `Next`.
+- no countdown,
+- progression only after `Next`.
 
 #### `timed_action`
 
-- odlicza `durationMs`,
-- po zakonczeniu moze auto-przejsc dalej, jesli `requiresConfirm: false`,
-- jesli `requiresConfirm: true`, zatrzymuje sie i czeka na `Next`.
+- counts down `durationMs`,
+- may auto-advance when time ends if `requiresConfirm: false`,
+- if `requiresConfirm: true`, it stops and waits for `Next`.
 
 #### `timed_wait`
 
-- odlicza `durationMs`,
-- po zakonczeniu auto-przechodzi dalej.
+- counts down `durationMs`,
+- auto-advances when time ends.
 
 #### `confirm`
 
 - zero-timer,
-- wymaga `Next`.
+- requires `Next`.
 
 #### `finish`
 
-- konczy sesje,
-- wywoluja finalny feedback i zapis historii.
+- ends the session,
+- triggers final feedback and history persistence.
 
 ### Persist policy
 
-`active_session_v1` ma byc zapisywane:
+`active_session_v1` must be written:
 
-- przy starcie sesji,
-- przy rozpoczeciu kazdego kroku,
-- przy zakonczeniu kazdego kroku,
-- przy `Abort`,
-- przy `Complete`.
+- on session start,
+- on every step start,
+- on every step completion,
+- on `Abort`,
+- on `Complete`.
 
-## Watch flow 6 - resume po wygaszeniu lub powrocie
+Implementation state after Stage 5:
 
-### Cel
+- storage-backed `active_session_v1` is already implemented,
+- further resume hardening for sleep and wake remains in Stage 6.
 
-Przywrocic sensowny stan bez udawania pelnego background engine.
+## Watch flow 6 - resume after sleep or app return
+
+### Goal
+
+Restore a sensible state without pretending a full background engine exists.
 
 ### Resume rules
 
-- `home` czyta `active_session_v1`,
-- jesli obecny krok byl czasowy, nalezy przeliczyc, ile czasu uplynelo na podstawie `expectedStepEndAt`,
-- jesli timer juz minol, krok ma wejsc w stan zakonczony i od razu przejsc do kolejnego albo do oczekiwania na `Next`,
-- caly proces ma dzialac bez kontaktu z telefonem.
+- `home` reads `active_session_v1`,
+- if the current step was timed, calculate elapsed time from `expectedStepEndAt`,
+- if the timer already passed, the step should move into completed state and immediately advance to the next step or to waiting for `Next`,
+- the whole process must work without contacting the phone first.
 
 ### What not to do
 
-- nie wznawiac sesji przez odtworzenie "tick po ticku",
-- nie zalezec od `AppService`,
-- nie czekac z resume na nowy bootstrap.
+- do not resume by replaying the session "tick by tick",
+- do not depend on `AppService`,
+- do not block resume on a new bootstrap.
 
-## Watch flow 7 - zakonczenie sesji
+## Watch flow 7 - session completion
 
 ### Completed
 
-1. zbudowac `HistoryEntry`,
-2. zapisac `LastResultSummary`,
-3. zapisac lub zaktualizowac `sync_meta_v1.pendingHistoryQueue`,
-4. wyslac `UPSERT_HISTORY_ENTRY`,
-5. wyczyscic `active_session_v1`,
-6. przejsc do `result-summary`.
+1. build `HistoryEntry`,
+2. save `LastResultSummary`,
+3. save or update `sync_meta_v1.pendingHistoryQueue`,
+4. send `UPSERT_HISTORY_ENTRY`,
+5. clear `active_session_v1`,
+6. navigate to `result-summary`.
 
 ### Aborted
 
-Abort tworzy `HistoryEntry` ze statusem `aborted`, o ile sesja byla juz faktycznie uruchomiona. Nie zapisujemy pustych aborted entries, jesli uzytkownik nigdy nie wyszedl poza ekran startu receptury.
+Abort creates a `HistoryEntry` with status `aborted` only if the session was actually started. Do not save empty aborted entries if the user never moved past the recipe start screen.
 
-## Watch flow 8 - ekran wyniku
+## Watch flow 8 - result screen
 
-### Ekran
+### Screen
 
 `result-summary`
 
-### Zawartosc
+### Contents
 
-- nazwa receptury,
+- recipe name,
 - status,
-- czas calkowity,
-- podstawowa delta czasowa,
+- total time,
+- basic time delta,
 - CTA `Done`.
 
-### Czego tu nie robimy
+### What we do not do here
 
-- pelnej edycji notatki,
-- pelnej oceny tekstowej,
-- przegladania calej historii.
+- full note editing,
+- full text rating workflow,
+- browsing the full history.
 
-## Phone flow 1 - boot `setting/`
+## Phone flow 1 - `setting/` boot
 
-### Widok startowy
+### Start view
 
 `library-home`
 
-### Zawartosc
+### Contents
 
-- sekcja wspieranych narzedzi,
-- liczba receptur per narzedzie,
-- wejscie do `history-list`,
-- sekcja stanu synchronizacji.
+- supported tools section,
+- recipe count per tool,
+- entry to `history-list`,
+- sync state section.
 
-### Zachowanie
+### Behavior
 
-- `setting/` korzysta bezposrednio z `settingsStorage`,
-- kazda zmiana zapisuje rekord i indeks, a `app-side/` odbiera to reaktywnie.
+- `setting/` uses `settingsStorage` directly,
+- every change writes the record and index, and `app-side/` picks it up reactively.
 
-## Phone flow 2 - lista receptur
+## Phone flow 2 - recipe list
 
-### Wejscie
+### Entry
 
-Z `library-home` po kliknieciu narzedzia.
+From `library-home` after tapping a tool.
 
-### Widok
+### View
 
-- lista receptur dla jednego `toolId`,
-- przyciski `Create`, `Edit`, `Delete`, `Duplicate`.
+- recipe list for one `toolId`,
+- buttons `Create`, `Edit`, `Delete`, `Duplicate`.
 
-### Reguly
+### Rules
 
-- `Create` zawsze wymaga wybranego narzedzia z whitelisty,
-- `Duplicate` kopiuje caly rekord i tworzy nowy `recipeId`,
-- `Delete` usuwa rekord receptury, ale nie historie.
+- `Create` always requires a selected tool from the whitelist,
+- `Duplicate` copies the full record and creates a new `recipeId`,
+- `Delete` removes the recipe record but keeps history.
 
-## Phone flow 3 - edytor receptury
+## Phone flow 3 - recipe editor
 
-### Pola formularza
+### Form fields
 
 - `name`
-- `toolId` z read-only lub controlled select whitelisty
+- `toolId` as read-only or controlled whitelist select
 - `colorToken`
 - `description`
 - `coffeeDoseG`
@@ -250,9 +255,9 @@ Z `library-home` po kliknieciu narzedzia.
 - `notes`
 - `steps[]`
 
-### Edycja krokow
+### Step editing
 
-Kazdy krok ma osobny sub-form:
+Each step has its own sub-form:
 
 - `title`
 - `body`
@@ -263,73 +268,73 @@ Kazdy krok ma osobny sub-form:
 - `requiresConfirm`
 - `feedbackCue`
 
-### Walidacje UX
+### UX validation
 
-- nie pozwalac zapisac receptury bez `finish` na koncu,
-- nie pozwalac ustawic nieistniejacego `toolId`,
-- nie pozwalac zapisac pustej listy krokow.
+- do not allow saving a recipe without `finish` at the end,
+- do not allow an unknown `toolId`,
+- do not allow saving an empty step list.
 
-## Phone flow 4 - historia
+## Phone flow 4 - history
 
 ### `history-list`
 
-- lista `HistoryIndexEntry`,
-- sortowanie `endedAt desc`,
-- filtrowanie po `toolId` jako opcjonalny enhancement, nie baseline.
+- `HistoryIndexEntry` list,
+- sorted by `endedAt desc`,
+- optional filtering by `toolId` is an enhancement, not baseline.
 
 ### `history-detail`
 
-- pelny snapshot receptury,
-- lista wynikow krokow,
-- status sesji,
-- ocena i notatka usera.
+- full recipe snapshot,
+- step result list,
+- session status,
+- user rating and note.
 
-### Regula edycji
+### Editing rule
 
-Notatka i ocena sa edytowane tylko na `history-detail`, nie w samej recepcie.
+Note and rating are edited only in `history-detail`, not inside the recipe itself.
 
 ## Phone flow 5 - delete recipe
 
-### Oczekiwane zachowanie
+### Expected behavior
 
-1. usunac `RecipeRecord`,
-2. zaktualizowac `RecipeSummary[]`,
-3. nie ruszac zadnego `HistoryEntry`,
-4. po sync zegarek ma przestac pokazywac te recepte w katalogu,
-5. `last_result_v1` moze nadal odnosic sie do starej nazwy ze snapshotu.
+1. delete `RecipeRecord`,
+2. update `RecipeSummary[]`,
+3. do not touch any `HistoryEntry`,
+4. after sync, the watch should stop showing that recipe in the catalog,
+5. `last_result_v1` may still point to the old snapshot name.
 
-## Synchronizacja - scenariusze
+## Sync scenarios
 
 ### Recipe changed on phone during active brew
 
-- aktywna sesja na zegarku sie nie zmienia,
-- nowa rewizja katalogu dotyczy dopiero kolejnych uruchomien.
+- the active session on the watch does not change,
+- the new catalog revision applies only to future launches.
 
 ### History note added on phone
 
-- `historyRevision` rosnie,
-- `PUSH_HISTORY_SNAPSHOT` aktualizuje tylko `latestResult`, jesli zmieniony wpis jest najnowszy,
-- zegarek nie pobiera pelnego archiwum.
+- `historyRevision` increases,
+- `PUSH_HISTORY_SNAPSHOT` updates only `latestResult` if the changed entry is the newest one,
+- the watch does not fetch the full archive.
 
 ### Phone unavailable
 
-- user moze nadal uruchomic recepte z cache,
-- po zakonczeniu sesji wynik trafia do `pendingHistoryQueue`.
+- the user can still start a recipe from cache,
+- after the session ends, the result goes into `pendingHistoryQueue`.
 
-## UI copy i tone
+## UI copy and tone
 
-Watch copy ma byc:
+Watch copy should be:
 
-- krotka,
-- operacyjna,
-- zorientowana na dzialanie.
+- short,
+- operational,
+- action-oriented.
 
-Phone copy moze byc bardziej opisowa, ale nadal bez zbednego rozgadania.
+Phone copy may be slightly more descriptive, but still without unnecessary verbosity.
 
-## Decyzje zamrozone
+## Frozen decisions
 
-- `home` robi resume gate.
-- Watch browse jest zawsze dwuetapowy: `tool -> recipe`.
-- Phone ma pelny CRUD receptur i historii.
-- Zegarek nie ma edytora receptur.
-- Zegarek nie ma pelnego browsera historii.
+- `home` owns the resume gate.
+- Watch browse is always two-step: `tool -> recipe`.
+- The phone owns full recipe and history CRUD.
+- The watch has no recipe editor.
+- The watch has no full history browser.

@@ -2,9 +2,11 @@ import { push, replace } from "@zos/router";
 import { getSupportedTools } from "../constants/tool-catalog";
 import {
   buildHistoryEntryFromSession,
-  createScaffoldSession
+  createActiveBrewSession,
+  getCurrentSessionStep
 } from "../engine/recipe-engine";
-import { advanceSession, abortSession } from "../engine/session-reducer";
+import { playFeedbackCue } from "../engine/feedback";
+import { advanceSession, abortSession, tickSession } from "../engine/session-reducer";
 import { createLastResultSummary } from "../domain/schema";
 import {
   clearActiveSession,
@@ -35,9 +37,41 @@ export const PAGE_URLS = {
   resultSummary: "page/result-summary/index"
 };
 
+function persistCompletedHistoryEntry(historyEntry) {
+  writeLastResult(createLastResultSummary(historyEntry));
+  enqueuePendingHistoryEntry(historyEntry);
+  flushPendingHistoryQueue();
+}
+
+function finalizeFinishedSession(nextSession) {
+  const historyEntry = buildHistoryEntryFromSession(nextSession);
+  persistCompletedHistoryEntry(historyEntry);
+  clearActiveSession();
+  replace({ url: PAGE_URLS.resultSummary });
+  return { completed: true, historyEntry };
+}
+
+function maybePlayCurrentStepCue(previousSession, nextSession) {
+  const previousStep = getCurrentSessionStep(previousSession);
+  const nextStep = getCurrentSessionStep(nextSession);
+
+  if (!nextStep) {
+    return;
+  }
+
+  if (!previousStep || previousStep.stepId !== nextStep.stepId) {
+    playFeedbackCue(nextStep.feedbackCue);
+  }
+}
+
 export function getToolList() {
   const syncedTools = getToolCatalog();
-  return syncedTools.length ? syncedTools : getSupportedTools();
+  const tools = syncedTools.length ? syncedTools : getSupportedTools();
+
+  return tools.map((tool) => ({
+    ...tool,
+    recipeCount: getRecipesForTool(tool.toolId).length
+  }));
 }
 
 export function getSelectedTool() {
@@ -47,7 +81,19 @@ export function getSelectedTool() {
 
 export function getRecipeListForSelectedTool() {
   const selectedTool = getSelectedTool();
-  return selectedTool ? getRecipesForTool(selectedTool.toolId) : [];
+
+  if (!selectedTool) {
+    return [];
+  }
+
+  return getRecipesForTool(selectedTool.toolId).map((recipeSummary) => {
+    const recipeSnapshot = getRecipeSnapshotById(recipeSummary.recipeId);
+
+    return {
+      ...recipeSummary,
+      recipeSnapshot
+    };
+  });
 }
 
 export function refreshPhoneSnapshot() {
@@ -85,7 +131,9 @@ export function startRecipe(recipeSummary) {
 
   writeSelectedToolId(recipeSummary.toolId);
   writeSelectedRecipeId(recipeSummary.recipeId);
-  writeActiveSession(createScaffoldSession(recipeSnapshot));
+  const activeSession = createActiveBrewSession(recipeSnapshot);
+  writeActiveSession(activeSession);
+  playFeedbackCue(getCurrentSessionStep(activeSession).feedbackCue);
   push({ url: PAGE_URLS.brewActive });
   return true;
 }
@@ -99,10 +147,47 @@ export function resumeActiveSession() {
   return true;
 }
 
-function persistCompletedHistoryEntry(historyEntry) {
-  writeLastResult(createLastResultSummary(historyEntry));
-  enqueuePendingHistoryEntry(historyEntry);
-  flushPendingHistoryQueue();
+export function discardActiveSessionFromHome() {
+  const activeSession = readActiveSession();
+
+  if (!activeSession) {
+    return false;
+  }
+
+  const abortedSession = abortSession(activeSession);
+  const historyEntry = buildHistoryEntryFromSession(abortedSession);
+  persistCompletedHistoryEntry(historyEntry);
+  clearActiveSession();
+  replace({ url: PAGE_URLS.home });
+  return true;
+}
+
+export function tickActiveSession(now = Date.now()) {
+  const activeSession = readActiveSession();
+
+  if (!activeSession) {
+    return null;
+  }
+
+  const nextSession = tickSession(activeSession, { now });
+
+  if (!nextSession) {
+    return null;
+  }
+
+  if (nextSession.status === "completed") {
+    return finalizeFinishedSession(nextSession);
+  }
+
+  if (JSON.stringify(nextSession) !== JSON.stringify(activeSession)) {
+    maybePlayCurrentStepCue(activeSession, nextSession);
+    writeActiveSession(nextSession);
+  }
+
+  return {
+    completed: false,
+    activeSession: nextSession
+  };
 }
 
 export function advanceOrCompleteActiveSession() {
@@ -113,16 +198,13 @@ export function advanceOrCompleteActiveSession() {
 
   const nextSession = advanceSession(activeSession);
   if (nextSession.status === "completed") {
-    const historyEntry = buildHistoryEntryFromSession(nextSession);
-    persistCompletedHistoryEntry(historyEntry);
-    clearActiveSession();
-    replace({ url: PAGE_URLS.resultSummary });
-    return { completed: true };
+    return finalizeFinishedSession(nextSession);
   }
 
+  maybePlayCurrentStepCue(activeSession, nextSession);
   writeActiveSession(nextSession);
   replace({ url: PAGE_URLS.brewActive });
-  return { completed: false };
+  return { completed: false, activeSession: nextSession };
 }
 
 export function abortActiveBrew() {

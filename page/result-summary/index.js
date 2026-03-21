@@ -1,7 +1,9 @@
 import * as hmUI from "@zos/ui";
+import { replace } from "@zos/router";
 import { getToolById } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
-import { goHome, goToToolList } from "../../shared/watch/router";
+import { PAGE_URLS, goHome, goToToolList } from "../../shared/watch/router";
+import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -12,9 +14,20 @@ import {
 } from "zosLoader:./index.[pf].layout.js";
 
 Page({
+  onDestroy() {
+    if (this.unsubscribeRuntime) {
+      this.unsubscribeRuntime();
+      this.unsubscribeRuntime = null;
+    }
+  },
   build() {
     const lastResult = readLastResult();
     const tool = lastResult ? getToolById(lastResult.toolId) : null;
+    this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
+      if (event.type === "last_result") {
+        replace({ url: PAGE_URLS.resultSummary });
+      }
+    });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {

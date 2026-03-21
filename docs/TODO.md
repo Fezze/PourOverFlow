@@ -1,35 +1,36 @@
-# PourOverFlow v1 - TODO wdrozeniowe
+# PourOverFlow v1 - implementation TODO
 
-## Zasady ogolne
+## General rules
 
-- Najpierw dokumenty i kontrakty, potem scaffold i implementacja.
-- Nie omijac `zeus build`.
-- Nie wdrazac background engine jako "pewnego", dopoki nie przejdzie osobnego spike.
-- Nie dodawac funkcji spoza scope v1 tylko dlatego, ze "moga sie przydac".
-- Ten plik ma byc utrzymywany na biezaco: wykonane punkty usuwaj albo oznaczaj jednoznacznie, nowe zadania dopisuj od razu.
-- Jesli w trakcie pracy wyjdzie nowy problem, debt, ograniczenie albo follow-up, dodaj go tutaj lub do odpowiedniego dokumentu architektonicznego jeszcze w tej samej sesji.
+- Documents and contracts first, then scaffold and implementation.
+- Do not skip `zeus build`.
+- Do not implement the background engine as something "guaranteed" until it passes a separate spike.
+- Do not add features outside v1 scope just because they "might be useful".
+- This file must be maintained continuously: remove completed items or mark them clearly, and add new tasks immediately.
+- If new problems, debt, constraints, or follow-ups appear during the work, add them here or to the relevant architecture document in the same session.
+- Keep this backlog in English. New tasks, notes, risks, and follow-ups must be written in English.
 
-## Workflow utrzymania backlogu
+## Backlog maintenance workflow
 
-Kazdy agent startujacy prace w repo ma:
+Every agent starting work in this repo must:
 
-1. przeczytac ten plik przed implementacja,
-2. wybrac najlepszy nastepny krok na podstawie aktualnego stanu repo,
-3. zakomunikowac userowi te rekomendacje,
-4. po wykonaniu pracy zaktualizowac ten plik.
+1. read this file before implementation,
+2. choose the best next step based on the current repo state,
+3. communicate that recommendation to the user,
+4. update this file after finishing the work.
 
-Przy aktualizacji backlogu:
+When updating the backlog:
 
-- usuwaj lub przepisuj punkty juz wykonane,
-- dopisuj nowe follow-upy wynikajace z implementacji,
-- nie duplikuj tego samego zadania w kilku miejscach bez powodu,
-- jesli zadanie zmienia sie z "do zrobienia" w stale ograniczenie architektury, przenies je do odpowiedniego dokumentu i zostaw tu tylko odnosnik lub krotki follow-up.
+- remove or rewrite items that are already done,
+- add new follow-ups discovered during implementation,
+- do not duplicate the same task in several places without a reason,
+- if a task changes from "to do" into a stable architecture constraint, move it into the proper document and leave only a reference or short follow-up here.
 
-## Etap 1 - zamrozenie dokumentacji
+## Stage 1 - freeze documentation
 
-### Cel
+### Goal
 
-Miec komplet dokumentow, na ktorych moze pracowac kolejny agent bez zgadywania modelu danych i sync.
+Have a complete document set that a later agent can use without guessing the data model or sync model.
 
 ### Deliverables
 
@@ -44,264 +45,277 @@ Miec komplet dokumentow, na ktorych moze pracowac kolejny agent bez zgadywania m
 
 ### Acceptance
 
-- katalog narzedzi jest jawny i zamkniety,
-- wszystkie klucze storage sa nazwane,
-- wszystkie typy wiadomosci sync sa nazwane,
-- aktywna sesja, historia i snapshot receptury sa opisane.
+- the tool catalog is explicit and closed,
+- all storage keys are named,
+- all sync message types are named,
+- active session, history, and recipe snapshot are documented.
 
-## Etap 2 - scaffold Zepp
+## Stage 2 - Zepp scaffold
 
-### Cel
+### Goal
 
-Postawic minimalny repo scaffold zgodny z dokumentami.
+Set up the minimum repo scaffold that matches the documents.
 
 ### Tasks
 
-- utworzyc `app.json`, `app.js`, `package.json`,
-- skonfigurowac `configVersion: "v3"` i `runtime.apiVersion.target: "4.0"`,
-- zarejestrowac target `common` dla `round` i `square`,
-- trzymac sie kontraktu z `docs/06-manifest-and-ui-contract.md`,
-- dodac strony `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
-- dodac `setting/index.jsx`,
-- dodac `app-side/index.js`,
-- dodac `shared/*`,
-- dodac puste asset directories `assets/common.r` i `assets/common.s`.
+- create `app.json`, `app.js`, `package.json`,
+- configure `configVersion: "v3"` and `runtime.apiVersion.target: "4.0"`,
+- register target `common` for `round` and `square`,
+- follow the contract from `docs/06-manifest-and-ui-contract.md`,
+- add pages `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
+- add `setting/index.jsx`,
+- add `app-side/index.js`,
+- add `shared/*`,
+- add empty asset directories `assets/common.r` and `assets/common.s`.
 
 ### Acceptance
 
-- `zeus build` przechodzi,
-- simulator uruchamia pusta appke bez crasha,
-- routing stron dziala,
-- `AppSettingsPage(...)` sie buduje.
+- `zeus build` passes,
+- the simulator launches the empty app without crashing,
+- page routing works,
+- `AppSettingsPage(...)` builds.
 
-### Ryzyka
+### Risks
 
-- niepoprawny manifest,
-- niepoprawna rejestracja stron,
-- rozjazd layout files round vs square.
+- invalid manifest,
+- invalid page registration,
+- layout mismatch between round and square.
 
 ### Status
 
-- wykonane: scaffold istnieje i `zeus build` przechodzi,
-- wykonane: sa strony `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
-- wykonane: istnieja `setting/`, `app-side/`, `shared/` i placeholderowe assets,
-- uwaga: watch runtime jest na razie scaffoldem in-memory, a nie docelowym `LocalStorage` / sync implementation.
+- done: scaffold exists and `zeus build` passes,
+- done: pages `home`, `tool-list`, `recipe-list`, `brew-active`, and `result-summary` exist,
+- done: `setting/`, `app-side/`, `shared/`, and placeholder assets exist,
+- note: the watch runtime is still only a scaffold at this stage, not the final `LocalStorage` / sync implementation.
 
-## Etap 3 - storage i phone CRUD
+## Stage 3 - storage and phone CRUD
 
-### Cel
+### Goal
 
-Uruchomic kanoniczna warstwe danych po stronie telefonu.
+Bring up the canonical data layer on the phone side.
 
 ### Tasks
 
-- seedowac `pof_tools_v1`,
-- seedowac recipes zgodnie z `docs/05-seed-library.md`,
-- zaimplementowac `RecipeRecord`, `RecipeSummary`, `HistoryEntry` i walidatory,
-- zrobic `setting/` z widokami:
+- seed `pof_tools_v1`,
+- seed recipes according to `docs/05-seed-library.md`,
+- implement `RecipeRecord`, `RecipeSummary`, `HistoryEntry`, and validators,
+- build `setting/` with the views:
   - `library-home`
   - `recipe-list`
   - `recipe-editor`
   - `history-list`
   - `history-detail`
-- zaimplementowac CRUD receptur,
-- zaimplementowac odczyt i edycje historii,
-- pilnowac zasady "delete recipe keeps history".
+- implement recipe CRUD,
+- implement history read and note editing,
+- enforce the rule "delete recipe keeps history".
 
 ### Acceptance
 
-- mozna utworzyc recepte dla wspieranego `toolId`,
-- nie da sie zapisac recepty dla niewspieranego `toolId`,
-- mozna usunac recepte bez utraty historii,
-- historia i receptury sa rozlozone na `index + records`.
+- a recipe can be created for a supported `toolId`,
+- a recipe cannot be saved for an unsupported `toolId`,
+- a recipe can be deleted without losing history,
+- history and recipes are stored as `index + records`.
 
-### Testy
+### Tests
 
-- testy walidatorow rekordow,
-- testy delete policy,
-- testy serializacji JSON.
+- record validator tests,
+- delete policy tests,
+- JSON serialization tests.
 
 ### Status
 
-- wykonane: seed library i seed do `settingsStorage`,
-- wykonane: `RecipeRecord`, `RecipeSummary`, `HistoryEntry` i walidatory,
-- wykonane: `setting/` z widokami `library-home`, `recipe-list`, `recipe-editor`, `history-list`, `history-detail`, `about-sync`,
-- wykonane: CRUD receptur i edycja notatek historii,
-- wykonane: podstawowe testy Node dla walidatorow i phone storage,
-- uwaga: `app-side/` na tym etapie seeduje dane i loguje zmiany, ale nie wysyla jeszcze snapshotow do watch runtime.
+- done: seed library and seeding into `settingsStorage`,
+- done: `RecipeRecord`, `RecipeSummary`, `HistoryEntry`, and validators,
+- done: `setting/` with views `library-home`, `recipe-list`, `recipe-editor`, `history-list`, `history-detail`, `about-sync`,
+- done: recipe CRUD and history note editing,
+- done: baseline Node tests for validators and phone storage,
+- note: at this stage `app-side/` seeds data and logs changes, but does not yet push snapshots to the watch runtime.
 
-## Etap 4 - `app-side/` i synchronizacja
+## Stage 4 - `app-side/` and synchronization
 
-### Cel
+### Goal
 
-Zrobic bootstrap i push danych z telefonu do zegarka.
+Build bootstrap and data push from phone to watch.
 
 ### Tasks
 
-- seed przy pierwszym uruchomieniu,
-- implementacja `messaging.peerSocket`,
+- seed on first launch,
+- implement `messaging.peerSocket`,
 - `REQUEST_BOOTSTRAP`,
 - `PUSH_TOOL_CATALOG`,
 - `PUSH_CATALOG_SNAPSHOT`,
 - `PUSH_HISTORY_SNAPSHOT`,
 - `UPSERT_HISTORY_ENTRY`,
 - `ACK_HISTORY_ENTRY`,
-- kodowanie i dekodowanie przez `stringToBuffer` i `bufferToString`.
-- ignorowanie `pof_settings_ui_state_v1` w listenerach storage i podczas normalizacji snapshotow.
+- encoding and decoding through `stringToBuffer` and `bufferToString`,
+- ignore `pof_settings_ui_state_v1` in storage listeners and snapshot normalization.
 
 ### Acceptance
 
-- watch dostaje katalog narzedzi i receptur po bootstrappie,
-- watch dostaje ostatni wynik,
-- `UPSERT_HISTORY_ENTRY` zapisuje historie po stronie telefonu,
-- `ACK_HISTORY_ENTRY` czysci pending queue na zegarku.
+- the watch receives the tool and recipe catalog during bootstrap,
+- the watch receives the latest result,
+- `UPSERT_HISTORY_ENTRY` stores history on the phone side,
+- `ACK_HISTORY_ENTRY` clears the pending queue on the watch.
 
-### Testy
+### Tests
 
 - encode/decode message envelopes,
-- replay `pendingHistoryQueue`,
-- walidacja rewizji i fallback na uszkodzony payload.
+- `pendingHistoryQueue` replay,
+- revision validation and fallback on corrupted payload.
 
 ### Status
 
-- wykonane: `app-side` obsluguje `REQUEST_BOOTSTRAP`, `UPSERT_HISTORY_ENTRY` i wysylanie `PUSH_*`,
-- wykonane: watch most korzysta z BLE po stronie device i `peerSocket` po stronie phone,
-- wykonane: `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` sa zapisywane lokalnie na watch,
-- wykonane: watch router czyta receptury ze zsynchronizowanego katalogu telefonu,
-- wykonane: podstawowe testy kontraktow sync i normalizacji snapshotow,
-- follow-up: placeholderowe watch pages nie maja jeszcze pelnego live rerenderu po przyjsciu snapshotu podczas otwartej strony.
+- done: `app-side` handles `REQUEST_BOOTSTRAP`, `UPSERT_HISTORY_ENTRY`, and sending `PUSH_*`,
+- done: the watch bridge uses BLE on device side and `peerSocket` on phone side,
+- done: `catalog_cache_v1`, `last_result_v1`, and `sync_meta_v1` are persisted locally on the watch,
+- done: the watch router reads recipes from the synced phone catalog,
+- done: baseline tests for sync contracts and snapshot normalization,
+- follow-up: placeholder watch pages still do not have full live rerender when a snapshot arrives while the page is already open.
 
-## Etap 5 - watch browse i recipe engine
+## Stage 5 - watch browse and recipe engine
 
-### Cel
+### Goal
 
-Uruchomic glowny flow `tool -> recipe -> active brew`.
+Bring up the main `tool -> recipe -> active brew` flow.
 
 ### Tasks
 
-- `home` z resume gate,
-- `tool-list` z whitelist katalogu,
-- `recipe-list` filtrowane po `toolId`,
-- start sesji na `RecipeSnapshot`,
-- `recipe-engine` i `session-reducer`,
-- UI dla `instruction`, `timed_action`, `timed_wait`, `confirm`, `finish`,
-- feedback layer dla haptyki i opcjonalnie audio,
-- zapis `active_session_v1` i `last_result_v1`.
-- dorobic sensowny refresh aktualnie otwartej strony po przyjsciu nowych snapshotow z telefonu.
+- `home` with resume gate,
+- `tool-list` with the whitelist catalog,
+- `recipe-list` filtered by `toolId`,
+- session start from `RecipeSnapshot`,
+- `recipe-engine` and `session-reducer`,
+- UI for `instruction`, `timed_action`, `timed_wait`, `confirm`, `finish`,
+- feedback layer for haptics and optional audio,
+- persistence of `active_session_v1` and `last_result_v1`,
+- meaningful refresh for the currently open page when new snapshots arrive from the phone.
 
 ### Acceptance
 
-- user moze przejsc przez cala sesje,
-- timer kroku i timer calosci sa widoczne rownolegle,
-- `confirm` wymaga recznego przejscia,
-- `finish` zapisuje wynik i czysci aktywna sesje.
+- the user can go through a full session,
+- step timer and full-session timer are visible in parallel,
+- `confirm` requires manual progression,
+- `finish` saves the result and clears the active session.
 
-### Testy
+### Tests
 
-- logika reducera,
-- przejscia miedzy typami krokow,
-- serializacja `ActiveBrewSession`,
-- simulator round i square.
+- reducer logic,
+- transitions between step kinds,
+- `ActiveBrewSession` serialization,
+- simulator validation for round and square.
 
-## Etap 6 - resume, offline i twarde testy
+### Status
 
-### Cel
+- done: `home` has a resume gate,
+- done: `tool-list` shows the whitelist catalog with recipe counts,
+- done: `recipe-list` uses data coming from `RecipeSnapshot`,
+- done: `active_session_v1` is storage-backed,
+- done: timed steps, confirm steps, and finish steps have more production-shaped reducer handling,
+- done: `brew-active` shows step timer and session timer,
+- done: best-effort feedback layer for haptics and system sounds,
+- done: runtime event refresh for list pages and result summary,
+- follow-up: real-device validation of feedback and resume remains in Stage 6.
 
-Upewnic sie, ze v1 zachowuje sie sensownie po przerwaniu.
+## Stage 6 - resume, offline, and hard validation
+
+### Goal
+
+Make sure v1 behaves sensibly after interruption.
 
 ### Tasks
 
-- `setWakeUpRelaunch(true)` na `brew-active`,
-- `setPageBrightTime(...)` na `brew-active`,
-- resume z `active_session_v1`,
-- obsluga `pendingHistoryQueue`,
+- `setWakeUpRelaunch(true)` on `brew-active`,
+- `setPageBrightTime(...)` on `brew-active`,
+- resume from `active_session_v1`,
+- handle `pendingHistoryQueue`,
 - last result summary,
-- fallbacki dla pustego albo uszkodzonego cache.
+- fallbacks for empty or corrupted cache,
+- real-device validation of `Buzzer` / `SystemSounds` and silent mode behavior.
 
 ### Acceptance
 
-- po wyjsciu i powrocie do aplikacji sesja daje sie wznowic,
-- brak telefonu nie blokuje dalszego flow,
-- offline-complete trafia do `pendingHistoryQueue`,
-- po odzyskaniu sync wpis trafia do telefonu.
+- after leaving and returning to the app, the session can be resumed,
+- lack of phone does not block the flow,
+- an offline-completed session goes into `pendingHistoryQueue`,
+- after sync is restored, the entry reaches the phone.
 
-### Testy
+### Tests
 
 - mocked resume,
-- replay kolejki,
-- testy na prawdziwym urzadzeniu dla wygaszania, haptyki i dzwieku.
+- queue replay,
+- real-device tests for screen sleep, haptics, and sound.
 
-## Etap 7 - eksperymentalny spike background reminders
+## Stage 7 - experimental background reminder spike
 
-### Cel
+### Goal
 
-Zweryfikowac, czy `AppService` i `createSysTimer()` sa warte rozwijania po v1 core.
+Verify whether `AppService` and `createSysTimer()` are worth developing after the v1 core.
 
 ### Tasks
 
-- zbadac `AppService` z `device:os.bg_service`,
-- sprawdzic realne ograniczenia timers/background na konkretnym sprzecie,
-- zbadac, czy reminder po wygaszeniu ma sens UX-owo i technicznie,
-- nie laczyc tego z glowna logika timera, dopoki spike nie przejdzie.
+- investigate `AppService` with `device:os.bg_service`,
+- verify real timer/background limitations on specific hardware,
+- check whether reminders after screen sleep make sense both technically and in UX terms,
+- do not connect this to the main timer logic until the spike passes.
 
 ### Acceptance
 
-- pisemna decyzja `go / no-go`,
-- osobny dokument techniczny albo ADR,
-- brak regresji w baseline v1.
+- written `go / no-go` decision,
+- separate technical document or ADR,
+- no regression in the v1 baseline.
 
-## Lista testow obowiazkowych
+## Required test list
 
 ### Pure logic
 
-- walidacja `toolId` whitelisty,
-- walidacja krokow receptury,
-- budowanie snapshotu sesji,
-- budowanie `HistoryEntry`,
-- encode/decode sync messages.
+- `toolId` whitelist validation,
+- recipe step validation,
+- session snapshot building,
+- `HistoryEntry` building,
+- sync message encode/decode.
 
 ### Mocked runtime
 
-- lifecycle stron,
-- bootstrap z cache,
-- update katalogu po sync,
-- zapis i replay `pendingHistoryQueue`.
+- page lifecycle,
+- bootstrap from cache,
+- catalog update after sync,
+- `pendingHistoryQueue` save and replay.
 
 ### Simulator
 
 - `round`,
 - `square`,
-- flow `tool -> recipe -> brew`,
-- `confirm` i `finish`,
-- resume po restarcie aplikacji.
+- `tool -> recipe -> brew` flow,
+- `confirm` and `finish`,
+- resume after app restart.
 
 ### Real device
 
-- wibracja,
-- opcjonalny dzwiek,
-- wygaszanie ekranu,
+- vibration,
+- optional sound,
+- screen sleep,
 - wake-up relaunch,
-- komfort uzycia podczas realnego parzenia.
+- real brewing comfort.
 
 ## Explicitly not now
 
 - backend,
 - cloud sync,
-- import zewnetrznych receptur,
+- external recipe import,
 - widgets/cards,
 - BLE integrations,
 - band layout,
-- pelna historia na zegarku.
+- full history on the watch.
 
-## Decision log dla kolejnego agenta
+## Decision log for the next agent
 
-- `Tool` jest read-only.
-- `setting/` nie ma CRUD dla narzedzi.
-- Historia zostaje po delete receptury.
-- `PUSH_HISTORY_SNAPSHOT` to tylko ostatni wynik.
-- `AppService` jest spike, nie baseline.
-- Zeus target-based scaffold potrzebuje ikon pod `assets/<target>.<shape>/icon.png`.
-- `setting/index.js` zostal dodany jako JS shim do kodu Settings App, bo sam `index.jsx` nie byl wystarczajacym entrypointem dla builda.
-- Watch cache i sync meta sa juz storage-backed, ale `active_session_v1` nadal pozostaje follow-upem dalszych etapow.
-- `pof_settings_ui_state_v1` jest kluczem pomocniczym Settings App i nie nalezy do kanonicznego modelu sync.
-- Etap 4 ma juz runtime sync i storage-backed cache, ale `active_session_v1` nadal czeka na docelowa implementacje i resume hardening.
+- `Tool` is read-only.
+- `setting/` has no tool CRUD.
+- History survives recipe deletion.
+- `PUSH_HISTORY_SNAPSHOT` is latest-result only.
+- `AppService` is a spike, not baseline.
+- Zeus target-based scaffolding needs icons under `assets/<target>.<shape>/icon.png`.
+- `setting/index.js` was added as a JS shim for Settings App code because `index.jsx` alone was not a reliable build entrypoint.
+- Watch cache, sync metadata, and `active_session_v1` are already storage-backed, but resume hardening for sleep and wake remains Stage 6 work.
+- `pof_settings_ui_state_v1` is a helper Settings App key and does not belong to the canonical sync model.
+- Stage 4 closed runtime sync, and Stage 5 added storage-backed `active_session_v1`; the next follow-up is resume hardening and real-device validation.

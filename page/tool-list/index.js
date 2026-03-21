@@ -1,5 +1,8 @@
 import * as hmUI from "@zos/ui";
+import { replace } from "@zos/router";
 import { getToolList, refreshPhoneSnapshot, selectTool } from "../../shared/watch/router";
+import { PAGE_URLS } from "../../shared/watch/router";
+import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -10,8 +13,19 @@ import {
 } from "zosLoader:./index.[pf].layout.js";
 
 Page({
+  onDestroy() {
+    if (this.unsubscribeRuntime) {
+      this.unsubscribeRuntime();
+      this.unsubscribeRuntime = null;
+    }
+  },
   build() {
     const tools = getToolList();
+    this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
+      if (event.type === "catalog") {
+        replace({ url: PAGE_URLS.toolList });
+      }
+    });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
@@ -46,7 +60,7 @@ Page({
 
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...buttonStyle,
-        text: tool.label,
+        text: `${tool.label} (${tool.recipeCount || 0})`,
         click_func: () => {
           selectTool(tool.toolId);
         }
@@ -55,7 +69,7 @@ Page({
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: `Visible tools: ${tools.length}`
+      text: "Counts reflect the current watch cache from phone sync."
     });
   }
 });

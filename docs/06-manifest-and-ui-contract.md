@@ -1,22 +1,22 @@
-# PourOverFlow v1 - manifest i kontrakt UI
+# PourOverFlow v1 - manifest and UI contract
 
-## Cel dokumentu
+## Purpose of this document
 
-Ten dokument zamraza dwa obszary, ktore musza byc decision-complete przed Etapem 2:
+This document freezes two areas that need to be decision-complete before Stage 2:
 
-- szkic `app.json` dla Zepp OS v4 baseline,
-- kontrakt implementacyjny dla `setting/index.jsx`.
+- the `app.json` outline for the Zepp OS v4 baseline,
+- the implementation contract for `setting/index.jsx`.
 
-Dokument korzysta z oficjalnych zalozen Zeppa dotyczacych `app.json v3+`, screen adaptation i `AppSettingsPage`.
+The document follows official Zepp assumptions for `app.json v3+`, screen adaptation, and `AppSettingsPage`.
 
-## Oficjalne punkty odniesienia
+## Official reference points
 
-- `app.json v3+` wymaga m.in. `configVersion`, `app`, `runtime`, `permissions`, `targets`, `i18n`, `defaultLanguage`.
-- `setting` i `app-side` sa opcjonalnymi modulami `targets.*.module`.
-- `AppSettingsPage` ma tylko lifecycle `build(props)` i korzysta z `props.settingsStorage`.
-- `target.platforms` w `app.json v3+` moze byc oparte o cechy ekranu `st: "r"` i `st: "s"`.
+- `app.json v3+` requires at least `configVersion`, `app`, `runtime`, `permissions`, `targets`, `i18n`, and `defaultLanguage`.
+- `setting` and `app-side` are optional modules inside `targets.*.module`.
+- `AppSettingsPage` only has the `build(props)` lifecycle and uses `props.settingsStorage`.
+- `target.platforms` in `app.json v3+` may be based on screen features such as `st: "r"` and `st: "s"`.
 
-Zrodla:
+Sources:
 
 - https://docs.zepp.com/docs/reference/app-json/
 - https://docs.zepp.com/docs/guides/framework/device/screen-adaption/
@@ -28,9 +28,9 @@ Zrodla:
 
 ## `app.json` contract
 
-### Docelowy ksztalt
+### Target shape
 
-Implementacja Etapu 2 ma wystartowac od takiego szkicu:
+Stage 2 implementation should start from this outline:
 
 ```json
 {
@@ -99,18 +99,18 @@ Implementacja Etapu 2 ma wystartowac od takiego szkicu:
 }
 ```
 
-### Reguly dla implementera
+### Rules for the implementer
 
-- `appId` jest placeholderem do podmiany, jesli projekt bedzie rejestrowany w konkretnym koncie.
-- `vender` ma pozostac ASCII.
-- W pierwszym scaffoldu nie wymuszac `runtime.type`, bo oficjalne szablony `os4.0` Zeusa go nie wymagaja do poprawnego builda.
-- Nie dodawac `designWidth` w pierwszym scaffoldu.
-- Nie dodawac `app-service`, `secondary-widget`, `app-widget`, `data-widget` ani BLE permissions.
-- Nie dodawac targetu `band`.
+- `appId` is a placeholder to replace later if the project is registered under a concrete account.
+- `vender` must remain ASCII.
+- In the first scaffold, do not force `runtime.type`, because official Zeus `os4.0` templates do not require it for a passing build.
+- Do not add `designWidth` in the first scaffold.
+- Do not add `app-service`, `secondary-widget`, `app-widget`, `data-widget`, or BLE permissions.
+- Do not add a `band` target.
 
-## Struktura plikow wynikajaca z manifestu
+## File structure implied by the manifest
 
-Z `app.json` i screen adaptation wynika obowiazkowa struktura:
+From `app.json` and screen adaptation, the required structure is:
 
 ```text
 assets/
@@ -135,18 +135,18 @@ setting/index.jsx
 app-side/index.js
 ```
 
-## Asset contract dla ikon
+## Asset contract for icons
 
 ### Root app icon
 
-- `icon.png` w root projektu
-- dla target-based scaffoldu Zeusa praktyczny baseline to rowniez:
+- `icon.png` in the project root
+- for target-based Zeus scaffolding, the practical baseline is also:
   - `assets/common.r/icon.png`
   - `assets/common.s/icon.png`
 
 ### Tool icons
 
-Ikony narzedzi maja byc trzymane parami zasobow round/square:
+Tool icons should be stored as round/square asset pairs:
 
 - `assets/common.r/tool-aeropress.png`
 - `assets/common.s/tool-aeropress.png`
@@ -161,23 +161,23 @@ Ikony narzedzi maja byc trzymane parami zasobow round/square:
 - `assets/common.r/tool-french-press.png`
 - `assets/common.s/tool-french-press.png`
 
-### Zasada mapowania
+### Mapping rule
 
-`ToolDefinition.iconStem` wskazuje na nazwe assetu bez rozszerzenia. Watch UI nie powinno zawierac recznego switcha po `toolId`, jesli ten sam efekt da sie osiagnac przez `iconStem`.
+`ToolDefinition.iconStem` points to the asset name without extension. The watch UI should not contain a manual switch on `toolId` when the same result can be achieved through `iconStem`.
 
-## Kontrakt `setting/index.jsx`
+## `setting/index.jsx` contract
 
-### Uwaga implementacyjna dla Etapu 2
+### Stage 2 implementation note
 
-Jesli toolchain Zeusa nie wykrywa bezposrednio `setting/index.jsx` jako entrypointu `setting.path`, wolno dodac cienki shim `setting/index.js`, ktory tylko importuje docelowy plik `.jsx`. Zrodlo logiki Settings App nadal ma pozostac w `.jsx`.
+If the Zeus toolchain does not detect `setting/index.jsx` directly as the `setting.path` entrypoint, it is allowed to add a thin `setting/index.js` shim that only imports the target `.jsx` file. The source of Settings App logic should still live in `.jsx`.
 
 ### Constructor shape
 
-`setting/index.jsx` ma byc zbudowane na `AppSettingsPage({ state, build(props), ...helpers })`.
+`setting/index.jsx` should be built on top of `AppSettingsPage({ state, build(props), ...helpers })`.
 
-Aktualna implementacja Etapu 3 trzyma glowna logike w `setting/app-settings.jsx`, a `setting/index.js` pozostaje cienkim shimem entrypointu dla Zeusa.
+The current Stage 3 implementation keeps main logic in `setting/app-settings.jsx`, while `setting/index.js` remains the thin Zeus entry shim.
 
-Zalecana struktura:
+Recommended structure:
 
 ```js
 AppSettingsPage({
@@ -201,11 +201,11 @@ AppSettingsPage({
 })
 ```
 
-V1 moze dodatkowo persystowac stan UI telefonu pod kluczem `pof_settings_ui_state_v1`, ale ten klucz nie jest elementem modelu sync i nie moze byc traktowany jak rekord domenowy.
+V1 may additionally persist phone UI state under `pof_settings_ui_state_v1`, but that key is not part of the sync model and must not be treated as a domain record.
 
-### Dozwolone widoki
+### Allowed views
 
-`view` moze przyjmowac tylko:
+`view` may be only:
 
 - `library-home`
 - `recipe-list`
@@ -214,63 +214,63 @@ V1 moze dodatkowo persystowac stan UI telefonu pod kluczem `pof_settings_ui_stat
 - `history-detail`
 - `about-sync`
 
-Nie tworzyc dodatkowych ukrytych widokow dla eksperymentow.
+Do not create extra hidden views for experiments.
 
-## Zasady UI dla Settings App
+## UI rules for the Settings App
 
-### Komponenty bazowe
+### Base components
 
-Implementer ma budowac `setting/` glownie z:
+The implementer should build `setting/` mainly from:
 
 - `Section`
 - `TextInput`
 - `Select`
 - `Button`
 
-To jest celowe. V1 ma byc prosty, czytelny i zgodny z dokumentacja Zeppa, bez rozbudowanego custom UI system.
+This is intentional. V1 should stay simple, readable, and aligned with Zepp documentation, without a large custom UI system.
 
-### Polityka formularzy
+### Form policy
 
-- Jeden logiczny formularz = jedna sekcja lub grupa sekcji.
-- Kazda istotna akcja ma jawny `Button`.
-- Pola z ograniczonym zestawem opcji maja uzywac `Select`, nie wolnego tekstu.
-- `toolId`, `colorToken`, `kind` i `feedbackCue` nie moga byc text inputami.
+- One logical form = one section or group of sections.
+- Every important action should have an explicit `Button`.
+- Fields with a restricted option set should use `Select`, not free text.
+- `toolId`, `colorToken`, `kind`, and `feedbackCue` must not be plain text inputs.
 
-### Polityka zapisu
+### Save policy
 
-- Zmiany formularza trzymac najpierw w `this.state.draftRecipe`.
-- Persist do `settingsStorage` robic dopiero na `Save`.
-- Wyjatkiem sa proste akcje jak `Delete`, `Duplicate` albo edycja notatki historii, ktore moga zapisywac od razu po kliknieciu.
+- Keep form changes in `this.state.draftRecipe` first.
+- Persist to `settingsStorage` only on `Save`.
+- Exceptions are simple actions such as `Delete`, `Duplicate`, or history note editing, which may persist immediately after click.
 
-## Kontrakt widokow `setting/`
+## `setting/` view contract
 
 ### `library-home`
 
-Ma zawierac:
+Must contain:
 
-- `Section` z lista wspieranych narzedzi i liczba receptur,
-- `Button` do przejscia do historii,
-- `Section` ze stanem synchronizacji.
+- a `Section` with the supported tools and recipe counts,
+- a `Button` to go to history,
+- a `Section` showing sync state.
 
-Kazdy wspierany `toolId` ma byc widoczny nawet, jesli ma 0 receptur.
+Every supported `toolId` must be visible even if it has 0 recipes.
 
 ### `recipe-list`
 
-Ma zawierac:
+Must contain:
 
-- tytul z nazwa narzedzia,
-- liste receptur dla jednego `selectedToolId`,
-- `Button` `Create`,
-- dla kazdej receptury akcje `Edit`, `Duplicate`, `Delete`.
+- a title with the tool name,
+- the recipe list for one `selectedToolId`,
+- a `Create` button,
+- `Edit`, `Duplicate`, and `Delete` actions for every recipe.
 
-Sortowanie:
+Sorting:
 
 1. `updatedAt desc`
 2. `name asc`
 
 ### `recipe-editor`
 
-Ma zawierac sekcje:
+Must contain sections:
 
 1. `Identity`
    - `name`
@@ -285,7 +285,7 @@ Ma zawierac sekcje:
    - `grindLabel`
    - `estimatedTotalDurationMs`
 3. `Steps`
-   - powtarzalne sekcje per krok
+   - repeated sections per step
 4. `Notes`
    - `notes`
 5. `Actions`
@@ -294,93 +294,93 @@ Ma zawierac sekcje:
 
 ### `history-list`
 
-Ma zawierac:
+Must contain:
 
-- liste `HistoryIndexEntry`,
+- the `HistoryIndexEntry` list,
 - status,
-- nazwe receptury,
-- date/czas zakonczenia,
-- wejscie w `history-detail`.
+- recipe name,
+- end date/time,
+- entry to `history-detail`.
 
-Nie dodawac zaawansowanych filtrow jako baseline.
+Do not add advanced filters as baseline behavior.
 
 ### `history-detail`
 
-Ma zawierac:
+Must contain:
 
-- snapshot receptury,
-- przebieg krokow,
+- recipe snapshot,
+- step execution breakdown,
 - `userRating`,
 - `userNote`,
 - `Save notes`.
 
-To jest jedyne miejsce edycji notatki i oceny.
+This is the only place for editing note and rating.
 
 ### `about-sync`
 
-Ma zawierac:
+Must contain:
 
-- ostatnie rewizje sync,
-- informacje o telefonie jako source of truth,
-- krotkie wyjasnienie, ze watch przechowuje tylko cache i aktywna sesje.
+- latest sync revisions,
+- information that the phone is the source of truth,
+- a short explanation that the watch stores only cache and the active session.
 
-## Kontrakt edytora krokow
+## Step editor contract
 
 ### Rendering
 
-Kroki maja byc edytowane jako lista sekcji jedna pod druga. V1 nie potrzebuje drag-and-drop.
+Steps should be edited as a list of sections one below another. V1 does not need drag-and-drop.
 
-### Pola kroku
+### Step fields
 
-Kazdy krok ma miec edycje:
+Each step must expose editing for:
 
-- `title` przez `TextInput`
-- `body` przez `TextInput`
-- `kind` przez `Select`
-- `durationMs` przez `TextInput`
-- `waterMl` przez `TextInput`
-- `targetTotalWaterMl` przez `TextInput`
-- `requiresConfirm` przez `Select`
-- `feedbackCue` przez `Select`
+- `title` through `TextInput`
+- `body` through `TextInput`
+- `kind` through `Select`
+- `durationMs` through `TextInput`
+- `waterMl` through `TextInput`
+- `targetTotalWaterMl` through `TextInput`
+- `requiresConfirm` through `Select`
+- `feedbackCue` through `Select`
 
-### Akcje na krokach
+### Step actions
 
 - `Add step`
 - `Move up`
 - `Move down`
 - `Delete step`
 
-`Delete step` nie moze usunac jedynego kroku bez natychmiastowego dodania nowego.
+`Delete step` must not remove the only remaining step without immediately adding a replacement.
 
-## Walidacje formularza receptury
+## Recipe form validation
 
-Przed zapisem `RecipeRecord`:
+Before saving `RecipeRecord`:
 
-- `toolId` musi nalezec do whitelisty,
-- `name` nie moze byc pusty,
+- `toolId` must belong to the whitelist,
+- `name` must not be empty,
 - `steps.length >= 1`,
-- ostatni krok musi miec `kind: "finish"`,
-- `order` musi zostac przepisany sekwencyjnie,
-- `estimatedTotalDurationMs` nie moze byc mniejsze od sumy `durationMs`.
+- the last step must have `kind: "finish"`,
+- `order` must be rewritten sequentially,
+- `estimatedTotalDurationMs` must not be smaller than the sum of `durationMs`.
 
-Jesli walidacja zawiedzie:
+If validation fails:
 
-- nie zapisuj do `settingsStorage`,
-- zostan w `recipe-editor`,
-- pokaz prosty komunikat bledu w widoku.
+- do not write to `settingsStorage`,
+- stay in `recipe-editor`,
+- show a simple error message in the view.
 
-## Implementacyjne wnioski dla Etapu 2 i 3
+## Implementation conclusions for Stages 2 and 3
 
-- Etap 2 ma stworzyc skeleton `app.json` zgodny z tym dokumentem.
-- Etap 3 ma implementowac `setting/` zgodnie z tym kontraktem, bez wymyslania nowej architektury formularzy.
-- Etap 3 ma seedowac recipe library zgodnie z [05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
-- Etap 4 ma zachowac kontrakt widokow i formularzy, ale podmienic zrodlo danych watch runtime z lokalnego preview na snapshoty pochodzace z telefonu.
+- Stage 2 should create the `app.json` skeleton according to this document.
+- Stage 3 should implement `setting/` according to this contract, without inventing a new form architecture.
+- Stage 3 should seed the recipe library according to [05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
+- Stage 4 should keep the view and form contract, but replace the watch runtime data source from local preview data to snapshots synced from the phone.
 
-## Rzeczy swiadomie odlozone
+## Things intentionally deferred
 
 - custom keyboard workflows,
-- wielopoziomowy routing w `setting/`,
-- import/export recipe files,
-- rozbudowane filtry historii,
-- dowolne kolory poza `RecipeColorToken`,
-- dowolne `toolId`.
+- multi-level routing inside `setting/`,
+- recipe file import/export,
+- advanced history filters,
+- arbitrary colors beyond `RecipeColorToken`,
+- arbitrary `toolId`.

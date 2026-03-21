@@ -1,14 +1,14 @@
-# PourOverFlow v1 - model domeny
+# PourOverFlow v1 - domain model
 
-## Zasady ogolne
+## General rules
 
-- Wszystkie identyfikatory sa ASCII, lowercase, stable.
-- Wszystkie rekordy maja `schemaVersion: 1`.
-- Wszystkie daty i timestampy sa zapisywane jako Unix epoch w milisekundach.
-- Wszystkie wartosci liczbowe dla masy i wody sa w gramach lub mililitrach jako `number`.
-- Jednostki nie sa konfigurowalne w v1.
+- All identifiers are ASCII, lowercase, and stable.
+- All records use `schemaVersion: 1`.
+- All dates and timestamps are stored as Unix epoch milliseconds.
+- All numeric values for dose and water are stored as `number` in grams or milliliters.
+- Units are not configurable in v1.
 
-## Enumeracje domenowe
+## Domain enums
 
 ### `RecipeStepKind`
 
@@ -35,7 +35,7 @@ type FeedbackCue =
 
 ### `RecipeColorToken`
 
-Kolor receptury ma byc tokenem z ograniczonej palety, a nie dowolnym hexem. To upraszcza watch UI i seed danych.
+Recipe color must be a token from a limited palette, not an arbitrary hex value. This simplifies watch UI and seed data.
 
 ```ts
 type RecipeColorToken =
@@ -47,7 +47,7 @@ type RecipeColorToken =
   | 'slate'
 ```
 
-Mapowanie tokenow:
+Token mapping:
 
 | token | hex |
 | --- | --- |
@@ -71,7 +71,7 @@ type SessionStatus =
 
 ## `ToolDefinition`
 
-`ToolDefinition` jest globalny, kontrolowany i nieedytowalny przez uzytkownika.
+`ToolDefinition` is global, controlled, and not user-editable.
 
 ```ts
 interface ToolDefinition {
@@ -85,9 +85,9 @@ interface ToolDefinition {
 }
 ```
 
-### Seed katalogu narzedzi
+### Seed tool catalog
 
-Implementacja ma seedowac dokladnie ten zestaw:
+Implementation should seed exactly this set:
 
 ```ts
 const TOOL_CATALOG: ToolDefinition[] = [
@@ -173,15 +173,15 @@ interface RecipeRecord {
 }
 ```
 
-### Reguly `RecipeRecord`
+### `RecipeRecord` rules
 
-- `toolId` musi istniec w `ToolDefinition`.
-- `name` nie moze byc pusty.
+- `toolId` must exist in `ToolDefinition`.
+- `name` must not be empty.
 - `steps.length >= 1`.
-- Ostatni krok musi miec `kind: 'finish'`.
-- `order` musi byc ciagly od `0`.
-- `estimatedTotalDurationMs` to suma timerow krokow albo recznie policzona wartosc orientacyjna, ale nie moze byc mniejsza od sumy `durationMs`.
-- `archived: false` oznacza widocznosc w katalogu. V1 nie potrzebuje dodatkowego kosza.
+- The last step must have `kind: 'finish'`.
+- `order` must be continuous from `0`.
+- `estimatedTotalDurationMs` is either the sum of timed steps or a manually calculated estimate, but it must not be smaller than the sum of `durationMs`.
+- `archived: false` means visible in the catalog. V1 does not need an additional trash state.
 
 ## `RecipeStep`
 
@@ -200,40 +200,40 @@ interface RecipeStep {
 }
 ```
 
-### Semantyka krokow
+### Step semantics
 
 #### `instruction`
 
-- zwykla instrukcja bez odliczania,
-- moze miec `requiresConfirm: true`,
-- uzyteczne dla "add filter", "rinse", "invert", "stir".
+- plain instruction without countdown,
+- may use `requiresConfirm: true`,
+- useful for `add filter`, `rinse`, `invert`, `stir`.
 
 #### `timed_action`
 
-- krok z licznikiem czasu i aktywna akcja do wykonania,
-- przyklad: "pour 100 ml in 15 seconds",
-- domyslnie auto-konczony po czasie, chyba ze `requiresConfirm: true`.
+- a timed step with an active action to perform,
+- example: `pour 100 ml in 15 seconds`,
+- auto-completes after time by default unless `requiresConfirm: true`.
 
 #### `timed_wait`
 
-- krok z licznikiem czasu i oczekiwaniem,
-- przyklad: "let bloom for 30 seconds",
-- domyslnie auto-konczony po czasie.
+- a timed waiting step,
+- example: `let bloom for 30 seconds`,
+- auto-completes after time by default.
 
 #### `confirm`
 
-- zero-timer albo jawnie reczny checkpoint,
-- zawsze wymaga potwierdzenia.
+- zero-timer or explicit manual checkpoint,
+- always requires confirmation.
 
 #### `finish`
 
-- ostatni krok sesji,
-- nie powinien miec `durationMs`,
-- moze miec `feedbackCue`.
+- final step of the session,
+- should not use `durationMs`,
+- may use `feedbackCue`.
 
 ## `RecipeSummary`
 
-Indeks receptur na telefonie nie powinien przechowywac pelnych krokow.
+The recipe index on the phone should not store full steps.
 
 ```ts
 interface RecipeSummary {
@@ -249,7 +249,7 @@ interface RecipeSummary {
 
 ## `RecipeSnapshot`
 
-Snapshot jest kopia receptury zapisana do sesji i historii.
+A snapshot is a copy of a recipe saved into the session and history.
 
 ```ts
 interface RecipeSnapshot {
@@ -269,9 +269,9 @@ interface RecipeSnapshot {
 }
 ```
 
-### Regula snapshotu
+### Snapshot rule
 
-Snapshot powstaje w momencie startu sesji i pozostaje niezmienny do jej konca. Zmiany w `RecipeRecord` nie modyfikuja `RecipeSnapshot`.
+The snapshot is created when the session starts and stays unchanged until the session ends. Changes in `RecipeRecord` do not mutate `RecipeSnapshot`.
 
 ## `ActiveBrewSession`
 
@@ -295,12 +295,12 @@ interface ActiveBrewSession {
 }
 ```
 
-### Reguly `ActiveBrewSession`
+### `ActiveBrewSession` rules
 
-- w danym momencie istnieje maksymalnie jedna aktywna sesja,
-- `currentStepIndex` wskazuje krok biezacy albo ostatni krok przed `completed`,
-- `stepRunResults` przechowuje wyniki tylko dla zakonczonych krokow,
-- `elapsedSessionMs` jest przeliczane na biezaco podczas resume.
+- at most one active session exists at a time,
+- `currentStepIndex` points to the current step or the last step before `completed`,
+- `stepRunResults` stores results only for finished steps,
+- `elapsedSessionMs` is recalculated during resume.
 
 ## `StepRunResult`
 
@@ -352,16 +352,16 @@ interface DeviationSummary {
 }
 ```
 
-### Reguly historii
+### History rules
 
-- `HistoryEntry` zawsze zawiera `recipeSnapshot`,
-- `recipeId` moze pozostac dla linkowania, ale nie wolno polegac na nim przy renderowaniu historii,
-- usuniecie receptury nie usuwa wpisow historii,
-- notatki i ocena sa opcjonalne i glownie edytowane na telefonie.
+- `HistoryEntry` always contains `recipeSnapshot`,
+- `recipeId` may remain for linking, but history rendering must not depend on it,
+- deleting a recipe does not delete history entries,
+- notes and rating are optional and edited mainly on the phone.
 
 ## `LastResultSummary`
 
-Na zegarku nie zapisujemy pelnej historii, tylko ostatni wynik do szybkiego podsumowania.
+The watch does not store full history, only the latest result for quick summary.
 
 ```ts
 interface LastResultSummary {
@@ -389,9 +389,9 @@ interface SyncEnvelope<TPayload> {
 }
 ```
 
-## Konwencja generowania identyfikatorow
+## ID generation convention
 
-Nie dodawac zewnetrznej biblioteki UUID do v1. Uzywac prostych, czytelnych prefiksow:
+Do not add an external UUID library in v1. Use simple readable prefixes:
 
 - `recipe_<timestamp>_<rand4>`
 - `hist_<timestamp>_<rand4>`
@@ -399,9 +399,9 @@ Nie dodawac zewnetrznej biblioteki UUID do v1. Uzywac prostych, czytelnych prefi
 - `step_<index>_<rand4>`
 - `req_<timestamp>_<rand4>`
 
-`rand4` oznacza cztery znaki base36.
+`rand4` means four base36 characters.
 
-## Przyklad kompletnej receptury
+## Example full recipe
 
 ```json
 {
@@ -476,10 +476,10 @@ Nie dodawac zewnetrznej biblioteki UUID do v1. Uzywac prostych, czytelnych prefi
 }
 ```
 
-## Decyzje zamrozone
+## Frozen decisions
 
-- Uzywamy snapshotu receptury w sesji i historii.
-- Kolor receptury jest tokenem z malej palety.
-- `ToolDefinition` jest nieedytowalne przez usera.
-- Ostatni krok to zawsze `finish`.
-- Pelna historia zostaje na telefonie.
+- We use recipe snapshots in both session and history.
+- Recipe color is a token from a small palette.
+- `ToolDefinition` is not editable by the user.
+- The last step is always `finish`.
+- Full history stays on the phone.

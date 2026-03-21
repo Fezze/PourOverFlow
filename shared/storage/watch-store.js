@@ -2,6 +2,7 @@ import { LocalStorage } from "@zos/storage";
 import { TOOL_CATALOG } from "../constants/tool-catalog";
 import { CURRENT_SCHEMA_VERSION } from "../domain/schema";
 import { WATCH_STORAGE_KEYS } from "./keys";
+import { emitRuntimeEvent } from "../watch/runtime-events";
 
 const watchStorage = new LocalStorage();
 const PENDING_HISTORY_LIMIT = 20;
@@ -106,7 +107,7 @@ function createDefaultRuntimeState() {
   return {
     selectedToolId: getInitialSelectedToolId(catalogCache),
     selectedRecipeId: null,
-    activeSession: null,
+    activeSession: readWatchJson(WATCH_STORAGE_KEYS.activeSession, null),
     lastResult: readWatchJson(WATCH_STORAGE_KEYS.lastResult, null),
     catalogCache,
     syncMeta,
@@ -149,11 +150,13 @@ export function readActiveSession() {
 
 export function writeActiveSession(activeSession) {
   getRuntimeState().activeSession = activeSession;
+  writeWatchJson(WATCH_STORAGE_KEYS.activeSession, activeSession);
   return activeSession;
 }
 
 export function clearActiveSession() {
   getRuntimeState().activeSession = null;
+  removeWatchKey(WATCH_STORAGE_KEYS.activeSession);
 }
 
 export function readLastResult() {
@@ -168,6 +171,11 @@ export function writeLastResult(lastResult) {
   } else {
     removeWatchKey(WATCH_STORAGE_KEYS.lastResult);
   }
+
+  emitRuntimeEvent({
+    type: "last_result",
+    value: lastResult
+  });
 
   return lastResult;
 }
@@ -187,6 +195,11 @@ export function writeCatalogCache(catalogCache) {
     runtimeState.selectedToolId = getInitialSelectedToolId(nextCatalogCache);
     runtimeState.selectedRecipeId = null;
   }
+
+  emitRuntimeEvent({
+    type: "catalog",
+    value: nextCatalogCache
+  });
 
   return nextCatalogCache;
 }

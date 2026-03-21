@@ -1,68 +1,125 @@
-import { getToolById } from "../constants/tool-catalog";
+import { getToolById } from "../constants/tool-catalog.js";
 import {
   CURRENT_SCHEMA_VERSION,
   createLastResultSummary,
   createGeneratedId,
   createRecipeSnapshot
-} from "../domain/schema";
+} from "../domain/schema.js";
 
-export function createScaffoldSession(recipeDefinition) {
+function isTimedStep(step) {
+  return Boolean(step && (step.kind === "timed_action" || step.kind === "timed_wait"));
+}
+
+function deriveInitialStatus(step) {
+  return isTimedStep(step) ? "running" : "waiting_for_confirm";
+}
+
+export function createActiveBrewSession(recipeDefinition, options = {}) {
   const tool = getToolById(recipeDefinition.toolId);
-  const steps = (recipeDefinition.steps || []).map((step) => ({ ...step }));
-  const startedAt = Date.now();
+  const sessionStartedAt = Number.isFinite(options.now) ? options.now : Date.now();
   const recipeSnapshot =
     recipeDefinition.recipeUpdatedAt !== undefined
       ? {
           ...recipeDefinition,
-          steps
+          steps: (recipeDefinition.steps || []).map((step) => ({ ...step }))
         }
       : createRecipeSnapshot(recipeDefinition);
+  const firstStep = recipeSnapshot.steps[0] || null;
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    sessionId: createGeneratedId("sess", startedAt),
-    recipeId: recipeDefinition.recipeId,
-    recipeName: recipeDefinition.name,
+    sessionId: createGeneratedId("sess", sessionStartedAt),
+    recipeId: recipeSnapshot.recipeId,
+    recipeName: recipeSnapshot.name,
     recipeSnapshot,
-    toolId: recipeDefinition.toolId,
-    toolLabel: tool ? tool.label : recipeDefinition.toolId,
-    status: "running",
+    toolId: recipeSnapshot.toolId,
+    toolLabel: tool ? tool.label : recipeSnapshot.toolId,
     currentStepIndex: 0,
-    stepCount: steps.length,
-    steps,
-    startedAt,
-    updatedAt: startedAt,
-    elapsedMs: 0
+    status: deriveInitialStatus(firstStep),
+    sessionStartedAt,
+    currentStepStartedAt: sessionStartedAt,
+    expectedStepEndAt: isTimedStep(firstStep) ? sessionStartedAt + (firstStep.durationMs || 0) : undefined,
+    elapsedSessionMs: 0,
+    completedStepIds: [],
+    stepRunResults: [],
+    lastPersistedAt: sessionStartedAt,
+    wakeUpResumeEnabled: false,
+    pageBrightModeEnabled: false
   };
 }
 
-export function getCurrentScaffoldStep(activeSession) {
-  if (!activeSession || !Array.isArray(activeSession.steps)) {
+export function getCurrentSessionStep(activeSession) {
+  if (!activeSession || !activeSession.recipeSnapshot || !Array.isArray(activeSession.recipeSnapshot.steps)) {
     return null;
   }
 
-  return activeSession.steps[activeSession.currentStepIndex] || null;
+  return activeSession.recipeSnapshot.steps[activeSession.currentStepIndex] || null;
 }
 
-export function buildScaffoldResult(activeSession) {
-  const historyEntry = buildHistoryEntryFromSession(activeSession);
+export function getCurrentStepRemainingMs(activeSession, now = Date.now()) {
+  const currentStep = getCurrentSessionStep(activeSession);
 
-  return {
-    schemaVersion: CURRENT_SCHEMA_VERSION,
-    ...createLastResultSummary(historyEntry),
-    summary:
-      activeSession.status === "aborted"
-        ? "Session aborted. Watch will sync the result back to the phone when the bridge is connected."
-        : "Session completed. Result is ready for phone history sync."
-  };
+  if (!isTimedStep(currentStep) || !Number.isFinite(activeSession.expectedStepEndAt)) {
+    return null;
+  }
+
+  return Math.max(0, activeSession.expectedStepEndAt - now);
 }
 
-export function buildHistoryEntryFromSession(activeSession) {
-  const endedAt = Date.now();
-  const completedSteps =
-    activeSession.status === "completed"
-      ? activeSession.stepCount
-      : Math.max(0, Math.min(activeSession.currentStepIndex, activeSession.stepCount));
+export function getCurrentStepElapsedMs(activeSession, now = Date.now()) {
+  if (!activeSession || !Number.isFinite(activeSession.currentStepStartedAt)) {
+    return 0;
+  }
+
+  return Math.max(0, now - activeSession.currentStepStartedAt);
+}
+
+export function getElapsedSessionMs(activeSession, now = Date.now()) {
+  if (!activeSession || !Number.isFinite(activeSession.sessionStartedAt)) {
+    return 0;
+  }
+
+  return Math.max(0, now - activeSession.sessionStartedAt);
+}
+
+export function getStepProgressLabel(step) {
+  if (!step) {
+    return "No step";
+  }
+
+  if (step.kind === "timed_action") {
+    return "Timed action";
+  }
+
+  if (step.kind === "timed_wait") {
+    return "Timed wait";
+  }
+
+  if (step.kind === "confirm") {
+    return "Manual confirm";
+  }
+
+  if (step.kind === "finish") {
+    return "Finish";
+  }
+
+  return "Instruction";
+}
+
+export function formatDurationLabel(durationMs) {
+  if (!Number.isFinite(durationMs)) {
+    return "--:--";
+  }
+
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function buildHistoryEntryFromSession(activeSession, options = {}) {
+  const endedAt = Number.isFinite(options.now) ? options.now : Date.now();
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -72,18 +129,31 @@ export function buildHistoryEntryFromSession(activeSession) {
     toolId: activeSession.toolId,
     recipeSnapshot: activeSession.recipeSnapshot,
     status: activeSession.status,
-    startedAt: activeSession.startedAt,
+    startedAt: activeSession.sessionStartedAt,
     endedAt,
-    elapsedMs: activeSession.elapsedMs,
-    stepRunResults: [],
+    elapsedMs: activeSession.elapsedSessionMs,
+    stepRunResults: [...activeSession.stepRunResults],
     deviationSummary: {
       totalDeltaMs: 0,
       worstStepDeltaMs: 0,
-      completedSteps,
-      totalSteps: activeSession.stepCount
+      completedSteps: activeSession.completedStepIds.length,
+      totalSteps: activeSession.recipeSnapshot.steps.length
     },
     syncedFrom: "watch",
     createdAt: endedAt,
     updatedAt: endedAt
+  };
+}
+
+export function buildScaffoldResult(activeSession, options = {}) {
+  const historyEntry = buildHistoryEntryFromSession(activeSession, options);
+
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    ...createLastResultSummary(historyEntry),
+    summary:
+      activeSession.status === "aborted"
+        ? "Session aborted. Result is stored locally and queued for sync."
+        : "Session completed. Result is stored locally and queued for sync."
   };
 }

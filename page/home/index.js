@@ -1,13 +1,17 @@
 import * as hmUI from "@zos/ui";
+import { replace } from "@zos/router";
 import { getToolList } from "../../shared/watch/router";
 import {
+  discardActiveSessionFromHome,
   getHomeScaffoldState,
+  PAGE_URLS,
   goToResultSummary,
   goToToolList,
   refreshPhoneSnapshot,
   retryPendingHistorySync,
   resumeActiveSession
 } from "../../shared/watch/router";
+import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -18,6 +22,12 @@ import {
 } from "zosLoader:./index.[pf].layout.js";
 
 Page({
+  onDestroy() {
+    if (this.unsubscribeRuntime) {
+      this.unsubscribeRuntime();
+      this.unsubscribeRuntime = null;
+    }
+  },
   build() {
     const {
       activeSession,
@@ -30,6 +40,11 @@ Page({
       syncMeta
     } = getHomeScaffoldState();
     const supportedTools = getToolList();
+    this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
+      if (event.type === "catalog" || event.type === "last_result") {
+        replace({ url: PAGE_URLS.home });
+      }
+    });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
@@ -38,7 +53,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: connected ? "Phone bridge connected" : "Waiting for phone bridge"
+      text: activeSession ? "Resume gate" : connected ? "Phone bridge connected" : "Waiting for phone bridge"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -69,8 +84,13 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: connected ? "Refresh sync" : "Retry sync",
+      text: activeSession ? "Discard session" : connected ? "Refresh sync" : "Retry sync",
       click_func: () => {
+        if (activeSession) {
+          discardActiveSessionFromHome();
+          return;
+        }
+
         refreshPhoneSnapshot();
         retryPendingHistorySync();
       }

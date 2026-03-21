@@ -1,28 +1,28 @@
-# PourOverFlow v1 - architektura Zepp
+# PourOverFlow v1 - Zepp architecture
 
-## Profil runtime
+## Runtime profile
 
-Projekt ma zostac zbudowany jako nowoczesna mini-app Zepp:
+The project should be built as a modern Zepp mini-app:
 
 - `configVersion: "v3"`
 - `runtime.apiVersion.target: "4.0"`
-- profil kompatybilnosci: `v4`
-- tylko `round + square`
-- `band` poza zakresem
+- compatibility profile: `v4`
+- `round + square` only
+- `band` out of scope
 
-Kod ma uzywac `@zos/*`, nie legacy `hmUI` lub `hmApp`.
+The codebase should use `@zos/*`, not legacy `hmUI` or `hmApp`.
 
-## Zalozenia architektoniczne
+## Architectural assumptions
 
-- v1 ma opierac sie na oficjalnych API Zeppa bez dodatkowych wrapperow typu `@zeppos/zml`,
-- `setting/` odpowiada za UI do zarzadzania danymi,
-- `app-side/` odpowiada za synchronizacje i normalizacje danych,
-- `page/` odpowiada za watch UX,
-- `app-service/` nie jest czescia baseline v1 i pojawia sie dopiero jako osobny spike badawczy.
+- v1 should rely on official Zepp APIs without extra wrappers such as `@zeppos/zml`,
+- `setting/` owns the UI for data management,
+- `app-side/` owns data sync and normalization,
+- `page/` owns watch UX,
+- `app-service/` is not part of the v1 baseline and appears only as a separate spike.
 
-## Proponowana struktura repo
+## Proposed repo structure
 
-Ta struktura ma byc potraktowana jako docelowy scaffold:
+This structure should be treated as the target scaffold:
 
 ```text
 app.js
@@ -85,63 +85,63 @@ shared/
 
 ### `app.js`
 
-- rejestruje `App()` dokladnie raz,
-- trzyma minimalne `globalData`,
-- nie przechowuje duzych danych katalogowych,
-- moze trzymac tylko ulotne flagi bootstrapa.
+- registers `App()` exactly once,
+- keeps minimal `globalData`,
+- does not store large catalog data,
+- may keep only short-lived bootstrap flags.
 
 ### `page/home/index.js`
 
-- pierwszy punkt wejscia watch app,
-- laduje `active_session_v1`, `catalog_cache_v1` i `sync_meta_v1`,
-- decyduje, czy pokazac resume, czy przejsc do `tool-list`,
-- odpala `REQUEST_BOOTSTRAP`, ale nie blokuje UI na odpowiedz.
+- first entrypoint of the watch app,
+- loads `active_session_v1`, `catalog_cache_v1`, and `sync_meta_v1`,
+- decides whether to show resume or navigate to `tool-list`,
+- triggers `REQUEST_BOOTSTRAP`, but does not block the UI waiting for the reply.
 
 ### `page/tool-list/index.js`
 
-- pokazuje zamkniety katalog wspieranych narzedzi,
-- nie wyswietla receptur bezposrednio,
-- sluzy jako pierwszy ekran browse flow.
+- shows the closed catalog of supported tools,
+- does not display recipes directly,
+- acts as the first screen of the browse flow.
 
 ### `page/recipe-list/index.js`
 
-- pokazuje receptury tylko dla jednego `toolId`,
-- sortuje po `updatedAt desc`, a potem po `name asc`,
-- nie pokazuje pelnej historii ani edytora.
+- shows recipes only for one `toolId`,
+- sorts by `updatedAt desc`, then `name asc`,
+- does not show the full history or an editor.
 
 ### `page/brew-active/index.js`
 
-- renderuje aktywna sesje,
-- pokazuje jednoczesnie timer kroku, timer calej sesji i kluczowe metadata kroku,
-- uzywa `setPageBrightTime(...)` oraz `setWakeUpRelaunch(true)` przez caly czas aktywnego parzenia,
-- zapisuje sesje do `active_session_v1` po kazdej zmianie krytycznego stanu.
+- renders the active session,
+- shows step timer, full-session timer, and key step metadata at the same time,
+- uses `setPageBrightTime(...)` and `setWakeUpRelaunch(true)` during active brewing,
+- writes the session to `active_session_v1` after every critical state change.
 
 ### `page/result-summary/index.js`
 
-- pokazuje skrot wyniku tuz po zakonczeniu sesji,
-- nie probuje zbierac dlugich notatek tekstowych,
-- zapisuje `last_result_v1`.
+- shows a short result summary immediately after session completion,
+- does not try to collect long free-text notes,
+- writes `last_result_v1`.
 
 ### `setting/index.jsx`
 
-- rejestruje `AppSettingsPage(...)`,
-- jest jedynym miejscem CRUD dla receptur i historii,
-- korzysta z `props.settingsStorage`,
-- trzyma routing widokow tylko w stanie UI, nie w persisted storage.
+- registers `AppSettingsPage(...)`,
+- is the only place for recipe and history CRUD,
+- uses `props.settingsStorage`,
+- keeps view routing in UI state only, not in canonical persisted storage.
 
 ### `app-side/index.js`
 
-- seeduje katalog narzedzi przy pierwszym uruchomieniu,
-- obserwuje `settingsStorage`,
-- normalizuje snapshoty danych,
-- nasluchuje `messaging.peerSocket`,
-- odpowiada na `REQUEST_BOOTSTRAP`,
-- wysyla `PUSH_TOOL_CATALOG`, `PUSH_CATALOG_SNAPSHOT` i `PUSH_HISTORY_SNAPSHOT`,
-- przyjmuje `UPSERT_HISTORY_ENTRY` z zegarka i zapisuje historie po stronie telefonu.
+- seeds the tool catalog on first launch,
+- watches `settingsStorage`,
+- normalizes data snapshots,
+- listens on `messaging.peerSocket`,
+- answers `REQUEST_BOOTSTRAP`,
+- sends `PUSH_TOOL_CATALOG`, `PUSH_CATALOG_SNAPSHOT`, and `PUSH_HISTORY_SNAPSHOT`,
+- accepts `UPSERT_HISTORY_ENTRY` from the watch and persists history on the phone side.
 
-## Watch pages i routing
+## Watch pages and routing
 
-Flow watch UI ma byc prosty i stabilny:
+The watch UI flow should stay simple and stable:
 
 1. `home`
 2. `tool-list`
@@ -149,15 +149,15 @@ Flow watch UI ma byc prosty i stabilny:
 4. `brew-active`
 5. `result-summary`
 
-Nie dodawac osobnych stron dla:
+Do not add separate pages for:
 
-- ustawien na zegarku,
-- pelnej historii,
-- tworzenia lub edycji receptur.
+- watch settings,
+- full history,
+- recipe creation or editing.
 
-## Phone views w `setting/`
+## Phone views in `setting/`
 
-W `setting/index.jsx` nalezy przewidziec nastepujace widoki logiczne:
+`setting/index.jsx` should account for these logical views:
 
 - `library-home`
 - `recipe-list`
@@ -166,140 +166,140 @@ W `setting/index.jsx` nalezy przewidziec nastepujace widoki logiczne:
 - `history-detail`
 - `about-sync`
 
-Routing tych widokow ma byc lokalny dla `setting/`. Nie zapisujemy aktywnego widoku do `settingsStorage`.
+Routing for those views should stay local to `setting/`. Do not persist the active view into canonical `settingsStorage`.
 
 ## Screen adaptation
 
-Projekt ma korzystac z mechanizmu `app.json v3+` i layout files:
+The project should use the `app.json v3+` mechanism and layout files:
 
-- `index.r.layout.js` dla round,
-- `index.s.layout.js` dla square,
-- `zosLoader:./index.[pf].layout.js` do wyboru layoutu,
-- `assets/common.r` i `assets/common.s` dla zasobow.
+- `index.r.layout.js` for round,
+- `index.s.layout.js` for square,
+- `zosLoader:./index.[pf].layout.js` for layout selection,
+- `assets/common.r` and `assets/common.s` for assets.
 
-### Decyzja o `designWidth`
+### `designWidth` decision
 
-Na starcie nie ustawiac recznie `designWidth`, zeby skorzystac z domyslnych benchmarkow Zeppa dla round i square. Po zbudowaniu pierwszych ekranow mozna to zweryfikowac na podstawie realnych assetow, ale baseline dokumentacyjny ma byc neutralny i korzystac z `px(...)` tam, gdzie wartosci pochodza z draftu.
+Do not set `designWidth` manually at the start. Use Zepp defaults for round and square first. Once the first screens exist, this can be revisited using real assets, but the documentation baseline should stay neutral and use `px(...)` where values come from a draft.
 
-## Manifest i targety
+## Manifest and targets
 
-W `app.json` kolejny agent ma zamrozic co najmniej:
+In `app.json`, the next agent should freeze at least:
 
 - `configVersion: "v3"`,
 - `runtime.apiVersion.target: "4.0"`,
 - target `common`,
-- platformy `round` i `square`,
-- rejestracje wszystkich stron `page/*`,
-- wlaczenie `setting/` i `app-side/`.
+- `round` and `square` platforms,
+- registration of all `page/*` pages,
+- enabled `setting/` and `app-side/`.
 
-Manifest ma zawierac `device:os.local_storage` w baseline.
+The manifest must include `device:os.local_storage` in the baseline.
 
-Nie dodawac na starcie:
+Do not add at the start:
 
 - `device:os.bg_service`,
 - `data-widget`,
 - `secondary-widget`,
 - BLE permissions.
 
-`device:os.bg_service` jest dozwolone dopiero w fazie spike dla background reminders.
+`device:os.bg_service` is allowed only later, during the background reminder spike.
 
-## Permissions i capability posture
+## Permissions and capability posture
 
 ### Baseline
 
-- `device:os.local_storage` - wymagane
+- `device:os.local_storage` - required
 
 ### Best-effort feedback
 
-- haptyka przez `Vibrator` jest priorytetem,
-- audio przez `SystemSounds` lub `Buzzer` tylko po capability check i z uwzglednieniem trybow systemowych.
+- haptics through `Vibrator` are the priority,
+- audio through `SystemSounds` or `Buzzer` only after a capability check and with system sound mode in mind.
 
-### Explicitly out for baseline
+### Explicitly out for the baseline
 
 - BLE,
 - geolocation,
 - app-service background permission.
 
-## Wspoldzielone moduly
+## Shared modules
 
 ### `shared/constants/tool-catalog.js`
 
-- zawiera seed katalogu narzedzi,
-- jest jedynym zrodlem definicji `toolId`,
-- sluzy do pierwszego seedowania `pof_tools_v1`.
+- contains the seed tool catalog,
+- is the only source of `toolId` definitions,
+- is used to seed `pof_tools_v1`.
 
 ### `shared/domain/*`
 
-- przechowuje schematy i walidatory rekordow,
-- jest wspolne dla `setting/`, `app-side/` i watch app.
+- stores record schemas and validators,
+- is shared by `setting/`, `app-side/`, and the watch app.
 
 ### `shared/storage/*`
 
-- kapsulkuje klucze i funkcje `read/write`,
-- izoluje format JSON od warstw UI.
+- encapsulates storage keys and `read/write` functions,
+- isolates JSON format details from UI layers.
 
 ### `shared/sync/*`
 
-- zamraza typy wiadomosci,
-- koduje JSON do `ArrayBuffer`,
-- dekoduje `ArrayBuffer` do JSON,
-- waliduje `schemaVersion`.
+- freezes message types,
+- encodes JSON to `ArrayBuffer`,
+- decodes `ArrayBuffer` back to JSON,
+- validates `schemaVersion`.
 
 ### `shared/engine/*`
 
-- implementuje czysta logike sesji,
-- ma byc testowalny bez runtime Zepp,
-- nie powinien bezposrednio importowac widgetow UI.
+- implements pure session logic,
+- should be testable without Zepp runtime,
+- should not import UI widgets directly.
 
-## Architektura danych w runtime
+## Runtime data architecture
 
-### Telefon jest zrodlem prawdy
+### The phone is the source of truth
 
-Telefon trzyma:
+The phone stores:
 
-- katalog narzedzi,
-- indeks receptur,
-- pelne rekordy receptur,
-- indeks historii,
-- pelne rekordy historii,
-- rewizje synchronizacji.
+- tool catalog,
+- recipe index,
+- full recipe records,
+- history index,
+- full history records,
+- sync revisions.
 
-### Zegarek trzyma stan operacyjny
+### The watch stores operational state
 
-Zegarek trzyma:
+The watch stores:
 
-- cache katalogu do szybkiego startu,
-- aktywna sesje,
-- ostatni wynik,
-- metadane sync wraz z kolejka niezsynchronizowanych wynikow.
+- catalog cache for fast startup,
+- active session,
+- latest result,
+- sync metadata together with a queue of unsynced results.
 
-## Resume i tlo
+## Resume and background
 
 ### Required baseline
 
-- `page/brew-active` ma zapisywac sesje po kazdej zmianie kroku,
-- `setWakeUpRelaunch(true)` ma byc wlaczone dla aktywnej strony,
-- `setPageBrightTime(...)` ma byc uzywane dla aktywnego parzenia.
+- `page/brew-active` must persist the session after every step change,
+- `setWakeUpRelaunch(true)` must be enabled for the active page,
+- `setPageBrightTime(...)` must be used during active brewing.
 
 ### Forbidden assumption
 
-Nie wolno projektowac v1 tak, jakby `AppService` byl gwarantowanym zegarem sesji. `AppService` nie ma UI, ma ograniczenia wykonania i nie obsluguje zwyklego `setTimeout`.
+Do not design v1 as if `AppService` were a guaranteed session clock. `AppService` has no UI, has execution limits, and does not support normal `setTimeout`.
 
-## Narzedzia debugowania
+## Debugging assumptions
 
-W dokumentach implementacyjnych zakladamy:
+The implementation documents assume:
 
-- `zeus build` jako minimalna bramka kompilacji,
-- simulator dla layoutu i flow,
-- real device dla haptyki, audio i zachowania po wygaszeniu ekranu.
+- `zeus build` as the minimum compile gate,
+- simulator validation for layout and flow,
+- real device validation for haptics, audio, and screen-sleep behavior.
 
-Jesli pojawi sie problem z niewidocznymi logami `setting/`, mozna rozwazyc `@silver-zepp/vis-log`, ale nie jest to baseline v1.
+If `setting/` logs become hard to see, `@silver-zepp/vis-log` may be considered, but it is not part of the v1 baseline.
 
-## Decyzje zamrozone
+## Frozen decisions
 
 - Official `@zos/*` only.
-- Brak `app-service/` w pierwszym scaffoldu.
-- Brak widgets i cards.
-- Brak BLE.
-- Layouty osobno dla round i square.
-- Phone-side sync przez `app-side/` jest obowiazkowy, nie opcjonalny.
+- No `app-service/` in the first scaffold.
+- No widgets or cards.
+- No BLE.
+- Separate layouts for round and square.
+- Phone-side sync through `app-side/` is mandatory, not optional.

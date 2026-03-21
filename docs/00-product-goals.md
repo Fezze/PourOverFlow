@@ -1,199 +1,199 @@
-# PourOverFlow v1 - cele produktu
+# PourOverFlow v1 - product goals
 
-## Misja
+## Mission
 
-PourOverFlow ma pomagac w powtarzalnym parzeniu kawy na zegarku Zepp bez zmuszania uzytkownika do patrzenia w telefon podczas calego procesu. Zegarek ma pelnic role lekkiego "brew coacha": prowadzi przez przepis krok po kroku, pilnuje czasu, przypomina o akcjach i pozwala wznowic sesje po chwilowym przerwaniu.
+PourOverFlow should help users brew coffee consistently on a Zepp watch without forcing them to stare at their phone during the whole process. The watch should act as a lightweight brew coach: guide the recipe step by step, keep time, remind the user about actions, and allow the session to resume after a short interruption.
 
-## Problem, ktory rozwiazujemy
+## Problem we are solving
 
-Domowe parzenie kawy czesto wymaga jednoczesnie:
+Manual home coffee brewing often requires doing all of these at once:
 
-- sledzenia czasu calej sesji,
-- sledzenia czasu pojedynczych krokow,
-- pamietania ilosci wody lub kolejnych akcji,
-- trzymania przepisu w poblizu,
-- szybkiego wznowienia po wygaszeniu ekranu albo chwilowym odejsciu.
+- tracking total session time,
+- tracking time for individual steps,
+- remembering water amounts or upcoming actions,
+- keeping the recipe nearby,
+- resuming quickly after screen sleep or stepping away for a moment.
 
-Telefon jest dobry do edycji i archiwizacji, ale slaby jako ekran "operacyjny" przy samym parzeniu. Zegarek jest dobry do wykonania przepisu, ale nie do rozbudowanej edycji. Produkt ma wykorzystywac ten podzial odpowiedzialnosci celowo.
+The phone is good for editing and archiving, but poor as the operational screen during brewing. The watch is good for execution, but not for rich editing. The product should use this split of responsibilities intentionally.
 
-## Docelowy uzytkownik
+## Target user
 
 ### Primary persona
 
-Domowy entuzjasta kawy, ktory:
+A home coffee enthusiast who:
 
-- parzy recznie kilka razy w tygodniu,
-- korzysta z kilku znanych narzedzi do parzenia,
-- zapisuje wlasne warianty receptur,
-- chce powtarzalnosci bez stalego zerkania w telefon.
+- brews manually several times per week,
+- uses several known brewing tools,
+- stores personal recipe variants,
+- wants repeatability without constantly checking the phone.
 
 ### Secondary persona
 
-Uzytkownik Zepp/Amazfit, ktory chce prostego flow "wybierz -> odpal -> wykonaj", bez wchodzenia w chmure, konto i synchronizacje miedzy wieloma telefonami.
+A Zepp/Amazfit user who wants a simple `choose -> start -> execute` flow, without cloud, account setup, or multi-phone sync.
 
 ## V1 scope
 
 ### Watch experience
 
-- wybor narzedzia z ograniczonego, globalnego katalogu wspieranych brewerow,
-- wybor receptury przypisanej do wybranego narzedzia,
-- uruchomienie sesji parzenia,
-- prowadzenie przez kroki z timerem kroku i timerem calej sesji,
-- kroki wymagajace recznego przejscia dalej,
-- best-effort feedback haptyczny i opcjonalny audio,
-- wznowienie sesji po ponownym otwarciu aplikacji lub wybudzeniu zegarka,
-- zapis ostatniego wyniku po zakonczeniu sesji.
+- tool selection from a limited global catalog of supported brewers,
+- recipe selection within the chosen tool,
+- start of the brewing session,
+- guided steps with a step timer and full-session timer,
+- steps that require manual progression,
+- best-effort haptic feedback and optional audio,
+- session resume after reopening the app or waking the watch,
+- saving the latest result when the session ends.
 
 ### Phone experience
 
-- pelny manager receptur w `setting/`,
-- przegladanie historii parzen,
-- edycja notatek i oceny po zakonczonym parzeniu,
-- seedowanie i przechowywanie kanonicznego katalogu narzedzi, receptur i historii,
-- synchronizacja danych do zegarka przez `app-side/`.
+- full recipe manager in `setting/`,
+- browsing brewing history,
+- editing notes and rating after a finished brew,
+- seeding and storing the canonical tool catalog, recipes, and history,
+- syncing data to the watch through `app-side/`.
 
-## Twarde zalozenia produktu
+## Hard product assumptions
 
-- v1 nie ma chmury, kont, backendu ani importu zewnetrznych receptur,
-- katalog narzedzi jest zamkniety i globalny,
-- uzytkownik nie dodaje wlasnych typow narzedzi w v1,
-- historia jest kanoniczna po stronie telefonu,
-- zegarek ma byc odporny na chwilowy brak telefonu i uruchamiac sie z lokalnego cache,
-- trwajaca sesja zawsze pracuje na snapshotcie receptury z momentu startu.
+- v1 has no cloud, accounts, backend, or external recipe import,
+- the tool catalog is closed and global,
+- the user cannot create custom tool types in v1,
+- history is canonical on the phone side,
+- the watch should tolerate temporary phone absence and start from local cache,
+- a running session always uses a recipe snapshot taken at session start.
 
-## Katalog wspieranych narzedzi v1
+## Supported v1 tool catalog
 
-Ponizsza lista jest zamrozona dla v1. Kazde `toolId` jest stabilne, czytelne ASCII i nie moze byc zmienione po wdrozeniu.
+The list below is frozen for v1. Every `toolId` is stable, ASCII-safe, and must not change after release.
 
-| toolId | Label | Icon stem | Domyslna kolejnosc | Uwagi |
+| toolId | Label | Icon stem | Default order | Notes |
 | --- | --- | --- | --- | --- |
-| `tool_aeropress` | AeroPress | `tool-aeropress` | `10` | najbogatsza kategoria startowa |
-| `tool_v60` | Hario V60 | `tool-v60` | `20` | klasyczny dripper pour-over |
-| `tool_kalita_wave` | Kalita Wave | `tool-kalita-wave` | `30` | plaska geometria, inne tempo zalewania |
-| `tool_chemex` | Chemex | `tool-chemex` | `40` | wieksza pojemnosc, dluzsze kroki |
-| `tool_clever_dripper` | Clever Dripper | `tool-clever-dripper` | `50` | hybryda immersion + drawdown |
-| `tool_french_press` | French Press | `tool-french-press` | `60` | immersion, dluzsze czasy |
+| `tool_aeropress` | AeroPress | `tool-aeropress` | `10` | richest launch category |
+| `tool_v60` | Hario V60 | `tool-v60` | `20` | classic pour-over dripper |
+| `tool_kalita_wave` | Kalita Wave | `tool-kalita-wave` | `30` | flat-bed geometry, different pour pacing |
+| `tool_chemex` | Chemex | `tool-chemex` | `40` | larger capacity, longer steps |
+| `tool_clever_dripper` | Clever Dripper | `tool-clever-dripper` | `50` | immersion + drawdown hybrid |
+| `tool_french_press` | French Press | `tool-french-press` | `60` | immersion, longer brew times |
 
-### Reguly katalogu narzedzi
+### Tool catalog rules
 
-- To sa jedyne narzedzia, jakie moze wybrac uzytkownik w v1.
-- Telefon nie oferuje formularza tworzenia nowego `Tool`.
-- Seed danych ma zainstalowac caly katalog przy pierwszym uruchomieniu.
-- Receptura z nieznanym `toolId` jest niewazna i ma byc odrzucona juz po stronie telefonu.
+- These are the only tools the user may select in v1.
+- The phone does not offer a form for creating a new `Tool`.
+- Seed data must install the entire catalog on first launch.
+- A recipe with an unknown `toolId` is invalid and must be rejected on the phone side.
 
 ## Seed library v1
 
-Seed library ma byc kuratorowana, ale lekka:
+The seed library should be curated but lightweight:
 
-- minimalny shipping bar: co najmniej 1 receptura startowa na kazde wspierane narzedzie,
-- target produktowy: 2 receptury startowe na kazde narzedzie,
-- seed recipes maja byc edytowalne i klonowalne przez uzytkownika,
-- seed recipes maja korzystac tylko z modelu krokow wspieranego przez v1.
+- minimum shipping bar: at least 1 starter recipe for each supported tool,
+- product target: 2 starter recipes for each tool,
+- seed recipes must be editable and clonable by the user,
+- seed recipes must use only the step model supported by v1.
 
-## Jak traktowac przyklady z serwisow zewnetrznych
+## How to treat examples from external services
 
-Serwisy takie jak AeroPrecipe sa tylko wzorcem domeny, nie zrodlem importu danych. Moga inspirowac:
+Services such as AeroPrecipe are domain references only, not import sources. They may inspire:
 
-- zestaw pol metadata przepisu,
-- nazewnictwo krokow,
-- sposob zapisu dozy, temperatury, filtra i czasu,
-- rozroznienie pomiedzy przepisem a wynikiem konkretnej sesji.
+- the set of recipe metadata fields,
+- step naming,
+- how dose, temperature, filter, and time are written down,
+- the distinction between a recipe and the result of a concrete session.
 
-Nie wolno projektowac v1 tak, jakby aplikacja miala od razu ingestowac zewnetrzne bazy receptur.
+Do not design v1 as if the app were about to ingest external recipe databases.
 
-## Minimalny model produktu
+## Minimal product model
 
-### Receptura
+### Recipe
 
-Receptura musi przechowywac:
+A recipe must store:
 
-- nazwe,
-- przypisane narzedzie,
-- kolor receptury,
-- opis,
-- doze kawy,
-- laczna ilosc wody,
-- temperature wody,
-- rodzaj filtra,
-- opis mielenia,
-- orientacyjny czas calosci,
-- liste krokow,
-- notatki autora receptury.
+- name,
+- assigned tool,
+- recipe color,
+- description,
+- coffee dose,
+- total water amount,
+- water temperature,
+- filter type,
+- grind description,
+- estimated full duration,
+- step list,
+- recipe author notes.
 
-### Krok przepisu
+### Recipe step
 
-Pojedynczy krok musi umiec opisac:
+A single step must be able to describe:
 
-- tekst instrukcji,
-- czas pojedynczego kroku, jesli dotyczy,
-- czy uzytkownik musi nacisnac "dalej",
-- opcjonalna ilosc wody dla kroku,
-- opcjonalny target lacznej wody po kroku,
-- typ feedbacku.
+- instruction text,
+- per-step duration when applicable,
+- whether the user must press `Next`,
+- optional water amount for the step,
+- optional target total water after the step,
+- feedback type.
 
-### Wynik sesji
+### Session result
 
-Wynik sesji musi umiec opisac:
+A session result must be able to describe:
 
-- z jakiej receptury i jakiego narzedzia pochodzila sesja,
-- kiedy sesja sie zaczela i skonczyla,
-- czy zostala zakonczona, przerwana albo porzucona,
-- jak dlugo trwala,
-- jakie byly rzeczywiste czasy krokow,
-- notatke i ocene dodawana glownie na telefonie.
+- which recipe and tool were used,
+- when the session started and ended,
+- whether it completed, was aborted, or expired,
+- how long it took,
+- actual per-step timing,
+- note and rating, edited mainly on the phone.
 
 ## UX principles
 
-### 1. Zegarek ma byc wykonawczy, nie edycyjny
+### 1. The watch should be execution-first, not editing-first
 
-Watch UI ma maksymalnie upraszczac decyzje w trakcie parzenia. Zegarek nie jest miejscem do tworzenia skomplikowanych receptur ani przegladania pelnego archiwum.
+The watch UI should simplify decisions during brewing as much as possible. The watch is not the place for building complex recipes or browsing the full archive.
 
-### 2. Telefon ma byc zrodlem prawdy
+### 2. The phone should be the source of truth
 
-To telefon odpowiada za edycje, katalog i archiwum. Zegarek pracuje na lokalnym cache i danych sesji.
+The phone is responsible for editing, catalog management, and archive ownership. The watch works from local cache and session data.
 
-### 3. Resume jest wazniejsze niz "pelne tlo"
+### 3. Resume matters more than "full background"
 
-Uzytkownik ma po powrocie widziec sensowny stan sesji. V1 nie obiecuje niezawodnego background engine.
+When the user comes back, they should see a sensible session state. V1 does not promise a fully reliable background engine.
 
-### 4. Malo decyzji podczas parzenia
+### 4. Minimize decisions during brewing
 
-Na zegarku flow ma miec tylko trzy glownie tryby:
+On the watch, the flow should have only three primary modes:
 
-- wybierz narzedzie,
-- wybierz recepture,
-- wykonaj sesje.
+- choose tool,
+- choose recipe,
+- execute session.
 
-### 5. Historia ma byc trwala wobec zmian w bibliotece
+### 5. History must survive library changes
 
-Usuniecie receptury nie moze zniszczyc historii. Historia zawsze przechowuje snapshot.
+Deleting a recipe must not destroy history. History always stores its own snapshot.
 
-## Sukces v1
+## V1 success
 
-V1 uznajemy za gotowe, gdy:
+V1 is considered ready when:
 
-- uzytkownik moze wybrac jedno ze wspieranych narzedzi i uruchomic recepture na zegarku,
-- zegarek poprawnie przeprowadza przez kroki z timerami i krokami recznymi,
-- aktywna sesja daje sie wznowic po powrocie do aplikacji,
-- telefon pozwala tworzyc, edytowac i usuwac receptury,
-- historia jest zapisywana, widoczna na telefonie i nie znika po usunieciu receptury,
-- zegarek dziala z lokalnego cache, gdy telefon nie jest chwilowo dostepny.
+- the user can select one of the supported tools and start a recipe on the watch,
+- the watch correctly guides the user through timed and manual steps,
+- the active session can be resumed after returning to the app,
+- the phone allows the user to create, edit, and delete recipes,
+- history is saved, visible on the phone, and does not disappear after recipe deletion,
+- the watch works from local cache when the phone is temporarily unavailable.
 
-## Poza v1
+## Out of scope for v1
 
-- backend, logowanie, chmura i multi-device sync,
-- import z serwisow zewnetrznych,
+- backend, login, cloud, and multi-device sync,
+- import from external services,
 - user-defined tools,
-- pelna historia na zegarku,
-- workout extension, widgets i shortcut cards,
-- App Service jako twardy filar timera,
-- rozbudowana analityka typu extraction, TDS albo integracje z wagami/BLE.
+- full history on the watch,
+- workout extension, widgets, and shortcut cards,
+- `AppService` as a hard timer foundation,
+- advanced analytics such as extraction, TDS, or scale/BLE integrations.
 
-## Decyzje, ktorych kolejny agent nie ma juz podejmowac
+## Decisions the next agent should not revisit
 
-- Katalog narzedzi jest zamkniety.
-- Historia jest kanoniczna na telefonie.
-- Zegarek pokazuje tylko ostatni wynik, nie pelne archiwum.
-- Trwajaca sesja pracuje na snapshotcie.
-- Multi-brewer jest w scope v1.
-- Round i square sa w scope v1; band nie.
+- The tool catalog is closed.
+- History is canonical on the phone.
+- The watch shows only the latest result, not the full archive.
+- A running session works on a snapshot.
+- Multi-brewer support is in scope for v1.
+- Round and square are in scope for v1; band is not.

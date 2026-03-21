@@ -1,19 +1,28 @@
 # AGENTS.md
 
-## Cel tego pliku
+## Purpose of this file
 
-Ten plik jest instrukcja repo-level dla kolejnego agenta AI. Traktuj go jako warstwe nadrzedna wobec domyslnych zalozen o projekcie, ale podrzedna wobec jawnych polecen usera.
+This file is a repo-level instruction set for the next AI agent. Treat it as higher priority than generic project assumptions, but lower priority than explicit user instructions.
 
-## Stan repo
+## Repo status
 
-- Repo ma zakonczone Etapy 3 i 4.
-- Istnieje scaffold Zepp app, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD w `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache w `LocalStorage`, podstawowe testy logiki i przechodzace `zeus build`.
-- Aktualny zakres prac to Etap 5: watch browse i recipe engine na zsynchronizowanych snapshotach.
-- To repo jest projektem Zepp OS, wiec przy kazdym zadaniu dotyczacym implementacji, architektury, debugowania albo walidacji nalezy uzyc skilla `zepp-miniapp-builder` jako podstawowego workflow.
+- The repo has Stages 3, 4, and 5 completed.
+- There is a Zepp app scaffold, a seed library, canonical phone storage using `index + records`, real CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, a more production-shaped session reducer, a best-effort feedback layer, and baseline logic plus sync tests.
+- The current work scope is Stage 6: resume, offline behavior, and harder validation.
+- This repo is a Zepp OS project, so any task involving implementation, architecture, debugging, or validation must use the `zepp-miniapp-builder` skill as the default workflow.
 
-## Obowiazkowa kolejnosc czytania
+## Project language
 
-Przed jakakolwiek implementacja przeczytaj w tej kolejnosci:
+This project must be run in English.
+
+- Repository documentation must be kept in English.
+- Backlog maintenance in `docs/TODO.md` must be kept in English.
+- Architecture notes, persistent handoff notes, and repo-facing agent instructions must be kept in English.
+- If an agent discovers new work, risks, debt, or constraints, the written follow-up must be added in English.
+
+## Mandatory reading order
+
+Before any implementation, read these files in this exact order:
 
 1. [README.md](c:\Users\krzys\Projects\PourOverFlow\README.md)
 2. [docs/START-HERE.md](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md)
@@ -25,124 +34,124 @@ Przed jakakolwiek implementacja przeczytaj w tej kolejnosci:
 8. [docs/06-manifest-and-ui-contract.md](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md)
 9. [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 
-Nie zaczynaj pisac kodu "z glowy", jesli nie przeczytales tych plikow.
+Do not start writing code from memory if you have not read these files.
 
-## Obowiazkowy skill
+## Mandatory skill
 
-To repo dotyczy Zepp OS mini-app, dlatego agent ma zawsze:
+This repo is a Zepp OS mini-app project, so the agent must always:
 
-- uruchomic prace z zalozeniem uzycia skilla `zepp-miniapp-builder`,
-- sprawdzac decyzje runtime, manifestu, surface architecture i permissionow przez pryzmat tego skilla,
-- nie traktowac tego projektu jak zwyklego web app albo generycznego mobile app.
+- start work assuming use of the `zepp-miniapp-builder` skill,
+- evaluate runtime, manifest, surface architecture, and permission decisions through that skill,
+- avoid treating this project like a generic web app or generic mobile app.
 
-Jesli zadanie dotyczy Zepp runtime i agent nie uzywa `zepp-miniapp-builder`, to znaczy, ze workflow jest niezgodny z zalozeniami repo.
+If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`, the workflow is inconsistent with the repo rules.
 
-## Decyzje zamrozone
+## Frozen decisions
 
-- Target runtime to `API 4.0`.
-- Scope ekranow to `round + square`.
-- `band` poza v1.
-- Katalog `Tool` jest zamkniety i read-only.
-- Telefon jest zrodlem prawdy dla receptur i historii.
-- Zegarek trzyma tylko cache, aktywna sesje, ostatni wynik i metadane sync.
-- Watch browse flow to zawsze `tool -> recipe -> active brew`.
-- Aktywna sesja pracuje na `RecipeSnapshot`.
-- Usuniecie receptury nie usuwa historii.
-- `PUSH_HISTORY_SNAPSHOT` synchronizuje tylko ostatni wynik, nie pelne archiwum.
-- `AppService` jest tylko spike badawczym, nie baseline v1.
+- Target runtime is `API 4.0`.
+- Screen scope is `round + square`.
+- `band` is out of scope for v1.
+- The `Tool` catalog is closed and read-only.
+- The phone is the source of truth for recipes and history.
+- The watch stores only cache, active session, last result, and sync metadata.
+- The watch browse flow is always `tool -> recipe -> active brew`.
+- The active session runs on `RecipeSnapshot`.
+- Deleting a recipe does not delete history.
+- `PUSH_HISTORY_SNAPSHOT` syncs only the latest result, not the full archive.
+- `AppService` is an experimental spike only, not part of the v1 baseline.
 
-## Czego nie wolno zmieniac bez jawnej decyzji
+## What must not change without an explicit decision
 
-- Nazw kluczy storage.
-- Nazw typow wiadomosci sync.
-- Katalogu wspieranych `toolId` bez aktualizacji dokumentacji produktu i modelu danych.
-- Zasady "phone is source of truth".
-- Zakresu v1 poprzez dodanie cloud, backendu, importu zewnetrznego albo BLE.
+- Storage key names.
+- Sync message type names.
+- The supported `toolId` catalog without updating product documentation and the data model.
+- The "phone is source of truth" rule.
+- The v1 scope by adding cloud, backend, external import, or BLE.
 
-## Jak implementowac
+## How to implement
 
-- Buduj zgodnie z etapami z [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md).
-- Najpierw scaffold i kontrakty, potem UI i engine, potem resume i sync hardening.
-- Trzymaj logike domenowa w wspoldzielonych modulach testowalnych bez runtime Zepp.
-- Warstwa watch UI ma byc cienka: czyta stan i renderuje.
-- Warstwa `setting/` ma byc jedynym miejscem CRUD receptur i historii.
-- Warstwa `app-side/` ma byc jedynym mostem sync do zegarka.
+- Build according to the stages in [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md).
+- Scaffold and contracts first, then UI and engine, then resume and sync hardening.
+- Keep domain logic in shared, testable modules without Zepp runtime dependencies.
+- The watch UI layer should stay thin: read state and render.
+- `setting/` must remain the only place for recipe and history CRUD.
+- `app-side/` must remain the only sync bridge to the watch.
 
-## Obowiazkowa higiena backlogu i dokumentacji
+## Mandatory backlog and documentation hygiene
 
-Kazdy agent pracujacy w tym repo ma obowiazek utrzymywac backlog i dokumentacje w stanie uzywalnym dla kolejnego agenta.
+Every agent working in this repo must keep the backlog and documentation usable for the next agent.
 
-### Przy starcie kazdej sesji
+### At the start of every session
 
-- Przejrzyj [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) i ostatnio zmieniane dokumenty.
-- Zidentyfikuj najblizszy sensowny krok implementacyjny.
-- Zasugeruj userowi, czym najlepiej zajac sie nastepnie, zamiast startowac od przypadkowego zadania.
-- Jesli znajdziesz przeterminowane, wykonane albo nieaktualne punkty, najpierw uporzadkuj backlog.
+- Review [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) and recently changed documents.
+- Identify the nearest sensible implementation step.
+- Recommend the best next task to the user instead of starting from a random request.
+- If you find stale, completed, or outdated items, clean up the backlog first.
 
-### W trakcie pracy
+### During the work
 
-- Kazda nowa rzecz do zrobienia, ryzyko, spike, debt albo odkryte ograniczenie ma trafic do [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) albo do bardziej odpowiedniego dokumentu, jesli dotyczy stalej decyzji architektonicznej.
-- Nie zostawiaj waznych ustalen tylko w odpowiedzi czatu albo w swojej glowie.
-- Jesli implementacja zmienia model danych, kontrakty sync, flow albo scope, zaktualizuj odpowiedni dokument od razu, nie "pozniej".
+- Every new task, risk, spike, debt item, or discovered constraint must be written into [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) or into a more appropriate document if it affects a stable architectural decision.
+- Do not leave important conclusions only in chat replies or in your head.
+- If implementation changes the data model, sync contracts, flow, or scope, update the relevant document immediately, not later.
 
-### Przy zamykaniu zadania
+### When closing the task
 
-- Usun lub oznacz jako wykonane punkty TODO, ktore zostaly zrealizowane.
-- Dopisz nowe follow-upy wynikajace z wykonanej pracy.
-- Oczysc TODO z punktow nieaktualnych, zdublowanych albo juz niepotrzebnych.
-- Upewnij sie, ze `README.md`, `docs/START-HERE.md` i `docs/TODO.md` nadal prowadza kolejnego agenta do sensownego nastepnego kroku.
+- Remove or clearly mark TODO items that were completed.
+- Add new follow-ups created by the work you just did.
+- Clean `TODO.md` of stale, duplicated, or no-longer-needed items.
+- Make sure `README.md`, `docs/START-HERE.md`, and `docs/TODO.md` still guide the next agent toward a sensible next step.
 
-### Twarda regula
+### Hard rule
 
-Nowy agent startujacy prace w tym repo ma zawsze:
+A new agent starting work in this repo must always:
 
-1. przejrzec backlog i dokumentacje,
-2. ocenic, co jest aktualnie najlepszym nastepnym krokiem,
-3. zakomunikowac te sugestie userowi,
-4. dopiero potem implementowac.
+1. review the backlog and documentation,
+2. assess what the best next step currently is,
+3. communicate that recommendation to the user,
+4. only then begin implementation.
 
-## Jak testowac
+## How to test
 
-Minimalny standard:
+Minimum standard:
 
-- testy czystej logiki dla modelu, reducera sesji i sync,
-- simulator dla layoutu i flow,
-- real device dla haptyki, audio, wygaszania ekranu i resume.
+- pure-logic tests for the model, session reducer, and sync,
+- simulator validation for layout and flow,
+- real-device validation for haptics, audio, screen sleep, and resume.
 
-Nie traktuj simulatora jako dowodu poprawnosci feedbacku lub zachowania przy wygaszonym ekranie.
+Do not treat the simulator as proof of feedback behavior or screen-off behavior.
 
-## Co zrobic jako pierwsze
+## What to do first
 
-Pierwsze zadanie implementacyjne po obecnym stanie repo to Etap 5:
+The first implementation task from the current repo state is Stage 6:
 
-- rozwinac watch pages z placeholderowego Stage 4 do realnego browse flow opartego o zsynchronizowany katalog,
-- zastapic scaffold session engine bardziej docelowym reducerem i obsluga typow krokow,
-- przygotowac grunt pod feedback runtime i storage-backed `active_session_v1`,
-- utrzymac `npm test` i `zeus build` w stanie zielonym po kazdej wiekszej zmianie.
+- enable `setWakeUpRelaunch(true)` and `setPageBrightTime(...)` for the active session,
+- harden resume after restart and after screen sleep,
+- verify `pendingHistoryQueue` replay in an offline -> online scenario,
+- validate haptic and audio feedback on a real device,
+- keep `npm test` and `zeus build` green after every larger change.
 
-## Odkryte niuanse toolchainu
+## Discovered toolchain nuances
 
-- Dla target-based scaffoldu `configVersion: "v3"` Zeus oczekuje ikon rowniez pod `assets/<target>.<shape>/icon.png`, nie tylko logicznej nazwy `icon.png` w `app.json`.
-- Entry `setting.path` jest najbezpieczniej wystawiac przez `setting/index.js`; jesli zrodlo jest w `.jsx`, zostaw cienki shim JS zamiast polegac wylacznie na bezposrednim `index.jsx`.
-- Obecny watch runtime ma hybrydowy stan: `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` sa juz storage-backed, ale `active_session_v1` nadal pozostaje follow-upem kolejnych etapow.
-- `setting/` zapisuje w `settingsStorage` pomocniczy klucz `pof_settings_ui_state_v1`; `app-side` i przyszly sync musza go ignorowac, bo nie jest czescia kanonicznego modelu domenowego.
-- Etap 4 zapisuje `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` po stronie watch, ale `active_session_v1` nadal nie jest jeszcze storage-backed.
-- Placeholderowe watch pages czytaja juz zsynchronizowany cache, ale nie maja jeszcze pelnego reaktywnego rerenderu po przyjsciu snapshotu w trakcie otwartej strony.
+- For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under `assets/<target>.<shape>/icon.png`, not only the logical `icon.png` name in `app.json`.
+- The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`.
+- Stage 5 introduced storage-backed `active_session_v1`, but full resume hardening on wake and app return is still not complete.
+- `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
+- Watch browse and result pages already refresh on runtime events when new snapshots arrive, but this is not yet a fully reactive UI system.
 
-## Kiedy aktualizowac dokumenty
+## When to update documents
 
-Aktualizuj dokumenty zawsze, gdy zmienia sie:
+Update documents whenever any of these change:
 
-- model danych,
-- kontrakty sync,
-- katalog wspieranych narzedzi,
-- przeplyw watch/phone,
-- decyzje scope v1.
+- data model,
+- sync contracts,
+- supported tool catalog,
+- watch/phone flow,
+- v1 scope decisions.
 
-Jesli implementacja odkryje ograniczenie techniczne Zeppa, zaktualizuj odpowiedni dokument przed zamknieciem zadania.
+If implementation reveals a Zepp technical limitation, update the appropriate document before closing the task.
 
-Dotyczy to rowniez TODO hygiene:
+This also applies to TODO hygiene:
 
-- zamykaj wykonane punkty,
-- dopisuj nowe odkryte zadania,
-- nie pozwalaj, by `docs/TODO.md` stalo sie archiwum nieaktualnych notatek.
+- close completed items,
+- add newly discovered tasks,
+- do not let `docs/TODO.md` become an archive of stale notes.

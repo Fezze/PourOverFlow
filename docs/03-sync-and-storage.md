@@ -1,54 +1,54 @@
-# PourOverFlow v1 - synchronizacja i storage
+# PourOverFlow v1 - sync and storage
 
-## Zasady ownership
+## Ownership rules
 
-### Telefon
+### Phone
 
-Telefon jest zrodlem prawdy dla:
+The phone is the source of truth for:
 
-- katalogu narzedzi,
-- receptur,
-- historii,
-- rewizji sync.
+- tool catalog,
+- recipes,
+- history,
+- sync revisions.
 
-Telefon przechowuje te dane w `settingsStorage` jako stringi JSON.
+The phone stores these in `settingsStorage` as JSON strings.
 
-### Zegarek
+### Watch
 
-Zegarek przechowuje tylko dane operacyjne:
+The watch stores operational data only:
 
-- lokalny cache katalogu,
-- aktywna sesje,
-- ostatni wynik,
-- metadane synchronizacji wraz z kolejka niezsynchronizowanych wpisow historii.
+- local catalog cache,
+- active session,
+- latest result,
+- sync metadata together with a queue of unsynced history entries.
 
-Stan implementacyjny po Etapie 4:
+Implementation state after Stage 5:
 
-- `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1` sa juz zapisywane lokalnie na watch,
-- `active_session_v1` pozostaje jeszcze follow-upem kolejnych etapow.
+- `catalog_cache_v1`, `last_result_v1`, `sync_meta_v1`, and `active_session_v1` are already persisted locally on the watch,
+- resume hardening for screen sleep and wake remains a Stage 6 follow-up.
 
-## Klucze storage po stronie telefonu
+## Phone-side storage keys
 
-| key | zawartosc | uwagi |
+| key | contents | notes |
 | --- | --- | --- |
-| `pof_tools_v1` | `ToolDefinition[]` | seedowane przy pierwszym uruchomieniu |
-| `pof_recipe_index_v1` | `RecipeSummary[]` | lista lekka, bez krokow |
-| `pof_recipe_<id>_v1` | `RecipeRecord` | pelny rekord receptury |
-| `pof_history_index_v1` | `HistoryIndexEntry[]` | summary historii |
-| `pof_history_<id>_v1` | `HistoryEntry` | pelny rekord historii |
-| `pof_sync_meta_v1` | `PhoneSyncMeta` | rewizje i stan synchronizacji |
-| `pof_settings_ui_state_v1` | `SettingsUiState` | pomocniczy stan Settings App, niekanoniczny dla sync |
+| `pof_tools_v1` | `ToolDefinition[]` | seeded on first launch |
+| `pof_recipe_index_v1` | `RecipeSummary[]` | lightweight list, without steps |
+| `pof_recipe_<id>_v1` | `RecipeRecord` | full recipe record |
+| `pof_history_index_v1` | `HistoryIndexEntry[]` | history summary list |
+| `pof_history_<id>_v1` | `HistoryEntry` | full history record |
+| `pof_sync_meta_v1` | `PhoneSyncMeta` | revisions and sync state |
+| `pof_settings_ui_state_v1` | `SettingsUiState` | helper state for Settings App, non-canonical for sync |
 
-## Klucze storage po stronie zegarka
+## Watch-side storage keys
 
-| key | zawartosc | uwagi |
+| key | contents | notes |
 | --- | --- | --- |
-| `active_session_v1` | `ActiveBrewSession \| null` | tylko jedna aktywna sesja |
+| `active_session_v1` | `ActiveBrewSession \| null` | only one active session |
 | `catalog_cache_v1` | `WatchCatalogCache` | tools + recipes |
-| `last_result_v1` | `LastResultSummary \| null` | tylko ostatni wynik |
-| `sync_meta_v1` | `WatchSyncMeta` | rewizje, bootstrap i kolejka pending |
+| `last_result_v1` | `LastResultSummary \| null` | latest result only |
+| `sync_meta_v1` | `WatchSyncMeta` | revisions, bootstrap info, and pending queue |
 
-## Rekordy indeksowe
+## Index records
 
 ### `HistoryIndexEntry`
 
@@ -106,55 +106,55 @@ interface WatchSyncMeta {
 }
 ```
 
-## Dlaczego `index + records`
+## Why `index + records`
 
-`settingsStorage` przechowuje stringi JSON. Z tego powodu:
+`settingsStorage` stores JSON strings. Because of that:
 
-- nie wolno trzymac calej biblioteki i calej historii w jednym kluczu,
-- lista ma byc w indeksie,
-- rekord szczegolowy ma miec osobny klucz,
-- modyfikacja jednej receptury nie moze wymagac przepisywania calego archiwum.
+- do not put the whole library and history into one key,
+- keep list data in an index,
+- keep detailed records under separate keys,
+- changing one recipe must not require rewriting the whole archive.
 
-## Seed danych na telefonie
+## Phone seeding
 
-`app-side/` ma wykonac seed przy pierwszym uruchomieniu:
+`app-side/` should seed data on first launch:
 
-1. jesli `pof_tools_v1` nie istnieje, zapisac `TOOL_CATALOG`,
-2. jesli `pof_recipe_index_v1` nie istnieje, zapisac seed recipes,
-3. jesli `pof_history_index_v1` nie istnieje, zapisac pusta liste,
-4. jesli `pof_sync_meta_v1` nie istnieje, utworzyc rewizje startowe.
+1. if `pof_tools_v1` does not exist, write `TOOL_CATALOG`,
+2. if `pof_recipe_index_v1` does not exist, write seed recipes,
+3. if `pof_history_index_v1` does not exist, write an empty list,
+4. if `pof_sync_meta_v1` does not exist, create initial revisions.
 
-Seed ma byc idempotentny. Kolejne uruchomienia nie nadpisuja danych usera.
+Seeding must be idempotent. Later launches must not overwrite user data.
 
-`pof_settings_ui_state_v1` nie bierze udzialu w seedzie danych domenowych. To tylko stan UI telefonu.
+`pof_settings_ui_state_v1` is not part of domain seeding. It is phone UI state only.
 
 ## Bootstrap flow
 
 ### Watch start
 
-1. `home` czyta `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1`; `active_session_v1` pozostaje jeszcze follow-upem kolejnych etapow.
-2. UI rusza od razu z cache, jesli istnieje.
-3. Watch wysyla `REQUEST_BOOTSTRAP`.
-4. `app-side/` odczytuje telefoniczne rekordy i wysyla snapshoty.
-5. Watch aktualizuje `catalog_cache_v1`, `last_result_v1` i `sync_meta_v1`.
+1. `home` reads `catalog_cache_v1`, `last_result_v1`, `sync_meta_v1`, and `active_session_v1`.
+2. The UI starts immediately from cache if it exists.
+3. The watch sends `REQUEST_BOOTSTRAP`.
+4. `app-side/` reads phone records and sends snapshots.
+5. The watch updates `catalog_cache_v1`, `last_result_v1`, and `sync_meta_v1`.
 
-Na obecnym etapie placeholderowe strony watch moga wymagac przebudowania strony, zeby w pelni pokazac nowy snapshot przychodzacy juz po pierwszym renderze.
+At the current stage, some watch pages may still require a rebuild to fully show a new snapshot that arrives after the first render.
 
 ### Phone answer order
 
-`app-side/` ma wysylac odpowiedzi w tej kolejnosci:
+`app-side/` should send responses in this order:
 
 1. `PUSH_TOOL_CATALOG`
 2. `PUSH_CATALOG_SNAPSHOT`
 3. `PUSH_HISTORY_SNAPSHOT`
 
-To upraszcza watch bootstrap i walidacje `toolId`.
+This simplifies watch bootstrap and `toolId` validation.
 
-Listener `settingsStorage` w `app-side/` ma ignorowac zmiany klucza `pof_settings_ui_state_v1`, zeby drafty i przejscia widokow Settings App nie wyzwalaly falszywych refreshy sync.
+The `settingsStorage` listener inside `app-side/` must ignore `pof_settings_ui_state_v1` changes so that drafts and view transitions in Settings App do not trigger false sync refreshes.
 
-## Kontrakty wiadomosci
+## Message contracts
 
-Wszystkie wiadomosci sa opakowane w `SyncEnvelope<T>` i kodowane do `ArrayBuffer`.
+All messages are wrapped in `SyncEnvelope<T>` and encoded to `ArrayBuffer`.
 
 ### `REQUEST_BOOTSTRAP`
 
@@ -195,7 +195,7 @@ interface PushCatalogSnapshotPayload {
 
 Phone -> watch
 
-Ta wiadomosc nie przenosi pelnej historii. V1 wymaga tylko ostatniego wyniku i rewizji historii.
+This message does not carry the full history. V1 needs only the latest result and the history revision.
 
 ```ts
 interface PushHistorySnapshotPayload {
@@ -225,127 +225,127 @@ interface AckHistoryEntryPayload {
 }
 ```
 
-## Kodowanie i dekodowanie
+## Encoding and decoding
 
-Dla `API 4.0+` nalezy uzyc:
+For `API 4.0+`, use:
 
-- `stringToBuffer` do kodowania JSON string -> `ArrayBuffer`,
-- `bufferToString` do dekodowania `ArrayBuffer` -> JSON string.
+- `stringToBuffer` for JSON string -> `ArrayBuffer`,
+- `bufferToString` for `ArrayBuffer` -> JSON string.
 
-Nie przesylac raw JS objects. Messaging layer ma uzywac tylko `ArrayBuffer`.
+Do not send raw JS objects. The messaging layer should use `ArrayBuffer` only.
 
-## Rewizje danych
+## Data revisions
 
 ### `toolCatalogRevision`
 
-- inkrementowana tylko przy zmianie seed katalogu w nowej wersji aplikacji,
-- w normalnym uzyciu user jej nie zmienia.
+- incremented only when the seed catalog changes in a new app version,
+- not changed by normal user activity.
 
 ### `recipeCatalogRevision`
 
-- inkrementowana przy kazdym utworzeniu, edycji, archiwizacji albo usunieciu receptury.
+- incremented for every recipe create, edit, archive, or delete operation.
 
 ### `historyRevision`
 
-- inkrementowana przy kazdym dodaniu historii albo aktualizacji notatki/oceny.
+- incremented for every history add or note/rating update.
 
-## Polityka walidacji
+## Validation policy
 
-### Po stronie telefonu
+### On the phone side
 
-- odrzucic recepture z nieznanym `toolId`,
-- odrzucic `HistoryEntry`, jesli snapshot wskazuje nieistniejacy `toolId`,
-- nie zapisywac rekordow bez `schemaVersion: 1`,
-- odrzucic puste lub uszkodzone JSON-y.
+- reject a recipe with an unknown `toolId`,
+- reject `HistoryEntry` if the snapshot references a non-existent `toolId`,
+- do not store records without `schemaVersion: 1`,
+- reject empty or corrupted JSON.
 
-### Po stronie zegarka
+### On the watch side
 
-- jesli `PUSH_TOOL_CATALOG` jest uszkodzony, zachowac poprzedni cache,
-- jesli brak `recipeSnapshotById` dla `RecipeSummary`, ukryc te recepture,
-- jesli przyjdzie `latestResult: null`, wyczyscic `last_result_v1`.
+- if `PUSH_TOOL_CATALOG` is corrupted, keep the previous cache,
+- if a `RecipeSummary` has no matching `recipeSnapshotById`, hide that recipe,
+- if `latestResult: null` arrives, clear `last_result_v1`.
 
-## Zapis historii z zegarka
+## Writing history from the watch
 
-### Scenariusz online
+### Online scenario
 
-1. watch konczy sesje,
-2. buduje `HistoryEntry`,
-3. zapisuje `LastResultSummary`,
-4. wysyla `UPSERT_HISTORY_ENTRY`,
-5. po `ACK_HISTORY_ENTRY` usuwa wpis z `pendingHistoryQueue`.
+1. the watch finishes a session,
+2. it builds `HistoryEntry`,
+3. it writes `LastResultSummary`,
+4. it sends `UPSERT_HISTORY_ENTRY`,
+5. after `ACK_HISTORY_ENTRY` it removes the entry from `pendingHistoryQueue`.
 
-### Scenariusz offline
+### Offline scenario
 
-1. watch konczy sesje,
-2. zapisuje `LastResultSummary`,
-3. dodaje pelny `HistoryEntry` do `sync_meta_v1.pendingHistoryQueue`,
-4. przy kolejnym udanym `REQUEST_BOOTSTRAP` kolejka jest replayowana.
+1. the watch finishes a session,
+2. it writes `LastResultSummary`,
+3. it appends the full `HistoryEntry` to `sync_meta_v1.pendingHistoryQueue`,
+4. the queue is replayed after the next successful `REQUEST_BOOTSTRAP`.
 
-### Limit kolejki
+### Queue limit
 
-`pendingHistoryQueue` ma miec limit 20 wpisow. Po przekroczeniu limitu:
+`pendingHistoryQueue` should have a limit of 20 entries. If the limit is exceeded:
 
-- najstarsze zsynchronizowane wpisy nie powinny sie tam znajdowac,
-- jesli limit nadal jest przekroczony, odrzucic najstarszy pending i zapisac warning do logu.
+- the oldest synced entries should not still be in the queue,
+- if the limit is still exceeded, drop the oldest pending entry and write a warning to the log.
 
 ## Delete policy
 
-Usuniecie receptury po stronie telefonu oznacza:
+Deleting a recipe on the phone means:
 
-- usuniecie `pof_recipe_<id>_v1`,
-- usuniecie wpisu z `pof_recipe_index_v1`,
-- inkrementacje `recipeCatalogRevision`.
+- delete `pof_recipe_<id>_v1`,
+- remove the entry from `pof_recipe_index_v1`,
+- increment `recipeCatalogRevision`.
 
-Nie ruszamy:
+Do not touch:
 
 - `pof_history_index_v1`,
-- zadnego `pof_history_<id>_v1`,
-- `last_result_v1` na zegarku, jesli ostatni wynik odwoluje sie do usunietej receptury.
+- any `pof_history_<id>_v1`,
+- `last_result_v1` on the watch if the latest result refers to a deleted recipe.
 
 ## Watch cache invalidation
 
-Przy przyjeciu nowego `PUSH_CATALOG_SNAPSHOT` zegarek:
+When a new `PUSH_CATALOG_SNAPSHOT` is accepted, the watch:
 
-1. przepisuje caly `catalog_cache_v1`,
-2. nie zmienia `active_session_v1`,
-3. nie zmienia `last_result_v1`,
-4. aktualizuje rewizje w `sync_meta_v1`.
+1. rewrites the full `catalog_cache_v1`,
+2. does not change `active_session_v1`,
+3. does not change `last_result_v1`,
+4. updates revisions in `sync_meta_v1`.
 
-To jest celowe. Aktywna sesja zyje na snapshotcie.
+This is intentional. The active session lives on its own snapshot.
 
 ## Resume policy
 
-Docelowo resume ma opierac sie na `active_session_v1`, nie na sync z telefonu. Po Etapie 4 `activeSession` nadal pozostaje runtime-only, a storage-backed resume jest praca kolejnych etapow.
+Eventually, resume should depend on `active_session_v1`, not on sync from the phone. After Stage 5, the session itself is already storage-backed, but hard behavior during sleep and wake still needs Stage 6 work.
 
-Przy resume:
+During resume:
 
-- zegarek wczytuje sesje lokalnie,
-- przelicza `elapsedSessionMs` i biezacy stan timerow na podstawie `sessionStartedAt`, `currentStepStartedAt` i `expectedStepEndAt`,
-- dopiero potem prosi telefon o bootstrap.
+- the watch loads the session locally,
+- recalculates `elapsedSessionMs` and timer state from `sessionStartedAt`, `currentStepStartedAt`, and `expectedStepEndAt`,
+- only then asks the phone for bootstrap.
 
-## Bledy i fallbacki
+## Errors and fallbacks
 
-### Brak telefonu
+### No phone available
 
-- watch dziala z `catalog_cache_v1`,
-- watch moze korzystac z lokalnego cache i kontynuowac aktualna sesje, jesli runtime nadal zyje,
-- wyniki sa buforowane do `pendingHistoryQueue`.
+- the watch works from `catalog_cache_v1`,
+- the watch can continue the current session from local state if the runtime is still alive,
+- results are buffered into `pendingHistoryQueue`.
 
-### Uszkodzony cache
+### Corrupted cache
 
-- jesli `catalog_cache_v1` jest nieczytelny, watch ma pokazac pusty katalog i stan "sync needed",
-- nie wolno crashowac aplikacji.
+- if `catalog_cache_v1` is unreadable, the watch should show an empty catalog and a `sync needed` state,
+- the app must not crash.
 
-### Rozjazd rewizji
+### Revision mismatch
 
-- `REQUEST_BOOTSTRAP` nigdy nie sluzy do merge,
-- telefon zawsze odsyla pelny aktualny snapshot,
-- v1 nie implementuje conflict resolution pomiedzy dwoma zrodlami edycji.
+- `REQUEST_BOOTSTRAP` is never used for merge,
+- the phone always sends the full current snapshot,
+- v1 does not implement conflict resolution between two editing sources.
 
-## Decyzje zamrozone
+## Frozen decisions
 
-- `settingsStorage` jest kanoniczne.
-- `index + records`, nie jeden blob.
-- `PUSH_HISTORY_SNAPSHOT` przenosi tylko ostatni wynik, nie pelna historie.
-- `pendingHistoryQueue` mieszka w `sync_meta_v1`.
-- Bootstrap zawsze ma byc full refresh, nie delta sync.
+- `settingsStorage` is canonical.
+- `index + records`, not one blob.
+- `PUSH_HISTORY_SNAPSHOT` carries only the latest result, not full history.
+- `pendingHistoryQueue` lives in `sync_meta_v1`.
+- Bootstrap is always a full refresh, not delta sync.

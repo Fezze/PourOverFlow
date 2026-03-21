@@ -1,31 +1,39 @@
 # PourOverFlow
 
-PourOverFlow to planowana aplikacja Zepp OS do prowadzenia uzytkownika przez reczne parzenie kawy na zegarku. V1 ma laczyc prosty watch-first flow wykonawczy z telefonicznym managerem receptur i historii.
+PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a watch. V1 combines a simple watch-first execution flow with a phone-side recipe and history manager.
 
-## Aktualny status
+## Current status
 
-Repo ma juz zrealizowane Etapy 3 i 4. Istnieje scaffold Zepp app z przechodzacym `zeus build`, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD receptur w `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache w `LocalStorage`, ACK-owanie historii i podstawowe testy logiki.
+The repo already has Stages 3, 4, and 5 completed. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, a more production-shaped session reducer, timed step UI, and baseline logic tests.
 
-## Co ma zrobic produkt
+## Project language
 
-- Na zegarku: `tool -> recipe -> active brew`
-- W trakcie sesji: timer kroku, timer calej sesji, kroki reczne typu `Next`, feedback haptyczny i opcjonalnie audio
-- Po stronie telefonu: pelny CRUD receptur i edycja notatek historii
-- Synchronizacja: `setting/ -> app-side/ -> messaging.peerSocket -> Device App`
-- Resume: best-effort `resume`, a nie gwarantowany pelny background engine
+This project is to be run in English.
 
-## Twarde zalozenia v1
+- Repository documentation must be written in English.
+- Backlog updates in `docs/TODO.md` must be written in English.
+- Architecture notes, handoff notes, and persistent repo-facing agent instructions must be written in English.
+
+## What the product should do
+
+- On the watch: `tool -> recipe -> active brew`
+- During a session: step timer, total session timer, manual `Next` steps, haptic feedback, and optional audio
+- On the phone: full recipe CRUD and history note editing
+- Sync: `setting/ -> app-side/ -> messaging.peerSocket -> Device App`
+- Resume: best-effort `resume`, not a guaranteed full background engine
+
+## Hard v1 assumptions
 
 - `configVersion: "v3"`
 - `runtime.apiVersion.target: "4.0"`
-- profil `v4`
-- scope ekranow: `round + square`
-- brak `band`
-- zamkniety katalog wspieranych narzedzi
-- telefon jest zrodlem prawdy dla receptur i historii
-- zegarek przechowuje tylko cache, aktywna sesje, ostatni wynik i metadane sync
+- `v4` profile
+- screen scope: `round + square`
+- no `band`
+- closed catalog of supported brewing tools
+- the phone is the source of truth for recipes and history
+- the watch stores only cache, active session, last result, and sync metadata
 
-## Najwazniejsze dokumenty
+## Most important documents
 
 - [Start Here](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md)
 - [Product Goals](c:\Users\krzys\Projects\PourOverFlow\docs\00-product-goals.md)
@@ -38,33 +46,33 @@ Repo ma juz zrealizowane Etapy 3 i 4. Istnieje scaffold Zepp app z przechodzacym
 - [Implementation TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - [Agent Instructions](c:\Users\krzys\Projects\PourOverFlow\AGENTS.md)
 
-## Kolejnosc pracy
+## Work order
 
-1. Przeczytac [Start Here](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md).
-2. Zamrozic scaffold zgodnie z [Zepp Architecture](c:\Users\krzys\Projects\PourOverFlow\docs\01-zepp-architecture.md).
-3. Trzymac sie modelu danych z [Domain Model](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md).
-4. Seedowac biblioteke zgodnie z [Seed Library](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
-5. Trzymac sie kontraktu `app.json` i `setting/` z [Manifest and UI Contract](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md).
-6. Nie zmieniac kontraktow storage i sync bez aktualizacji dokumentow.
-7. Realizowac etapy z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) w kolejnosci.
+1. Read [Start Here](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md).
+2. Freeze the scaffold according to [Zepp Architecture](c:\Users\krzys\Projects\PourOverFlow\docs\01-zepp-architecture.md).
+3. Follow the data model from [Domain Model](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md).
+4. Seed the library according to [Seed Library](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
+5. Follow the `app.json` and `setting/` contract from [Manifest and UI Contract](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md).
+6. Do not change storage or sync contracts without updating the documents.
+7. Execute the stages from [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) in order.
 
-## Zakres etapu nastepnego
+## Next stage
 
-Nastepny praktyczny etap to Etap 5 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): domkniecie watch browse i recipe engine na zsynchronizowanych snapshotach, z lepszym UI krokow, reducerem sesji i feedbackiem runtime.
+The next practical stage is Stage 6 from [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): resume hardening, `setWakeUpRelaunch(true)`, `setPageBrightTime(...)`, offline queue replay, and hard validation on a real device.
 
-## Czego nie ma jeszcze w repo
+## What is still missing in the repo
 
-- storage-backed resume dla `active_session_v1`,
-- pelnego engine'u receptur z realnymi timerami krokow,
-- reaktywnego odswiezania placeholderowego watch UI natychmiast po przyjsciu snapshotu,
-- feedbacku haptycznego i audio runtime.
+- resume hardening after leaving and returning to the app,
+- `setWakeUpRelaunch(true)` and `setPageBrightTime(...)` during an active session,
+- hard validation of haptic and audio feedback on a real device,
+- mocked Zepp runtime coverage for lifecycle and queue replay.
 
-## Wazne ograniczenia techniczne
+## Important technical limits
 
-- Nie traktowac `AppService` jako rdzenia timera.
-- Nie dodawac cloud sync, backendu, importu zewnetrznych receptur ani BLE do baseline v1.
-- Nie projektowac user-defined `Tool`.
-- Nie przenosic kanonicznej historii na zegarek.
+- Do not treat `AppService` as the core timer engine.
+- Do not add cloud sync, backend, external recipe import, or BLE to the v1 baseline.
+- Do not design user-defined `Tool`.
+- Do not move canonical history to the watch.
 
 ## Commit history
 
@@ -72,4 +80,4 @@ Nastepny praktyczny etap to Etap 5 z [TODO](c:\Users\krzys\Projects\PourOverFlow
 - `0f7313d` - `Add agent onboarding and backlog maintenance docs`
 - `48e7a1b` - `Add seed library and manifest UI contracts`
 
-To jest punkt startowy dla dalszej implementacji.
+This is the starting point for further implementation.
