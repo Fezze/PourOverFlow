@@ -21,7 +21,9 @@ Przed jakakolwiek implementacja przeczytaj w tej kolejnosci:
 4. [docs/02-domain-model.md](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md)
 5. [docs/03-sync-and-storage.md](c:\Users\krzys\Projects\PourOverFlow\docs\03-sync-and-storage.md)
 6. [docs/04-watch-and-phone-flows.md](c:\Users\krzys\Projects\PourOverFlow\docs\04-watch-and-phone-flows.md)
-7. [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
+7. [docs/05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md)
+8. [docs/06-manifest-and-ui-contract.md](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md)
+9. [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 
 Nie zaczynaj pisac kodu "z glowy", jesli nie przeczytales tych plikow.
 

@@ -4,7 +4,7 @@ PourOverFlow to planowana aplikacja Zepp OS do prowadzenia uzytkownika przez rec
 
 ## Aktualny status
 
-Repo jest obecnie na etapie dokumentacji i zamrozenia decyzji architektonicznych. Nie ma jeszcze scaffoldu Zepp app ani kodu runtime. Pierwszy commit repo zawiera wyłącznie dokumenty wdrozeniowe dla v1.
+Repo jest obecnie na etapie dokumentacji i zamrozenia decyzji architektonicznych. Nie ma jeszcze scaffoldu Zepp app ani kodu runtime. Pierwsze commity repo zawieraja wylacznie dokumenty wdrozeniowe i onboardingowe dla v1.
 
 ## Co ma zrobic produkt
 
@@ -33,6 +33,8 @@ Repo jest obecnie na etapie dokumentacji i zamrozenia decyzji architektonicznych
 - [Domain Model](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md)
 - [Sync and Storage](c:\Users\krzys\Projects\PourOverFlow\docs\03-sync-and-storage.md)
 - [Watch and Phone Flows](c:\Users\krzys\Projects\PourOverFlow\docs\04-watch-and-phone-flows.md)
+- [Seed Library](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md)
+- [Manifest and UI Contract](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md)
 - [Implementation TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - [Agent Instructions](c:\Users\krzys\Projects\PourOverFlow\AGENTS.md)
 
@@ -41,8 +43,10 @@ Repo jest obecnie na etapie dokumentacji i zamrozenia decyzji architektonicznych
 1. Przeczytac [Start Here](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md).
 2. Zamrozic scaffold zgodnie z [Zepp Architecture](c:\Users\krzys\Projects\PourOverFlow\docs\01-zepp-architecture.md).
 3. Trzymac sie modelu danych z [Domain Model](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md).
-4. Nie zmieniac kontraktow storage i sync bez aktualizacji dokumentow.
-5. Realizowac etapy z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) w kolejnosci.
+4. Seedowac biblioteke zgodnie z [Seed Library](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
+5. Trzymac sie kontraktu `app.json` i `setting/` z [Manifest and UI Contract](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md).
+6. Nie zmieniac kontraktow storage i sync bez aktualizacji dokumentow.
+7. Realizowac etapy z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) w kolejnosci.
 
 ## Zakres etapu nastepnego
 
@@ -59,7 +63,7 @@ Nastepny praktyczny etap to Etap 2 z [TODO](c:\Users\krzys\Projects\PourOverFlow
 - `app-side/`
 - implementacji engine'u receptur
 
-## Ważne ograniczenia techniczne
+## Wazne ograniczenia techniczne
 
 - Nie traktowac `AppService` jako rdzenia timera.
 - Nie dodawac cloud sync, backendu, importu zewnetrznych receptur ani BLE do baseline v1.
@@ -68,8 +72,7 @@ Nastepny praktyczny etap to Etap 2 z [TODO](c:\Users\krzys\Projects\PourOverFlow
 
 ## Commit history
 
-Pierwszy commit:
-
 - `38bcd5e` - `Add PourOverFlow v1 architecture and planning docs`
+- `0f7313d` - `Add agent onboarding and backlog maintenance docs`
 
 To jest punkt startowy dla dalszej implementacji.

@@ -23,7 +23,7 @@ Przy aktualizacji backlogu:
 - usuwaj lub przepisuj punkty juz wykonane,
 - dopisuj nowe follow-upy wynikajace z implementacji,
 - nie duplikuj tego samego zadania w kilku miejscach bez powodu,
-- jesli zadanie zmienia sie z "do zrobienia" w stale ograniczenie architektury, przenies je do odpowiedniego dokumentu i zostaw tu tylko odnośnik lub krotki follow-up.
+- jesli zadanie zmienia sie z "do zrobienia" w stale ograniczenie architektury, przenies je do odpowiedniego dokumentu i zostaw tu tylko odnosnik lub krotki follow-up.
 
 ## Etap 1 - zamrozenie dokumentacji
 
@@ -38,6 +38,8 @@ Miec komplet dokumentow, na ktorych moze pracowac kolejny agent bez zgadywania m
 - `docs/02-domain-model.md`
 - `docs/03-sync-and-storage.md`
 - `docs/04-watch-and-phone-flows.md`
+- `docs/05-seed-library.md`
+- `docs/06-manifest-and-ui-contract.md`
 - `docs/TODO.md`
 
 ### Acceptance
@@ -58,6 +60,7 @@ Postawic minimalny repo scaffold zgodny z dokumentami.
 - utworzyc `app.json`, `app.js`, `package.json`,
 - skonfigurowac `configVersion: "v3"` i `runtime.apiVersion.target: "4.0"`,
 - zarejestrowac target `common` dla `round` i `square`,
+- trzymac sie kontraktu z `docs/06-manifest-and-ui-contract.md`,
 - dodac strony `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
 - dodac `setting/index.jsx`,
 - dodac `app-side/index.js`,
@@ -87,6 +90,7 @@ Uruchomic kanoniczna warstwe danych po stronie telefonu.
 
 - zaimplementowac `shared/constants/tool-catalog.js`,
 - seedowac `pof_tools_v1`,
+- seedowac recipes zgodnie z `docs/05-seed-library.md`,
 - zaimplementowac `RecipeRecord`, `RecipeSummary`, `HistoryEntry` i walidatory,
 - zrobic `setting/` z widokami:
   - `library-home`

@@ -19,7 +19,9 @@ Kazdy agent pracujacy nad tym repo ma traktowac `zepp-miniapp-builder` jako domy
 - model domeny,
 - kontrakty storage i sync,
 - flow watch/phone,
-- etapowy plan implementacji.
+- etapowy plan implementacji,
+- seed library,
+- kontrakt manifestu i Settings UI.
 
 ## Czego jeszcze nie ma
 
@@ -37,7 +39,9 @@ Kazdy agent pracujacy nad tym repo ma traktowac `zepp-miniapp-builder` jako domy
 4. [02-domain-model.md](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md)
 5. [03-sync-and-storage.md](c:\Users\krzys\Projects\PourOverFlow\docs\03-sync-and-storage.md)
 6. [04-watch-and-phone-flows.md](c:\Users\krzys\Projects\PourOverFlow\docs\04-watch-and-phone-flows.md)
-7. [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
+7. [05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md)
+8. [06-manifest-and-ui-contract.md](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md)
+9. [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 
 ## Startup protocol dla nowego agenta
 
