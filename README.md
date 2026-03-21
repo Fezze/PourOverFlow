@@ -4,7 +4,7 @@ PourOverFlow to planowana aplikacja Zepp OS do prowadzenia uzytkownika przez rec
 
 ## Aktualny status
 
-Repo jest obecnie na etapie dokumentacji i zamrozenia decyzji architektonicznych. Nie ma jeszcze scaffoldu Zepp app ani kodu runtime. Pierwsze commity repo zawieraja wylacznie dokumenty wdrozeniowe i onboardingowe dla v1.
+Repo ma juz zrealizowany Etap 2. Istnieje minimalny scaffold Zepp app z przechodzacym `zeus build`, stronami watch, `setting/`, `app-side/`, wspoldzielonymi modulami i placeholderowymi assetami. Logika domenowa, CRUD receptur, prawdziwy sync i trwala persystencja sa nadal przed nami.
 
 ## Co ma zrobic produkt
 
@@ -50,18 +50,15 @@ Repo jest obecnie na etapie dokumentacji i zamrozenia decyzji architektonicznych
 
 ## Zakres etapu nastepnego
 
-Nastepny praktyczny etap to Etap 2 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): scaffold Zepp app z `app.json`, `app.js`, stronami watch, `setting/`, `app-side/` i wspoldzielonymi modulami.
+Nastepny praktyczny etap to Etap 3 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): uruchomienie kanonicznej warstwy danych po stronie telefonu, seed recipe library i prawdziwy CRUD w `setting/`.
 
 ## Czego nie ma jeszcze w repo
 
-- `app.json`
-- `app.js`
-- `package.json`
-- assets
-- watch pages
-- `setting/`
-- `app-side/`
-- implementacji engine'u receptur
+- prawdziwego CRUD receptur i historii,
+- seed recipes zapisanych do storage,
+- runtime messaging przez `messaging.peerSocket`,
+- storage-backed watch cache i resume,
+- pelnego engine'u receptur i feedbacku runtime.
 
 ## Wazne ograniczenia techniczne
 
@@ -74,5 +71,6 @@ Nastepny praktyczny etap to Etap 2 z [TODO](c:\Users\krzys\Projects\PourOverFlow
 
 - `38bcd5e` - `Add PourOverFlow v1 architecture and planning docs`
 - `0f7313d` - `Add agent onboarding and backlog maintenance docs`
+- `48e7a1b` - `Add seed library and manifest UI contracts`
 
 To jest punkt startowy dla dalszej implementacji.

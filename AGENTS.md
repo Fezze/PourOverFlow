@@ -6,9 +6,9 @@ Ten plik jest instrukcja repo-level dla kolejnego agenta AI. Traktuj go jako war
 
 ## Stan repo
 
-- Repo jest na etapie dokumentacji.
-- Nie ma jeszcze scaffoldu Zepp app.
-- Aktualny zakres prac to przejscie od dokumentow do implementacji, zaczynajac od Etapu 2.
+- Repo ma zakonczony Etap 2.
+- Istnieje scaffold Zepp app i przechodzacy `zeus build`.
+- Aktualny zakres prac to Etap 3: phone storage, seed recipes i prawdziwy CRUD w `setting/`.
 - To repo jest projektem Zepp OS, wiec przy kazdym zadaniu dotyczacym implementacji, architektury, debugowania albo walidacji nalezy uzyc skilla `zepp-miniapp-builder` jako podstawowego workflow.
 
 ## Obowiazkowa kolejnosc czytania
@@ -113,14 +113,18 @@ Nie traktuj simulatora jako dowodu poprawnosci feedbacku lub zachowania przy wyg
 
 ## Co zrobic jako pierwsze
 
-Pierwsze zadanie implementacyjne to Etap 2:
+Pierwsze zadanie implementacyjne po obecnym stanie repo to Etap 3:
 
-- utworzyc `app.json`, `app.js`, `package.json`,
-- dodac strony `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
-- dodac `setting/index.jsx`,
-- dodac `app-side/index.js`,
-- dodac `shared/*`,
-- doprowadzic do przechodzacego `zeus build`.
+- zaimplementowac pelne rekordy `RecipeRecord` i `HistoryEntry`,
+- zseedowac recipe library zgodnie z `docs/05-seed-library.md`,
+- rozwinac `setting/` z placeholderowego scaffoldu do realnego CRUD,
+- utrzymac `zeus build` w stanie zielonym po kazdej wiekszej zmianie.
+
+## Odkryte niuanse toolchainu
+
+- Dla target-based scaffoldu `configVersion: "v3"` Zeus oczekuje ikon rowniez pod `assets/<target>.<shape>/icon.png`, nie tylko logicznej nazwy `icon.png` w `app.json`.
+- Entry `setting.path` jest najbezpieczniej wystawiac przez `setting/index.js`; jesli zrodlo jest w `.jsx`, zostaw cienki shim JS zamiast polegac wylacznie na bezposrednim `index.jsx`.
+- Obecny scaffold watch runtime trzyma stan tylko w pamieci aplikacji. To jest swiadomy etapowy kompromis Etapu 2, nie docelowa implementacja `LocalStorage`.
 
 ## Kiedy aktualizowac dokumenty
 

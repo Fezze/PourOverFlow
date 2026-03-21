@@ -80,6 +80,13 @@ Postawic minimalny repo scaffold zgodny z dokumentami.
 - niepoprawna rejestracja stron,
 - rozjazd layout files round vs square.
 
+### Status
+
+- wykonane: scaffold istnieje i `zeus build` przechodzi,
+- wykonane: sa strony `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
+- wykonane: istnieja `setting/`, `app-side/`, `shared/` i placeholderowe assets,
+- uwaga: watch runtime jest na razie scaffoldem in-memory, a nie docelowym `LocalStorage` / sync implementation.
+
 ## Etap 3 - storage i phone CRUD
 
 ### Cel
@@ -88,7 +95,6 @@ Uruchomic kanoniczna warstwe danych po stronie telefonu.
 
 ### Tasks
 
-- zaimplementowac `shared/constants/tool-catalog.js`,
 - seedowac `pof_tools_v1`,
 - seedowac recipes zgodnie z `docs/05-seed-library.md`,
 - zaimplementowac `RecipeRecord`, `RecipeSummary`, `HistoryEntry` i walidatory,
@@ -114,6 +120,12 @@ Uruchomic kanoniczna warstwe danych po stronie telefonu.
 - testy walidatorow rekordow,
 - testy delete policy,
 - testy serializacji JSON.
+
+### Najblizszy krok
+
+- zamienic placeholderowe recipe summaries w `setting/` i watch scaffoldzie na prawdziwe rekordy oparte o `docs/05-seed-library.md`,
+- rozwinac `shared/storage/phone-store.js` z minimalnego scaffoldu do realnego `index + records`,
+- utrzymac zielony `zeus build` po kazdej iteracji.
 
 ## Etap 4 - `app-side/` i synchronizacja
 
@@ -274,3 +286,6 @@ Zweryfikowac, czy `AppService` i `createSysTimer()` sa warte rozwijania po v1 co
 - Historia zostaje po delete receptury.
 - `PUSH_HISTORY_SNAPSHOT` to tylko ostatni wynik.
 - `AppService` jest spike, nie baseline.
+- Zeus target-based scaffold potrzebuje ikon pod `assets/<target>.<shape>/icon.png`.
+- `setting/index.js` zostal dodany jako JS shim do kodu Settings App, bo sam `index.jsx` nie byl wystarczajacym entrypointem dla builda.
+- Obecny watch state jest tylko scaffoldem in-memory i ma zostac zastapiony docelowym storage-backed flow w dalszych etapach.

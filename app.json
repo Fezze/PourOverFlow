@@ -1,0 +1,63 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 20001,
+    "appName": "PourOverFlow",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "0.1.0"
+    },
+    "icon": "icon.png",
+    "vender": "pouroverflow",
+    "description": "Manual coffee brewing flow for Zepp OS"
+  },
+  "permissions": [
+    "device:os.local_storage"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "4.0"
+    }
+  },
+  "targets": {
+    "common": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/home/index",
+            "page/tool-list/index",
+            "page/recipe-list/index",
+            "page/brew-active/index",
+            "page/result-summary/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        {
+          "st": "r"
+        },
+        {
+          "st": "s"
+        }
+      ]
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "PourOverFlow"
+    },
+    "pl-PL": {
+      "appName": "PourOverFlow"
+    }
+  },
+  "defaultLanguage": "en-US"
+}

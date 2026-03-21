@@ -21,15 +21,18 @@ Kazdy agent pracujacy nad tym repo ma traktowac `zepp-miniapp-builder` jako domy
 - flow watch/phone,
 - etapowy plan implementacji,
 - seed library,
-- kontrakt manifestu i Settings UI.
+- kontrakt manifestu i Settings UI,
+- scaffold Zepp app z przechodzacym `zeus build`,
+- placeholderowe strony watch, `setting/`, `app-side/` i `shared/*`.
 
 ## Czego jeszcze nie ma
 
-- scaffold Zepp app,
-- kod runtime,
-- testy,
-- assets,
-- seed recipes w kodzie.
+- prawdziwego CRUD receptur i historii,
+- runtime sync przez `messaging.peerSocket`,
+- seed recipes zapisanych do storage,
+- watch persistence w `LocalStorage`,
+- docelowego engine'u krokow i feedbacku runtime,
+- testow logiki i mockowanego runtime.
 
 ## Przeczytaj najpierw
 
@@ -104,7 +107,7 @@ Zegarek:
 
 ## Najblizszy cel
 
-Zrealizowac Etap 2 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), czyli postawic minimalny scaffold Zepp zgodny z dokumentami i doprowadzic go do przechodzacego `zeus build`.
+Zrealizowac Etap 3 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), czyli uruchomic kanoniczna warstwe danych po stronie telefonu, zseedowac recipe library i rozwinac `setting/` z placeholderowego scaffoldu do realnego CRUD.
 
 ## Utrzymanie TODO i dokumentow
 
@@ -122,3 +125,9 @@ Zrealizowac Etap 2 z [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md
 - istnieje `app-side/index.js`,
 - istnieje `shared/`,
 - `zeus build` przechodzi.
+
+## Wazne odkrycia z Etapu 2
+
+- Zeus v4 scaffold poprawnie buduje target-based ikony z `assets/common.r/icon.png` i `assets/common.s/icon.png`.
+- `setting/index.js` jest praktycznym entrypointem dla toolchainu, nawet jesli glowny kod Settings App trzymamy w `.jsx`.
+- Obecny watch flow dziala jako scaffold na stanie in-memory. To ma zostac zastapione storage-backed implementacja w kolejnych etapach, a nie traktowane jako finalne zachowanie.

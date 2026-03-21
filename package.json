@@ -1,0 +1,9 @@
+{
+  "name": "pouroverflow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PourOverFlow Zepp OS scaffold",
+  "scripts": {
+    "build": "zeus build"
+  }
+}

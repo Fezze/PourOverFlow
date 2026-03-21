@@ -44,7 +44,7 @@ Implementacja Etapu 2 ma wystartowac od takiego szkicu:
       "name": "0.1.0"
     },
     "icon": "icon.png",
-    "vendor": "pouroverflow",
+    "vender": "pouroverflow",
     "description": "Manual coffee brewing flow for Zepp OS"
   },
   "permissions": [
@@ -102,8 +102,8 @@ Implementacja Etapu 2 ma wystartowac od takiego szkicu:
 ### Reguly dla implementera
 
 - `appId` jest placeholderem do podmiany, jesli projekt bedzie rejestrowany w konkretnym koncie.
-- `vendor` ma pozostac ASCII.
-- `runtime.type` ma byc `0`.
+- `vender` ma pozostac ASCII.
+- W pierwszym scaffoldu nie wymuszac `runtime.type`, bo oficjalne szablony `os4.0` Zeusa go nie wymagaja do poprawnego builda.
 - Nie dodawac `designWidth` w pierwszym scaffoldu.
 - Nie dodawac `app-service`, `secondary-widget`, `app-widget`, `data-widget` ani BLE permissions.
 - Nie dodawac targetu `band`.
@@ -140,6 +140,9 @@ app-side/index.js
 ### Root app icon
 
 - `icon.png` w root projektu
+- dla target-based scaffoldu Zeusa praktyczny baseline to rowniez:
+  - `assets/common.r/icon.png`
+  - `assets/common.s/icon.png`
 
 ### Tool icons
 
@@ -163,6 +166,10 @@ Ikony narzedzi maja byc trzymane parami zasobow round/square:
 `ToolDefinition.iconStem` wskazuje na nazwe assetu bez rozszerzenia. Watch UI nie powinno zawierac recznego switcha po `toolId`, jesli ten sam efekt da sie osiagnac przez `iconStem`.
 
 ## Kontrakt `setting/index.jsx`
+
+### Uwaga implementacyjna dla Etapu 2
+
+Jesli toolchain Zeusa nie wykrywa bezposrednio `setting/index.jsx` jako entrypointu `setting.path`, wolno dodac cienki shim `setting/index.js`, ktory tylko importuje docelowy plik `.jsx`. Zrodlo logiki Settings App nadal ma pozostac w `.jsx`.
 
 ### Constructor shape
 
