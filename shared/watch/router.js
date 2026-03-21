@@ -1,8 +1,9 @@
 import { push, replace } from "@zos/router";
 import { getSupportedTools, getToolById } from "../constants/tool-catalog";
 import { buildScaffoldResult, createScaffoldSession } from "../engine/recipe-engine";
+import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../domain/seed-library";
+import { createRecipeSummary } from "../domain/schema";
 import { advanceSession, abortSession } from "../engine/session-reducer";
-import { createScaffoldRecipeSummaryList } from "../domain/schema";
 import {
   clearActiveSession,
   getRuntimeState,
@@ -34,7 +35,11 @@ export function getSelectedTool() {
 
 export function getRecipeListForSelectedTool() {
   const selectedTool = getSelectedTool();
-  return selectedTool ? createScaffoldRecipeSummaryList(selectedTool.toolId) : [];
+  return selectedTool
+    ? getSeedRecipeRecords(0)
+        .filter((recipeRecord) => recipeRecord.toolId === selectedTool.toolId && !recipeRecord.archived)
+        .map((recipeRecord) => createRecipeSummary(recipeRecord))
+    : [];
 }
 
 export function goHome() {
@@ -56,9 +61,15 @@ export function selectTool(toolId) {
 }
 
 export function startRecipe(recipeSummary) {
+  const recipeRecord = getSeedRecipeRecordById(recipeSummary.recipeId, Date.now());
+
+  if (!recipeRecord) {
+    return;
+  }
+
   writeSelectedToolId(recipeSummary.toolId);
   writeSelectedRecipeId(recipeSummary.recipeId);
-  writeActiveSession(createScaffoldSession(recipeSummary));
+  writeActiveSession(createScaffoldSession(recipeRecord));
   push({ url: PAGE_URLS.brewActive });
 }
 

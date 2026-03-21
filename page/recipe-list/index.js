@@ -26,12 +26,12 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Recipe scaffold"
+      text: "Seed recipe list"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
       text:
-        "Recipe labels mirror docs/05 while full seed records, CRUD and storage land in Stage 3."
+        "Watch preview now uses the real seed library from docs/05. Phone-edited recipes join this list after sync lands."
     });
 
     BUTTONS.forEach((buttonStyle, index) => {

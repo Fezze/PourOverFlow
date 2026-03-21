@@ -2,8 +2,10 @@
   "name": "pouroverflow",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "PourOverFlow Zepp OS scaffold",
   "scripts": {
-    "build": "zeus build"
+    "build": "zeus build",
+    "test": "node --test --experimental-specifier-resolution=node"
   }
 }

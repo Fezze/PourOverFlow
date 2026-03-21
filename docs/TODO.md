@@ -121,11 +121,14 @@ Uruchomic kanoniczna warstwe danych po stronie telefonu.
 - testy delete policy,
 - testy serializacji JSON.
 
-### Najblizszy krok
+### Status
 
-- zamienic placeholderowe recipe summaries w `setting/` i watch scaffoldzie na prawdziwe rekordy oparte o `docs/05-seed-library.md`,
-- rozwinac `shared/storage/phone-store.js` z minimalnego scaffoldu do realnego `index + records`,
-- utrzymac zielony `zeus build` po kazdej iteracji.
+- wykonane: seed library i seed do `settingsStorage`,
+- wykonane: `RecipeRecord`, `RecipeSummary`, `HistoryEntry` i walidatory,
+- wykonane: `setting/` z widokami `library-home`, `recipe-list`, `recipe-editor`, `history-list`, `history-detail`, `about-sync`,
+- wykonane: CRUD receptur i edycja notatek historii,
+- wykonane: podstawowe testy Node dla walidatorow i phone storage,
+- uwaga: `app-side/` na tym etapie seeduje dane i loguje zmiany, ale nie wysyla jeszcze snapshotow do watch runtime.
 
 ## Etap 4 - `app-side/` i synchronizacja
 
@@ -144,6 +147,7 @@ Zrobic bootstrap i push danych z telefonu do zegarka.
 - `UPSERT_HISTORY_ENTRY`,
 - `ACK_HISTORY_ENTRY`,
 - kodowanie i dekodowanie przez `stringToBuffer` i `bufferToString`.
+- ignorowanie `pof_settings_ui_state_v1` w listenerach storage i podczas normalizacji snapshotow.
 
 ### Acceptance
 
@@ -157,6 +161,12 @@ Zrobic bootstrap i push danych z telefonu do zegarka.
 - encode/decode message envelopes,
 - replay `pendingHistoryQueue`,
 - walidacja rewizji i fallback na uszkodzony payload.
+
+### Najblizszy krok
+
+- podlaczyc `app-side/index.js` do rzeczywistego bootstrap flow i wysylania snapshotow,
+- przestawic watch router z lokalnego seed preview na katalog przychodzacy z telefonu,
+- utrzymac `npm test` i `zeus build` w stanie zielonym po kazdej iteracji.
 
 ## Etap 5 - watch browse i recipe engine
 
@@ -289,3 +299,4 @@ Zweryfikowac, czy `AppService` i `createSysTimer()` sa warte rozwijania po v1 co
 - Zeus target-based scaffold potrzebuje ikon pod `assets/<target>.<shape>/icon.png`.
 - `setting/index.js` zostal dodany jako JS shim do kodu Settings App, bo sam `index.jsx` nie byl wystarczajacym entrypointem dla builda.
 - Obecny watch state jest tylko scaffoldem in-memory i ma zostac zastapiony docelowym storage-backed flow w dalszych etapach.
+- `pof_settings_ui_state_v1` jest kluczem pomocniczym Settings App i nie nalezy do kanonicznego modelu sync.

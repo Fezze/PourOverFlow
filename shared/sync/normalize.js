@@ -1,39 +1,24 @@
 import { getSupportedTools } from "../constants/tool-catalog";
-import {
-  createScaffoldRecipeSnapshot,
-  createScaffoldRecipeSummaryList
-} from "../domain/schema";
+import { buildRecipeSnapshotsById } from "../storage/phone-store";
 
-export function buildStageTwoToolCatalogSnapshot() {
+export function buildPhoneToolCatalogSnapshot(phoneSnapshot) {
   return {
-    toolCatalogRevision: 1,
+    toolCatalogRevision: phoneSnapshot.syncMeta.toolCatalogRevision,
     tools: getSupportedTools()
   };
 }
 
-export function buildStageTwoCatalogSnapshot() {
-  const recipesByTool = {};
-  const recipeSnapshotsById = {};
-
-  getSupportedTools().forEach((tool) => {
-    const recipeSummaries = createScaffoldRecipeSummaryList(tool.toolId);
-    recipesByTool[tool.toolId] = recipeSummaries;
-
-    recipeSummaries.forEach((recipeSummary) => {
-      recipeSnapshotsById[recipeSummary.recipeId] = createScaffoldRecipeSnapshot(recipeSummary);
-    });
-  });
-
+export function buildPhoneCatalogSnapshot(settingsStorage, phoneSnapshot) {
   return {
-    recipeCatalogRevision: 0,
-    recipesByTool,
-    recipeSnapshotsById
+    recipeCatalogRevision: phoneSnapshot.syncMeta.recipeCatalogRevision,
+    recipesByTool: phoneSnapshot.recipesByTool,
+    recipeSnapshotsById: buildRecipeSnapshotsById(settingsStorage, phoneSnapshot.recipeIndex)
   };
 }
 
-export function buildStageTwoHistorySnapshot(lastResult) {
+export function buildPhoneHistorySnapshot(phoneSnapshot) {
   return {
-    historyRevision: lastResult ? 1 : 0,
-    latestResult: lastResult || null
+    historyRevision: phoneSnapshot.syncMeta.historyRevision,
+    latestResult: phoneSnapshot.latestResult || null
   };
 }

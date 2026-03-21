@@ -11,3 +11,13 @@ export const WATCH_STORAGE_KEYS = {
   lastResult: "last_result_v1",
   syncMeta: "sync_meta_v1"
 };
+
+export const SETTINGS_UI_STORAGE_KEY = "pof_settings_ui_state_v1";
+
+export function getPhoneRecipeRecordKey(recipeId) {
+  return `pof_recipe_${recipeId}_v1`;
+}
+
+export function getPhoneHistoryRecordKey(historyId) {
+  return `pof_history_${historyId}_v1`;
+}

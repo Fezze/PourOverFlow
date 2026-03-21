@@ -30,11 +30,11 @@ Page({
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
-        text: "Stage 2 scaffold"
+        text: "Seed preview"
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
-        text: "Start a placeholder session from the recipe list first."
+        text: "Start a seed preview session from the recipe list first."
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...BUTTONS[0],
@@ -60,7 +60,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: tool ? `${tool.label} scaffold session` : "Scaffold session"
+      text: tool ? `${tool.label} seed preview` : "Seed preview"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -87,7 +87,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "The real recipe engine and storage-backed resume arrive in Stages 5 and 6."
+      text: "The real timer engine and storage-backed resume arrive in Stages 5 and 6."
     });
   }
 });

@@ -27,7 +27,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Stage 2 scaffold"
+      text: "Stage 3 seed preview"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -68,7 +68,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "CRUD, sync and persistence land in Stages 3 to 6."
+      text: "Phone CRUD now lives in Settings. Watch sync and persistence land in Stages 4 to 6."
     });
   }
 });

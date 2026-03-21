@@ -175,6 +175,8 @@ Jesli toolchain Zeusa nie wykrywa bezposrednio `setting/index.jsx` jako entrypoi
 
 `setting/index.jsx` ma byc zbudowane na `AppSettingsPage({ state, build(props), ...helpers })`.
 
+Aktualna implementacja Etapu 3 trzyma glowna logike w `setting/app-settings.jsx`, a `setting/index.js` pozostaje cienkim shimem entrypointu dla Zeusa.
+
 Zalecana struktura:
 
 ```js
@@ -185,7 +187,10 @@ AppSettingsPage({
     editingRecipeId: null,
     selectedHistoryId: null,
     draftRecipe: null,
-    syncMeta: null
+    historyDraft: null,
+    syncMeta: null,
+    flashMessage: '',
+    errorMessage: ''
   },
   build(props) {
     this.hydrateFromStorage(props)
@@ -195,6 +200,8 @@ AppSettingsPage({
   renderView(props) {}
 })
 ```
+
+V1 moze dodatkowo persystowac stan UI telefonu pod kluczem `pof_settings_ui_state_v1`, ale ten klucz nie jest elementem modelu sync i nie moze byc traktowany jak rekord domenowy.
 
 ### Dozwolone widoki
 
@@ -367,6 +374,7 @@ Jesli walidacja zawiedzie:
 - Etap 2 ma stworzyc skeleton `app.json` zgodny z tym dokumentem.
 - Etap 3 ma implementowac `setting/` zgodnie z tym kontraktem, bez wymyslania nowej architektury formularzy.
 - Etap 3 ma seedowac recipe library zgodnie z [05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
+- Etap 4 ma zachowac kontrakt widokow i formularzy, ale podmienic zrodlo danych watch runtime z lokalnego preview na snapshoty pochodzace z telefonu.
 
 ## Rzeczy swiadomie odlozone
 

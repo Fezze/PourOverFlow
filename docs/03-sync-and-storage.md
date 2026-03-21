@@ -32,6 +32,7 @@ Zegarek przechowuje tylko dane operacyjne:
 | `pof_history_index_v1` | `HistoryIndexEntry[]` | summary historii |
 | `pof_history_<id>_v1` | `HistoryEntry` | pelny rekord historii |
 | `pof_sync_meta_v1` | `PhoneSyncMeta` | rewizje i stan synchronizacji |
+| `pof_settings_ui_state_v1` | `SettingsUiState` | pomocniczy stan Settings App, niekanoniczny dla sync |
 
 ## Klucze storage po stronie zegarka
 
@@ -120,6 +121,8 @@ interface WatchSyncMeta {
 
 Seed ma byc idempotentny. Kolejne uruchomienia nie nadpisuja danych usera.
 
+`pof_settings_ui_state_v1` nie bierze udzialu w seedzie danych domenowych. To tylko stan UI telefonu.
+
 ## Bootstrap flow
 
 ### Watch start
@@ -139,6 +142,8 @@ Seed ma byc idempotentny. Kolejne uruchomienia nie nadpisuja danych usera.
 3. `PUSH_HISTORY_SNAPSHOT`
 
 To upraszcza watch bootstrap i walidacje `toolId`.
+
+Listener `settingsStorage` w `app-side/` ma ignorowac zmiany klucza `pof_settings_ui_state_v1`, zeby drafty i przejscia widokow Settings App nie wyzwalaly falszywych refreshy sync.
 
 ## Kontrakty wiadomosci
 

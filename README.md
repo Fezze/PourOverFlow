@@ -4,13 +4,13 @@ PourOverFlow to planowana aplikacja Zepp OS do prowadzenia uzytkownika przez rec
 
 ## Aktualny status
 
-Repo ma juz zrealizowany Etap 2. Istnieje minimalny scaffold Zepp app z przechodzacym `zeus build`, stronami watch, `setting/`, `app-side/`, wspoldzielonymi modulami i placeholderowymi assetami. Logika domenowa, CRUD receptur, prawdziwy sync i trwala persystencja sa nadal przed nami.
+Repo ma juz zrealizowany Etap 3. Istnieje scaffold Zepp app z przechodzacym `zeus build`, seed library, kanoniczny phone storage `index + records`, prawdziwy CRUD receptur w `setting/`, edycja notatek historii i podstawowe testy logiki. Przed nami pozostaje runtime sync do zegarka, storage-backed watch cache i kolejne etapy watch engine.
 
 ## Co ma zrobic produkt
 
 - Na zegarku: `tool -> recipe -> active brew`
 - W trakcie sesji: timer kroku, timer calej sesji, kroki reczne typu `Next`, feedback haptyczny i opcjonalnie audio
-- Po stronie telefonu: pelny CRUD receptur i historii
+- Po stronie telefonu: pelny CRUD receptur i edycja notatek historii
 - Synchronizacja: `setting/ -> app-side/ -> messaging.peerSocket -> Device App`
 - Resume: best-effort `resume`, a nie gwarantowany pelny background engine
 
@@ -50,15 +50,14 @@ Repo ma juz zrealizowany Etap 2. Istnieje minimalny scaffold Zepp app z przechod
 
 ## Zakres etapu nastepnego
 
-Nastepny praktyczny etap to Etap 3 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): uruchomienie kanonicznej warstwy danych po stronie telefonu, seed recipe library i prawdziwy CRUD w `setting/`.
+Nastepny praktyczny etap to Etap 4 z [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): runtime sync `setting/ -> app-side/ -> messaging.peerSocket -> watch`.
 
 ## Czego nie ma jeszcze w repo
 
-- prawdziwego CRUD receptur i historii,
-- seed recipes zapisanych do storage,
 - runtime messaging przez `messaging.peerSocket`,
 - storage-backed watch cache i resume,
-- pelnego engine'u receptur i feedbacku runtime.
+- pelnego engine'u receptur i feedbacku runtime,
+- watch browse opartego o zsynchronizowany katalog telefonu zamiast lokalnego seed preview.
 
 ## Wazne ograniczenia techniczne
 

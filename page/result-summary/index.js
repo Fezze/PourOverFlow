@@ -23,7 +23,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "Stage 2 scaffold"
+      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "Seed preview"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -34,7 +34,7 @@ Page({
             `Elapsed: ${Math.round(lastResult.elapsedMs / 1000)}s`,
             lastResult.summary
           ].join("\n")
-        : "Run a scaffold brew to create a placeholder result."
+        : "Run a seed preview brew to create a temporary result."
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
@@ -52,7 +52,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Phone-side history sync and notes arrive in Stages 3 and 4."
+      text: "Phone-side CRUD is live. History sync and real last-result handoff arrive in Stage 4."
     });
   }
 });
