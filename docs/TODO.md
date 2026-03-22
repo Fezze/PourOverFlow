@@ -261,8 +261,8 @@ Make sure v1 behaves sensibly after interruption.
 - done: simulator deployment was confirmed through `last_app_info.json`, the deployed `PourOverFlow20001` app folder, and `renderer.log` `side-service status:opened` entries on 2026-03-22,
 - done: the manifest now includes `data:os.device.info`, and `shared/watch/layouts.js` keeps a safe fallback size so a device-info permission issue does not immediately crash first paint,
 - done: a later simulator pass confirmed that `page/home/index.js` reached full widget render successfully; `ui pause` alone was not proof of a home-page render crash,
-- follow-up: simulator console shows `Failed to send watch sync envelope TypeError: not a function` during watch bootstrap from `shared/watch/sync-bridge.js`; verify the actual `@zos/ble` send API shape for the `API 4.0` target and adjust the bridge implementation before relying on simulator sync behavior,
-- follow-up: automatic startup bootstrap is temporarily disabled in `primeWatchSyncBridge()` while the simulator-side `@zos/ble.send` failure is under investigation; restore safe best-effort startup bootstrap after the bridge path is verified,
+- done: automatic startup bootstrap is restored for real hardware, while `shared/watch/sync-bridge.js` now skips automatic bootstrap only when a simulator battery heuristic (`Battery().getCurrent() === 0`) is detected,
+- follow-up: simulator console previously showed `Failed to send watch sync envelope TypeError: not a function` during watch bootstrap from `shared/watch/sync-bridge.js`; verify the actual `@zos/ble` send API shape for the `API 4.0` target and replace the simulator-only heuristic with a more authoritative transport check if possible,
 - remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
 - remaining: add more lifecycle-style mocked runtime coverage beyond pure reducer tests.
 

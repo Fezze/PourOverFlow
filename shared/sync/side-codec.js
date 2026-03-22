@@ -1,3 +1,4 @@
+import { extractAppBridgePayload } from "./bridge-frame.js";
 import { fromSyncEnvelopeJson } from "./decode.js";
 import { toSyncEnvelopeJson } from "./encode.js";
 
@@ -39,9 +40,11 @@ export function encodeEnvelopeForPeerSocket(syncEnvelope) {
 }
 
 export function decodeEnvelopeFromPeerSocket(payload) {
-  if (!payload) {
+  const normalizedPayload = extractAppBridgePayload(payload);
+
+  if (!normalizedPayload) {
     return null;
   }
 
-  return fromSyncEnvelopeJson(arrayBufferToString(payload));
+  return fromSyncEnvelopeJson(arrayBufferToString(normalizedPayload));
 }

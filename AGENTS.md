@@ -144,7 +144,7 @@ The first implementation task from the current repo state is Stage 6:
 - A successful simulator push can be confirmed without visual inspection by checking `C:\Users\krzys\AppData\Roaming\simulator\last_app_info.json`, the deployed app folder under `C:\Users\krzys\AppData\Roaming\simulator\apps\PourOverFlow20001`, and recent `side-service` `status:opened` lines in `C:\Users\krzys\AppData\Roaming\simulator\logs\renderer.log`.
 - `shared/watch/layouts.js` now depends on `getDeviceInfo()` together with `data:os.device.info`; keep that permission in the manifest baseline, and keep the fallback path so a permission issue does not immediately crash first paint.
 - In the latest simulator debugging pass, `page/home/index.js` reached full widget render successfully; a simulator-console `ui pause` line alone is not enough evidence that the page crashed during build.
-- Current WIP state: automatic startup bootstrap is temporarily disabled inside `primeWatchSyncBridge()` while the simulator-side `@zos/ble.send` behavior is being debugged. The next agent should restore best-effort automatic bootstrap only after that bridge path is verified again.
+- Current WIP state: automatic startup bootstrap is restored for real hardware, while `shared/watch/sync-bridge.js` skips simulator auto-bootstrap using a battery heuristic (`Battery().getCurrent() === 0`) until the simulator-side `@zos/ble.send` behavior is better understood.
 
 ## When to update documents
 

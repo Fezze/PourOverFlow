@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 
 import { createRecipeSnapshot } from "../shared/domain/schema.js";
 import { createSyncEnvelope, validateSyncEnvelope } from "../shared/sync/contracts.js";
+import { buildAppBridgeDataFrame } from "../shared/sync/bridge-frame.js";
+import {
+  BRIDGE_TRANSPORT_CONFIG,
+  buildChunkedBridgeTransportPayloads,
+  createBridgeTransportState,
+  readBridgeTransportPayload
+} from "../shared/sync/bridge-transport.js";
+import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../shared/sync/device-codec.js";
 import { decodeEnvelopeFromPeerSocket, encodeEnvelopeForPeerSocket } from "../shared/sync/side-codec.js";
 import { SYNC_MESSAGE_TYPES } from "../shared/sync/message-types.js";
 import {
@@ -40,6 +48,78 @@ test("sync envelopes encode and decode through peerSocket codec", () => {
   assert.deepEqual(validateSyncEnvelope(decodedEnvelope), []);
   assert.equal(decodedEnvelope.messageType, SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP);
   assert.equal(decodedEnvelope.payload.knownRecipeCatalogRevision, 2);
+});
+
+test("sync envelopes survive app bridge framing on both watch and phone codecs", () => {
+  const syncEnvelope = createSyncEnvelope(SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP, {
+    knownToolCatalogRevision: 4,
+    knownRecipeCatalogRevision: 5,
+    knownHistoryRevision: 6
+  });
+
+  const framedForPhone = buildAppBridgeDataFrame(encodeEnvelopeForPeerSocket(syncEnvelope), {
+    port2: 77
+  });
+  const decodedOnPhone = decodeEnvelopeFromPeerSocket({
+    data: framedForPhone.buffer
+  });
+
+  assert.deepEqual(validateSyncEnvelope(decodedOnPhone), []);
+  assert.equal(decodedOnPhone.payload.knownHistoryRevision, 6);
+
+  const framedForWatch = buildAppBridgeDataFrame(encodeEnvelopeForBle(syncEnvelope).buffer, {
+    port2: 77
+  });
+  const decodedOnWatch = decodeEnvelopeFromBlePayload(framedForWatch.buffer, framedForWatch.size);
+
+  assert.deepEqual(validateSyncEnvelope(decodedOnWatch), []);
+  assert.equal(decodedOnWatch.payload.knownToolCatalogRevision, 4);
+});
+
+test("bridge transport reassembles large chunked sync envelopes on raw and app-framed paths", () => {
+  const syncEnvelope = createSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT, {
+    recipeCatalogRevision: 99,
+    notes: "x".repeat(BRIDGE_TRANSPORT_CONFIG.maxChunkPayloadSize * 2)
+  });
+  const rawPayload = encodeEnvelopeForPeerSocket(syncEnvelope);
+  const transportFrames = buildChunkedBridgeTransportPayloads(rawPayload, {
+    maxChunkPayloadSize: 512
+  });
+
+  assert.ok(transportFrames.length > 1);
+
+  const sideTransportState = createBridgeTransportState();
+  let sidePayload = null;
+
+  transportFrames.forEach((frameBuffer) => {
+    const transportResult = readBridgeTransportPayload(sideTransportState, frameBuffer);
+    if (transportResult.status === "complete") {
+      sidePayload = transportResult.payload;
+    }
+  });
+
+  assert.ok(sidePayload instanceof ArrayBuffer);
+  const decodedOnPhone = decodeEnvelopeFromPeerSocket(sidePayload);
+  assert.deepEqual(validateSyncEnvelope(decodedOnPhone), []);
+  assert.equal(decodedOnPhone.payload.recipeCatalogRevision, 99);
+
+  const watchTransportState = createBridgeTransportState();
+  let watchPayload = null;
+
+  transportFrames.forEach((frameBuffer) => {
+    const wrappedFrame = buildAppBridgeDataFrame(frameBuffer, {
+      port2: 0
+    });
+    const transportResult = readBridgeTransportPayload(watchTransportState, wrappedFrame.buffer, wrappedFrame.size);
+    if (transportResult.status === "complete") {
+      watchPayload = transportResult.payload;
+    }
+  });
+
+  assert.ok(watchPayload instanceof ArrayBuffer);
+  const decodedOnWatch = decodeEnvelopeFromBlePayload(watchPayload, watchPayload.byteLength);
+  assert.deepEqual(validateSyncEnvelope(decodedOnWatch), []);
+  assert.equal(decodedOnWatch.payload.recipeCatalogRevision, 99);
 });
 
 test("normalize builds full phone bootstrap snapshots from seeded storage", () => {

@@ -1,33 +1,43 @@
-import { bufferToString, stringToBuffer } from "@zos/utils";
-import { fromSyncEnvelopeJson } from "./decode";
-import { toSyncEnvelopeJson } from "./encode";
+import { extractAppBridgePayload } from "./bridge-frame.js";
+import { fromSyncEnvelopeJson } from "./decode.js";
+import { toSyncEnvelopeJson } from "./encode.js";
+
+function encodeUtf8ToArrayBuffer(rawValue) {
+  if (typeof TextEncoder !== "undefined") {
+    return new TextEncoder().encode(rawValue).buffer;
+  }
+
+  const encoded = unescape(encodeURIComponent(rawValue));
+  const bytes = new Uint8Array(encoded.length);
+
+  for (let index = 0; index < encoded.length; index += 1) {
+    bytes[index] = encoded.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+}
+
+function decodeUtf8FromArrayBuffer(buffer) {
+  if (typeof TextDecoder !== "undefined") {
+    return new TextDecoder("utf-8").decode(new Uint8Array(buffer));
+  }
+
+  let encoded = "";
+  const bytes = new Uint8Array(buffer);
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    encoded += String.fromCharCode(bytes[index]);
+  }
+
+  return decodeURIComponent(escape(encoded));
+}
 
 function normalizeIncomingBuffer(data, size) {
-  if (!data) {
-    return null;
-  }
-
-  let buffer = null;
-
-  if (data instanceof ArrayBuffer) {
-    buffer = data;
-  } else if (data.buffer instanceof ArrayBuffer) {
-    buffer = data.buffer;
-  }
-
-  if (!buffer) {
-    return null;
-  }
-
-  if (Number.isFinite(size) && size >= 0 && size < buffer.byteLength) {
-    return buffer.slice(0, size);
-  }
-
-  return buffer;
+  return extractAppBridgePayload(data, size);
 }
 
 export function encodeEnvelopeForBle(syncEnvelope) {
-  const buffer = stringToBuffer(toSyncEnvelopeJson(syncEnvelope));
+  const buffer = encodeUtf8ToArrayBuffer(toSyncEnvelopeJson(syncEnvelope));
 
   return {
     buffer,
@@ -42,5 +52,5 @@ export function decodeEnvelopeFromBlePayload(data, size) {
     return null;
   }
 
-  return fromSyncEnvelopeJson(bufferToString(buffer));
+  return fromSyncEnvelopeJson(decodeUtf8FromArrayBuffer(buffer));
 }

@@ -1,4 +1,3 @@
-import * as messaging from "@zos/messaging";
 import {
   ensurePhoneStorage,
   readPhoneSnapshot,
@@ -13,15 +12,35 @@ import {
   buildPhoneHistorySnapshot,
   buildPhoneToolCatalogSnapshot
 } from "../shared/sync/normalize";
+import {
+  buildChunkedBridgeTransportPayloads,
+  createBridgeTransportState,
+  readBridgeTransportPayload
+} from "../shared/sync/bridge-transport.js";
 
 const STORAGE_PUSH_DEBOUNCE_MS = 150;
+const inboundBridgeTransportState = createBridgeTransportState();
+
+console.log("PourOverFlow app-side module loaded");
 
 function sendEnvelope(syncEnvelope) {
   try {
-    messaging.peerSocket.send(encodeEnvelopeForPeerSocket(syncEnvelope));
+    if (!messaging || !messaging.peerSocket || typeof messaging.peerSocket.send !== "function") {
+      console.log("App-side peerSocket send is unavailable");
+      return false;
+    }
+
+    const payload = encodeEnvelopeForPeerSocket(syncEnvelope);
+    const transportFrames = buildChunkedBridgeTransportPayloads(payload);
+    console.log(
+      `App-side sending sync envelope type=${syncEnvelope.messageType} bytes=${payload ? payload.byteLength : "n/a"} chunks=${transportFrames.length}`
+    );
+    transportFrames.forEach((frameBuffer) => {
+      messaging.peerSocket.send(frameBuffer);
+    });
     return true;
   } catch (error) {
-    console.log("Failed to send phone sync envelope", error);
+    console.log(`Failed to send phone sync envelope type=${syncEnvelope.messageType}`, error);
     return false;
   }
 }
@@ -80,22 +99,50 @@ function createBootstrapPushScheduler() {
   };
 }
 
-AppSideService({
-  onInit() {
+function ensureAppSideRuntime(service) {
+  if (service && service.runtimeReady) {
+    return true;
+  }
+
+  try {
     const settingsStorage = settings.settingsStorage;
     const bootstrapPushScheduler = createBootstrapPushScheduler();
-    this.bootstrapPushScheduler = bootstrapPushScheduler;
+    service.bootstrapPushScheduler = bootstrapPushScheduler;
+    service.settingsStorage = settingsStorage;
     const snapshot = ensurePhoneStorage(settingsStorage);
     console.log(
       `PourOverFlow app-side ready. tools=${snapshot.tools.length} recipes=${snapshot.recipeIndex.length} history=${snapshot.historyIndex.length}`
     );
 
-    messaging.peerSocket.addListener("message", (payload) => {
-      const syncEnvelope = decodeEnvelopeFromPeerSocket(payload);
+    if (!messaging || !messaging.peerSocket || typeof messaging.peerSocket.addListener !== "function") {
+      console.log("App-side peerSocket listener is unavailable");
+      return false;
+    }
 
-      if (!syncEnvelope) {
+    messaging.peerSocket.addListener("message", (payload) => {
+      console.log(`App-side received peerSocket payload bytes=${payload ? payload.byteLength : "n/a"}`);
+      const transportResult = readBridgeTransportPayload(inboundBridgeTransportState, payload);
+
+      if (transportResult.status === "pending") {
+        console.log(
+          `App-side waiting for chunked sync envelope transfer=${transportResult.transferId} chunk=${transportResult.chunkIndex + 1}/${transportResult.chunkCount}`
+        );
         return;
       }
+
+      if (transportResult.status !== "complete") {
+        console.log(`App-side rejected transport payload: ${transportResult.reason}`);
+        return;
+      }
+
+      const syncEnvelope = decodeEnvelopeFromPeerSocket(transportResult.payload);
+
+      if (!syncEnvelope) {
+        console.log("App-side failed to decode peerSocket payload");
+        return;
+      }
+
+      console.log(`App-side decoded sync envelope type=${syncEnvelope.messageType}`);
 
       if (syncEnvelope.messageType === SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP) {
         bootstrapPushScheduler.flush(settingsStorage, syncEnvelope.requestId);
@@ -137,8 +184,27 @@ AppSideService({
       );
       bootstrapPushScheduler.schedule(settingsStorage);
     });
+
+    service.runtimeReady = true;
+    return true;
+  } catch (error) {
+    console.log("PourOverFlow app-side runtime setup failed", error);
+    if (error && error.stack) {
+      console.log(error.stack);
+    }
+    return false;
+  }
+}
+
+AppSideService({
+  onInit() {
+    console.log("PourOverFlow app-side onInit");
+    ensureAppSideRuntime(this);
   },
-  onRun() {},
+  onRun() {
+    console.log("PourOverFlow app-side onRun");
+    ensureAppSideRuntime(this);
+  },
   onDestroy() {
     if (this.bootstrapPushScheduler) {
       this.bootstrapPushScheduler.destroy();
