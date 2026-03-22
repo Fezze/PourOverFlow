@@ -8,6 +8,7 @@ import {
   goToResultSummary,
   goToToolList,
   refreshPhoneSnapshot,
+  reconcileActiveSessionOnEntry,
   retryPendingHistorySync,
   resumeActiveSession
 } from "../../shared/watch/router";
@@ -29,6 +30,12 @@ Page({
     }
   },
   build() {
+    const reconcileResult = reconcileActiveSessionOnEntry();
+
+    if (reconcileResult.finalized) {
+      return;
+    }
+
     const {
       activeSession,
       catalogReady,

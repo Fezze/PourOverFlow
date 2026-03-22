@@ -7,8 +7,8 @@ This file is a repo-level instruction set for the next AI agent. Treat it as hig
 ## Repo status
 
 - The repo has Stages 3, 4, and 5 completed.
-- There is a Zepp app scaffold, a seed library, canonical phone storage using `index + records`, real CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, a more production-shaped session reducer, a best-effort feedback layer, and baseline logic plus sync tests.
-- The current work scope is Stage 6: resume, offline behavior, and harder validation.
+- There is a Zepp app scaffold, a seed library, canonical phone storage using `index + records`, real CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, a best-effort feedback layer, and baseline logic plus sync tests.
+- The current work scope is late Stage 6: real-device validation, lifecycle hardening, and follow-up cleanup.
 - This repo is a Zepp OS project, so any task involving implementation, architecture, debugging, or validation must use the `zepp-miniapp-builder` skill as the default workflow.
 
 ## Project language
@@ -124,8 +124,8 @@ Do not treat the simulator as proof of feedback behavior or screen-off behavior.
 
 The first implementation task from the current repo state is Stage 6:
 
-- enable `setWakeUpRelaunch(true)` and `setPageBrightTime(...)` for the active session,
-- harden resume after restart and after screen sleep,
+- validate `setWakeUpRelaunch(true)` and `setPageBrightTime(...)` on real hardware,
+- verify resume after restart and after screen sleep on a real device,
 - verify `pendingHistoryQueue` replay in an offline -> online scenario,
 - validate haptic and audio feedback on a real device,
 - keep `npm test` and `zeus build` green after every larger change.
@@ -134,9 +134,10 @@ The first implementation task from the current repo state is Stage 6:
 
 - For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under `assets/<target>.<shape>/icon.png`, not only the logical `icon.png` name in `app.json`.
 - The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`.
-- Stage 5 introduced storage-backed `active_session_v1`, but full resume hardening on wake and app return is still not complete.
+- Stage 6 adds timestamp-based resume reconciliation and active-brew display guard handling, but real-device confirmation is still pending.
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
 - Watch browse and result pages already refresh on runtime events when new snapshots arrive, but this is not yet a fully reactive UI system.
+- `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 
 ## When to update documents
 

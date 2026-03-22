@@ -37,12 +37,14 @@ This project must be run in English.
 - watch cache in `LocalStorage` for catalog, latest result, and sync metadata,
 - storage-backed `active_session_v1`,
 - a more production-shaped session reducer with timed and confirm step semantics,
+- timestamp-based active session reconciliation on app entry,
+- active-brew display guard handling for wake-up relaunch and page bright time,
+- debounced storage-driven snapshot pushes in `app-side/`,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer.
 
 ## What is still missing
 
-- resume hardening after restart or screen sleep,
-- `setWakeUpRelaunch(true)` and `setPageBrightTime(...)`,
+- hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
 - mocked Zepp runtime tests and lifecycle / queue replay coverage.
 
@@ -123,7 +125,7 @@ Helper phone key, non-canonical for sync:
 
 ## Nearest goal
 
-Execute Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), which means hardening resume, offline queue replay, and active-session behavior under real watch usage.
+Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), which now mostly means real-device validation of resume, anti-sleep, feedback behavior, and queue replay under real watch usage.
 
 ## TODO and document maintenance
 
@@ -150,3 +152,4 @@ Execute Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md
 - The session reducer is already much closer to the target model, but real resume and screen-sleep behavior still need confirmation in Stage 6.
 - `setting/` uses the helper key `pof_settings_ui_state_v1` to persist view state and drafts. That key must be ignored by `app-side` and future runtime sync.
 - With the current watch UI, lists and summary screens already refresh on runtime events, but this is not yet a fully reactive rendering system.
+- Stage 6 now reconciles active sessions from stored timestamps on app entry and coalesces phone-side storage change pushes, but hardware validation still remains.

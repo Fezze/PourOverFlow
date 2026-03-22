@@ -14,6 +14,8 @@ import {
   buildPhoneToolCatalogSnapshot
 } from "../shared/sync/normalize";
 
+const STORAGE_PUSH_DEBOUNCE_MS = 150;
+
 function sendEnvelope(syncEnvelope) {
   try {
     messaging.peerSocket.send(encodeEnvelopeForPeerSocket(syncEnvelope));
@@ -50,9 +52,39 @@ function pushBootstrapSnapshots(settingsStorage, requestId) {
   );
 }
 
+function createBootstrapPushScheduler() {
+  let pendingTimerId = null;
+
+  function clearPendingTimer() {
+    if (pendingTimerId !== null) {
+      clearTimeout(pendingTimerId);
+      pendingTimerId = null;
+    }
+  }
+
+  return {
+    flush(settingsStorage, requestId) {
+      clearPendingTimer();
+      pushBootstrapSnapshots(settingsStorage, requestId);
+    },
+    schedule(settingsStorage) {
+      clearPendingTimer();
+      pendingTimerId = setTimeout(() => {
+        pendingTimerId = null;
+        pushBootstrapSnapshots(settingsStorage);
+      }, STORAGE_PUSH_DEBOUNCE_MS);
+    },
+    destroy() {
+      clearPendingTimer();
+    }
+  };
+}
+
 AppSideService({
   onInit() {
     const settingsStorage = settings.settingsStorage;
+    const bootstrapPushScheduler = createBootstrapPushScheduler();
+    this.bootstrapPushScheduler = bootstrapPushScheduler;
     const snapshot = ensurePhoneStorage(settingsStorage);
     console.log(
       `PourOverFlow app-side ready. tools=${snapshot.tools.length} recipes=${snapshot.recipeIndex.length} history=${snapshot.historyIndex.length}`
@@ -66,7 +98,7 @@ AppSideService({
       }
 
       if (syncEnvelope.messageType === SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP) {
-        pushBootstrapSnapshots(settingsStorage, syncEnvelope.requestId);
+        bootstrapPushScheduler.flush(settingsStorage, syncEnvelope.requestId);
         return;
       }
 
@@ -90,7 +122,7 @@ AppSideService({
             }
           )
         );
-        pushBootstrapSnapshots(settingsStorage, syncEnvelope.requestId);
+        bootstrapPushScheduler.flush(settingsStorage, syncEnvelope.requestId);
       }
     });
 
@@ -103,9 +135,14 @@ AppSideService({
       console.log(
         `settingsStorage changed: ${key} (tools=${nextSnapshot.tools.length}, recipes=${nextSnapshot.recipeIndex.length}, history=${nextSnapshot.historyIndex.length})`
       );
-      pushBootstrapSnapshots(settingsStorage);
+      bootstrapPushScheduler.schedule(settingsStorage);
     });
   },
   onRun() {},
-  onDestroy() {}
+  onDestroy() {
+    if (this.bootstrapPushScheduler) {
+      this.bootstrapPushScheduler.destroy();
+      this.bootstrapPushScheduler = null;
+    }
+  }
 });

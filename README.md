@@ -4,7 +4,7 @@ PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a w
 
 ## Current status
 
-The repo already has Stages 3, 4, and 5 completed. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, a more production-shaped session reducer, timed step UI, and baseline logic tests.
+The repo already has Stages 3, 4, and 5 completed, and the code-facing part of Stage 6 is now in place. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, and baseline logic tests.
 
 ## Project language
 
@@ -58,14 +58,13 @@ This project is to be run in English.
 
 ## Next stage
 
-The next practical stage is Stage 6 from [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): resume hardening, `setWakeUpRelaunch(true)`, `setPageBrightTime(...)`, offline queue replay, and hard validation on a real device.
+The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): real-device validation of wake-up relaunch, anti-sleep behavior, haptic/audio feedback, and lifecycle edge cases that cannot be proven by simulator or pure tests alone.
 
 ## What is still missing in the repo
 
-- resume hardening after leaving and returning to the app,
-- `setWakeUpRelaunch(true)` and `setPageBrightTime(...)` during an active session,
-- hard validation of haptic and audio feedback on a real device,
-- mocked Zepp runtime coverage for lifecycle and queue replay.
+- hard validation of wake-up relaunch, anti-sleep, haptic, and audio behavior on a real device,
+- fuller mocked Zepp runtime coverage for lifecycle and queue replay,
+- a scalable watch recipe browse pattern for more than two recipes per brewer.
 
 ## Important technical limits
 

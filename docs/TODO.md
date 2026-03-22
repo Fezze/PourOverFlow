@@ -214,6 +214,8 @@ Bring up the main `tool -> recipe -> active brew` flow.
 - done: `brew-active` shows step timer and session timer,
 - done: best-effort feedback layer for haptics and system sounds,
 - done: runtime event refresh for list pages and result summary,
+- follow-up: the current watch recipe list UI exposes only the first two recipes for a brewer; add pagination, scrolling, or another browse pattern before treating watch recipe browse as fully scalable,
+- follow-up: aborted sessions currently mark the in-progress step as completed in history metrics; distinguish interrupted steps from completed steps before relying on `completedSteps` and deviation stats,
 - follow-up: real-device validation of feedback and resume remains in Stage 6.
 
 ## Stage 6 - resume, offline, and hard validation
@@ -230,7 +232,8 @@ Make sure v1 behaves sensibly after interruption.
 - handle `pendingHistoryQueue`,
 - last result summary,
 - fallbacks for empty or corrupted cache,
-- real-device validation of `Buzzer` / `SystemSounds` and silent mode behavior.
+- real-device validation of `Buzzer` / `SystemSounds` and silent mode behavior,
+- consider coalescing or debouncing full snapshot pushes from `app-side` during Settings edits to reduce bridge chatter.
 
 ### Acceptance
 
@@ -244,6 +247,16 @@ Make sure v1 behaves sensibly after interruption.
 - mocked resume,
 - queue replay,
 - real-device tests for screen sleep, haptics, and sound.
+
+### Status
+
+- done: `brew-active` enables wake-up relaunch and extended page bright time through a display guard,
+- done: active sessions are reconciled from persisted timestamps on app entry,
+- done: corrupted `active_session_v1` and `last_result_v1` fall back safely instead of crashing resume paths,
+- done: `app-side` coalesces storage-driven full snapshot pushes with a short debounce,
+- done: pure logic tests cover resume transitions and aborted-session metrics,
+- remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
+- remaining: add more lifecycle-style mocked runtime coverage beyond pure reducer tests.
 
 ## Stage 7 - experimental background reminder spike
 

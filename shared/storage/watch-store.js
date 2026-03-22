@@ -52,6 +52,52 @@ function createDefaultCatalogCache() {
   };
 }
 
+function normalizeActiveSession(activeSession) {
+  if (!activeSession || typeof activeSession !== "object") {
+    return null;
+  }
+
+  if (!activeSession.recipeSnapshot || !Array.isArray(activeSession.recipeSnapshot.steps)) {
+    return null;
+  }
+
+  const steps = activeSession.recipeSnapshot.steps.map((step) => ({ ...step }));
+
+  if (!steps.length) {
+    return null;
+  }
+
+  const currentStepIndex = Number.isInteger(activeSession.currentStepIndex)
+    ? Math.min(Math.max(activeSession.currentStepIndex, 0), steps.length - 1)
+    : 0;
+
+  return {
+    ...activeSession,
+    recipeSnapshot: {
+      ...activeSession.recipeSnapshot,
+      steps
+    },
+    currentStepIndex,
+    completedStepIds: Array.isArray(activeSession.completedStepIds) ? [...activeSession.completedStepIds] : [],
+    stepRunResults: Array.isArray(activeSession.stepRunResults) ? [...activeSession.stepRunResults] : [],
+    elapsedSessionMs: Number.isFinite(activeSession.elapsedSessionMs) ? activeSession.elapsedSessionMs : 0,
+    wakeUpResumeEnabled: activeSession.wakeUpResumeEnabled === true,
+    pageBrightModeEnabled: activeSession.pageBrightModeEnabled === true
+  };
+}
+
+function normalizeLastResult(lastResult) {
+  if (!lastResult || typeof lastResult !== "object") {
+    return null;
+  }
+
+  if (!lastResult.historyId || !lastResult.recipeName) {
+    return null;
+  }
+
+  return { ...lastResult };
+}
+
 function normalizeCatalogCache(catalogCache = {}) {
   const tools =
     Array.isArray(catalogCache.tools) && catalogCache.tools.length ? catalogCache.tools : [...TOOL_CATALOG];
@@ -103,12 +149,22 @@ function getInitialSelectedToolId(catalogCache) {
 function createDefaultRuntimeState() {
   const catalogCache = normalizeCatalogCache(readWatchJson(WATCH_STORAGE_KEYS.catalogCache, createDefaultCatalogCache()));
   const syncMeta = normalizeWatchSyncMeta(readWatchJson(WATCH_STORAGE_KEYS.syncMeta, createDefaultWatchSyncMeta()));
+  const activeSession = normalizeActiveSession(readWatchJson(WATCH_STORAGE_KEYS.activeSession, null));
+  const lastResult = normalizeLastResult(readWatchJson(WATCH_STORAGE_KEYS.lastResult, null));
+
+  if (!activeSession) {
+    removeWatchKey(WATCH_STORAGE_KEYS.activeSession);
+  }
+
+  if (!lastResult) {
+    removeWatchKey(WATCH_STORAGE_KEYS.lastResult);
+  }
 
   return {
     selectedToolId: getInitialSelectedToolId(catalogCache),
     selectedRecipeId: null,
-    activeSession: readWatchJson(WATCH_STORAGE_KEYS.activeSession, null),
-    lastResult: readWatchJson(WATCH_STORAGE_KEYS.lastResult, null),
+    activeSession,
+    lastResult,
     catalogCache,
     syncMeta,
     catalogReady: Number.isFinite(catalogCache.cachedAt) && catalogCache.cachedAt > 0,
@@ -149,9 +205,16 @@ export function readActiveSession() {
 }
 
 export function writeActiveSession(activeSession) {
-  getRuntimeState().activeSession = activeSession;
-  writeWatchJson(WATCH_STORAGE_KEYS.activeSession, activeSession);
-  return activeSession;
+  const nextActiveSession = normalizeActiveSession(activeSession);
+  getRuntimeState().activeSession = nextActiveSession;
+
+  if (nextActiveSession) {
+    writeWatchJson(WATCH_STORAGE_KEYS.activeSession, nextActiveSession);
+  } else {
+    removeWatchKey(WATCH_STORAGE_KEYS.activeSession);
+  }
+
+  return nextActiveSession;
 }
 
 export function clearActiveSession() {
@@ -164,20 +227,21 @@ export function readLastResult() {
 }
 
 export function writeLastResult(lastResult) {
-  getRuntimeState().lastResult = lastResult;
+  const nextLastResult = normalizeLastResult(lastResult);
+  getRuntimeState().lastResult = nextLastResult;
 
-  if (lastResult) {
-    writeWatchJson(WATCH_STORAGE_KEYS.lastResult, lastResult);
+  if (nextLastResult) {
+    writeWatchJson(WATCH_STORAGE_KEYS.lastResult, nextLastResult);
   } else {
     removeWatchKey(WATCH_STORAGE_KEYS.lastResult);
   }
 
   emitRuntimeEvent({
     type: "last_result",
-    value: lastResult
+    value: nextLastResult
   });
 
-  return lastResult;
+  return nextLastResult;
 }
 
 export function readCatalogCache() {

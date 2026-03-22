@@ -6,7 +6,7 @@ import {
   getCurrentSessionStep
 } from "../engine/recipe-engine";
 import { playFeedbackCue } from "../engine/feedback";
-import { advanceSession, abortSession, tickSession } from "../engine/session-reducer";
+import { advanceSession, abortSession, resumeSession, tickSession } from "../engine/session-reducer";
 import { createLastResultSummary } from "../domain/schema";
 import {
   clearActiveSession,
@@ -27,6 +27,7 @@ import {
   writeSelectedRecipeId,
   writeSelectedToolId
 } from "../storage/watch-store";
+import { disableActiveSessionDisplayGuard } from "./display-guard";
 import { flushPendingHistoryQueue, requestBootstrap } from "./sync-bridge";
 
 export const PAGE_URLS = {
@@ -47,6 +48,7 @@ function finalizeFinishedSession(nextSession) {
   const historyEntry = buildHistoryEntryFromSession(nextSession);
   persistCompletedHistoryEntry(historyEntry);
   clearActiveSession();
+  disableActiveSessionDisplayGuard();
   replace({ url: PAGE_URLS.resultSummary });
   return { completed: true, historyEntry };
 }
@@ -139,7 +141,9 @@ export function startRecipe(recipeSummary) {
 }
 
 export function resumeActiveSession() {
-  if (!readActiveSession()) {
+  const resumeResult = reconcileActiveSessionOnEntry();
+
+  if (resumeResult.finalized || !resumeResult.activeSession) {
     return false;
   }
 
@@ -158,6 +162,7 @@ export function discardActiveSessionFromHome() {
   const historyEntry = buildHistoryEntryFromSession(abortedSession);
   persistCompletedHistoryEntry(historyEntry);
   clearActiveSession();
+  disableActiveSessionDisplayGuard();
   replace({ url: PAGE_URLS.home });
   return true;
 }
@@ -216,7 +221,56 @@ export function abortActiveBrew() {
     clearActiveSession();
   }
 
+  disableActiveSessionDisplayGuard();
   replace({ url: PAGE_URLS.home });
+}
+
+export function reconcileActiveSessionOnEntry(now = Date.now()) {
+  const activeSession = readActiveSession();
+
+  if (!activeSession) {
+    return {
+      activeSession: null,
+      finalized: false
+    };
+  }
+
+  const resumedSession = resumeSession(activeSession, { now });
+
+  if (!resumedSession) {
+    clearActiveSession();
+    disableActiveSessionDisplayGuard();
+    return {
+      activeSession: null,
+      finalized: false
+    };
+  }
+
+  if (resumedSession.status === "completed") {
+    finalizeFinishedSession(resumedSession);
+    return {
+      activeSession: null,
+      finalized: true
+    };
+  }
+
+  if (resumedSession.status === "aborted" || resumedSession.status === "expired") {
+    clearActiveSession();
+    disableActiveSessionDisplayGuard();
+    return {
+      activeSession: null,
+      finalized: false
+    };
+  }
+
+  if (JSON.stringify(resumedSession) !== JSON.stringify(activeSession)) {
+    writeActiveSession(resumedSession);
+  }
+
+  return {
+    activeSession: readActiveSession(),
+    finalized: false
+  };
 }
 
 export function getHomeScaffoldState() {

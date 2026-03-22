@@ -30,6 +30,14 @@ function enterStep(activeSession, nextStepIndex, now) {
   };
 }
 
+function updateElapsedSession(activeSession, now) {
+  return {
+    ...activeSession,
+    elapsedSessionMs: Math.max(0, now - activeSession.sessionStartedAt),
+    lastPersistedAt: now
+  };
+}
+
 function buildStepRunResult(activeSession, step, now, confirmedManually) {
   return {
     stepId: step.stepId,
@@ -144,17 +152,86 @@ export function abortSession(activeSession, options = {}) {
   }
 
   const now = Number.isFinite(options.now) ? options.now : Date.now();
-  const currentStep = activeSession.recipeSnapshot.steps[activeSession.currentStepIndex];
-  const completedSession = currentStep
-    ? markCurrentStepCompleted(activeSession, now, true)
-    : activeSession;
 
   return {
-    ...completedSession,
+    ...updateElapsedSession(activeSession, now),
     status: "aborted",
     sessionEndedAt: now,
+    expectedStepEndAt: undefined
+  };
+}
+
+export function resumeSession(activeSession, options = {}) {
+  if (!activeSession || !activeSession.recipeSnapshot || !Array.isArray(activeSession.recipeSnapshot.steps)) {
+    return null;
+  }
+
+  const now = Number.isFinite(options.now) ? options.now : Date.now();
+  const maxIterations = Math.max(1, activeSession.recipeSnapshot.steps.length + 1);
+  let nextSession = updateElapsedSession(activeSession, now);
+
+  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+    const currentStep = nextSession.recipeSnapshot.steps[nextSession.currentStepIndex];
+
+    if (!currentStep) {
+      return {
+        ...nextSession,
+        status: "expired",
+        sessionEndedAt: now,
+        expectedStepEndAt: undefined
+      };
+    }
+
+    if (!isTimedStep(currentStep)) {
+      return {
+        ...nextSession,
+        status: "waiting_for_confirm",
+        expectedStepEndAt: undefined,
+        elapsedSessionMs: Math.max(0, now - nextSession.sessionStartedAt),
+        lastPersistedAt: now
+      };
+    }
+
+    const expectedStepEndAt = Number.isFinite(nextSession.expectedStepEndAt)
+      ? nextSession.expectedStepEndAt
+      : nextSession.currentStepStartedAt + (currentStep.durationMs || 0);
+
+    if (now < expectedStepEndAt) {
+      return {
+        ...nextSession,
+        status: "running",
+        expectedStepEndAt,
+        elapsedSessionMs: Math.max(0, now - nextSession.sessionStartedAt),
+        lastPersistedAt: now
+      };
+    }
+
+    if (currentStep.requiresConfirm) {
+      return {
+        ...nextSession,
+        status: "waiting_for_confirm",
+        expectedStepEndAt,
+        elapsedSessionMs: Math.max(0, now - nextSession.sessionStartedAt),
+        lastPersistedAt: now
+      };
+    }
+
+    nextSession = advanceSession(nextSession, {
+      now: expectedStepEndAt,
+      confirmedManually: false
+    });
+
+    if (!nextSession || nextSession.status === "completed") {
+      return nextSession;
+    }
+  }
+
+  return {
+    ...nextSession,
+    status: "expired",
+    sessionEndedAt: now,
     expectedStepEndAt: undefined,
-    elapsedSessionMs: now - activeSession.sessionStartedAt,
+    elapsedSessionMs: Math.max(0, now - nextSession.sessionStartedAt),
     lastPersistedAt: now
   };
 }

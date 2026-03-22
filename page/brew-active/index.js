@@ -16,8 +16,13 @@ import {
   abortActiveBrew,
   advanceOrCompleteActiveSession,
   goHome,
+  reconcileActiveSessionOnEntry,
   tickActiveSession
 } from "../../shared/watch/router";
+import {
+  disableActiveSessionDisplayGuard,
+  enableActiveSessionDisplayGuard
+} from "../../shared/watch/display-guard";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -103,11 +108,18 @@ Page({
     }
   },
   build() {
-    const activeSession = readActiveSession();
+    const reconcileResult = reconcileActiveSessionOnEntry();
+
+    if (reconcileResult.finalized) {
+      return;
+    }
+
+    const activeSession = reconcileResult.activeSession || readActiveSession();
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
 
     if (!activeSession) {
+      disableActiveSessionDisplayGuard();
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...TITLE_TEXT,
         text: "No active brew"
@@ -129,10 +141,12 @@ Page({
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
-        text: "Stage 5 persists active sessions. Resume hardening lands in the next stage."
+        text: "Stage 6 resume hardening is enabled. Real-device wake and feedback validation still remains."
       });
       return;
     }
+
+    enableActiveSessionDisplayGuard(activeSession);
 
     const currentStep = getCurrentSessionStep(activeSession);
     const tool = getToolById(activeSession.toolId);

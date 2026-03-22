@@ -22,10 +22,12 @@ The watch stores operational data only:
 - latest result,
 - sync metadata together with a queue of unsynced history entries.
 
-Implementation state after Stage 5:
+Implementation state after Stage 6 code implementation:
 
 - `catalog_cache_v1`, `last_result_v1`, `sync_meta_v1`, and `active_session_v1` are already persisted locally on the watch,
-- resume hardening for screen sleep and wake remains a Stage 6 follow-up.
+- active sessions are reconciled from timestamps on app entry before new phone bootstrap is required,
+- phone-side storage-driven bootstrap pushes are coalesced with a short debounce,
+- real-device validation for wake, anti-sleep, and feedback behavior still remains a Stage 6 follow-up.
 
 ## Phone-side storage keys
 
@@ -315,7 +317,7 @@ This is intentional. The active session lives on its own snapshot.
 
 ## Resume policy
 
-Eventually, resume should depend on `active_session_v1`, not on sync from the phone. After Stage 5, the session itself is already storage-backed, but hard behavior during sleep and wake still needs Stage 6 work.
+Resume should depend on `active_session_v1`, not on sync from the phone. Stage 6 now reconciles session state from persisted timestamps before asking the phone for fresh bootstrap data, but real-device confirmation is still required.
 
 During resume:
 
@@ -334,6 +336,7 @@ During resume:
 ### Corrupted cache
 
 - if `catalog_cache_v1` is unreadable, the watch should show an empty catalog and a `sync needed` state,
+- if `active_session_v1` or `last_result_v1` is corrupted, the watch should clear the bad key and continue safely,
 - the app must not crash.
 
 ### Revision mismatch

@@ -144,10 +144,11 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - on `Abort`,
 - on `Complete`.
 
-Implementation state after Stage 5:
+Implementation state after Stage 6 code implementation:
 
 - storage-backed `active_session_v1` is already implemented,
-- further resume hardening for sleep and wake remains in Stage 6.
+- timestamp-based resume reconciliation is implemented on app entry,
+- real-device wake and anti-sleep validation still remains in Stage 6.
 
 ## Watch flow 6 - resume after sleep or app return
 
@@ -161,6 +162,11 @@ Restore a sensible state without pretending a full background engine exists.
 - if the current step was timed, calculate elapsed time from `expectedStepEndAt`,
 - if the timer already passed, the step should move into completed state and immediately advance to the next step or to waiting for `Next`,
 - the whole process must work without contacting the phone first.
+
+### Implementation state
+
+- Stage 6 reconciles persisted sessions on app entry before rendering the resume gate or active brew page,
+- if the session auto-completes during reconciliation, the watch writes the result locally, queues sync, clears `active_session_v1`, and routes to `result-summary`.
 
 ### What not to do
 
