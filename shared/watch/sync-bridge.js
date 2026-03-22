@@ -1,4 +1,11 @@
-import { addListener, connectStatus, createConnect, disConnect, removeListener, send } from "@zos/ble";
+import {
+  addListener,
+  connectStatus,
+  createConnect,
+  disConnect,
+  removeListener,
+  send as bleSend
+} from "@zos/ble";
 import {
   ackPendingHistoryEntry,
   applyCatalogSnapshot,
@@ -14,14 +21,20 @@ import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../sync/devi
 import { SYNC_MESSAGE_TYPES } from "../sync/message-types";
 
 let isInitialized = false;
+let hasPrimedRuntimeSync = false;
 
 function sendEnvelope(syncEnvelope) {
   const { buffer, size } = encodeEnvelopeForBle(syncEnvelope);
-  send(buffer, size);
+
+  if (typeof bleSend !== "function") {
+    throw new TypeError("BLE send is unavailable in the current runtime");
+  }
+
+  bleSend(buffer, size);
 }
 
 function safeSendEnvelope(syncEnvelope) {
-  if (!isWatchConnected()) {
+  if (!isWatchConnected() || typeof bleSend !== "function") {
     return false;
   }
 
@@ -60,9 +73,10 @@ function handleIncomingMessage(index, data, size) {
 }
 
 function handleConnectionStatus(status) {
-  setConnectionStatus(status);
+  const connected = Boolean(status) && typeof bleSend === "function";
+  setConnectionStatus(connected);
 
-  if (!status) {
+  if (!connected) {
     return;
   }
 
@@ -75,14 +89,14 @@ export function initWatchSyncBridge() {
     return;
   }
 
-  createConnect(handleIncomingMessage);
-  addListener(handleConnectionStatus);
-  isInitialized = true;
-  setConnectionStatus(connectStatus());
-
-  if (connectStatus()) {
-    requestBootstrap();
-    flushPendingHistoryQueue();
+  try {
+    createConnect(handleIncomingMessage);
+    addListener(handleConnectionStatus);
+    isInitialized = true;
+    setConnectionStatus(Boolean(connectStatus()) && typeof bleSend === "function");
+  } catch (error) {
+    console.log("Failed to initialize watch sync bridge", error);
+    setConnectionStatus(false);
   }
 }
 
@@ -95,6 +109,21 @@ export function destroyWatchSyncBridge() {
   disConnect();
   setConnectionStatus(false);
   isInitialized = false;
+  hasPrimedRuntimeSync = false;
+}
+
+export function primeWatchSyncBridge() {
+  initWatchSyncBridge();
+
+  if (hasPrimedRuntimeSync || !isWatchConnected()) {
+    return false;
+  }
+
+  // Temporary Stage 6 debug posture:
+  // keep first paint independent from an immediate bootstrap send while the
+  // simulator-side @zos/ble.send path is being debugged.
+  hasPrimedRuntimeSync = true;
+  return true;
 }
 
 export function requestBootstrap() {

@@ -48,6 +48,7 @@ Stage 2 implementation should start from this outline:
     "description": "Manual coffee brewing flow for Zepp OS"
   },
   "permissions": [
+    "data:os.device.info",
     "device:os.local_storage"
   ],
   "runtime": {
@@ -103,6 +104,7 @@ Stage 2 implementation should start from this outline:
 
 - `appId` is a placeholder to replace later if the project is registered under a concrete account.
 - `vender` must remain ASCII.
+- Keep `data:os.device.info` when the watch layout layer uses `getDeviceInfo()` for runtime sizing.
 - In the first scaffold, do not force `runtime.type`, because official Zeus `os4.0` templates do not require it for a passing build.
 - Do not add `designWidth` in the first scaffold.
 - Do not add `app-service`, `secondary-widget`, `app-widget`, `data-widget`, or BLE permissions.

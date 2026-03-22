@@ -2,7 +2,35 @@ import * as hmUI from "@zos/ui";
 import { getDeviceInfo } from "@zos/device";
 import { px } from "@zos/utils";
 
-const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = getDeviceInfo();
+const DEFAULT_LAYOUT_SIZE = {
+  width: 480,
+  height: 480
+};
+
+function readLayoutDeviceSize() {
+  try {
+    const deviceInfo = getDeviceInfo();
+
+    if (
+      deviceInfo &&
+      Number.isFinite(deviceInfo.width) &&
+      deviceInfo.width > 0 &&
+      Number.isFinite(deviceInfo.height) &&
+      deviceInfo.height > 0
+    ) {
+      return {
+        width: deviceInfo.width,
+        height: deviceInfo.height
+      };
+    }
+  } catch (error) {
+    console.log("Falling back to default layout size", error);
+  }
+
+  return { ...DEFAULT_LAYOUT_SIZE };
+}
+
+const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = readLayoutDeviceSize();
 
 const SHARED_COLORS = {
   background: 0x101214,

@@ -13,6 +13,7 @@
     "description": "Manual coffee brewing flow for Zepp OS"
   },
   "permissions": [
+    "data:os.device.info",
     "device:os.local_storage"
   ],
   "runtime": {

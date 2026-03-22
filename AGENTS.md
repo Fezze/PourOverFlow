@@ -140,6 +140,11 @@ The first implementation task from the current repo state is Stage 6:
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 - In local simulator workflows, `zeus dev` may push the app more reliably than bridge `install`; if bridge `install` appears to do nothing in the simulator, prefer `zeus dev` for deployment and keep bridge for connection/debug tasks.
 - Zeus Bridge may prompt for explicit target selection when more than one online simulator or device is visible; picking the intended target such as `Balance 2` is expected behavior, not a failure case.
+- `zeus dev` may also prompt for explicit device selection with text such as `Which device would you like to preview?`; on this repo, `Amazfit Balance 2` was a valid target for simulator deployment.
+- A successful simulator push can be confirmed without visual inspection by checking `C:\Users\krzys\AppData\Roaming\simulator\last_app_info.json`, the deployed app folder under `C:\Users\krzys\AppData\Roaming\simulator\apps\PourOverFlow20001`, and recent `side-service` `status:opened` lines in `C:\Users\krzys\AppData\Roaming\simulator\logs\renderer.log`.
+- `shared/watch/layouts.js` now depends on `getDeviceInfo()` together with `data:os.device.info`; keep that permission in the manifest baseline, and keep the fallback path so a permission issue does not immediately crash first paint.
+- In the latest simulator debugging pass, `page/home/index.js` reached full widget render successfully; a simulator-console `ui pause` line alone is not enough evidence that the page crashed during build.
+- Current WIP state: automatic startup bootstrap is temporarily disabled inside `primeWatchSyncBridge()` while the simulator-side `@zos/ble.send` behavior is being debugged. The next agent should restore best-effort automatic bootstrap only after that bridge path is verified again.
 
 ## When to update documents
 

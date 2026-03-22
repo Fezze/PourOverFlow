@@ -13,6 +13,7 @@ import {
   resumeActiveSession
 } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
+import { primeWatchSyncBridge } from "../../shared/watch/sync-bridge";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -30,6 +31,7 @@ Page({
     }
   },
   build() {
+    primeWatchSyncBridge();
     const reconcileResult = reconcileActiveSessionOnEntry();
 
     if (reconcileResult.finalized) {
@@ -47,6 +49,7 @@ Page({
       syncMeta
     } = getHomeScaffoldState();
     const supportedTools = getToolList();
+
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "catalog" || event.type === "last_result") {
         replace({ url: PAGE_URLS.home });

@@ -192,7 +192,10 @@ In `app.json`, the next agent should freeze at least:
 - registration of all `page/*` pages,
 - enabled `setting/` and `app-side/`.
 
-The manifest must include `device:os.local_storage` in the baseline.
+The manifest must include these permissions in the baseline:
+
+- `device:os.local_storage`
+- `data:os.device.info` because shared watch layouts use `getDeviceInfo()` for real screen sizing
 
 Do not add at the start:
 
@@ -208,6 +211,7 @@ Do not add at the start:
 ### Baseline
 
 - `device:os.local_storage` - required
+- `data:os.device.info` - required because shared layouts read `getDeviceInfo()`
 
 ### Best-effort feedback
 
