@@ -255,6 +255,8 @@ Make sure v1 behaves sensibly after interruption.
 - done: corrupted `active_session_v1` and `last_result_v1` fall back safely instead of crashing resume paths,
 - done: `app-side` coalesces storage-driven full snapshot pushes with a short debounce,
 - done: pure logic tests cover resume transitions and aborted-session metrics,
+- note: in local simulator workflows, `zeus dev` may be the more reliable way to push the app than bridge `install`,
+- note: Zeus Bridge may prompt for explicit target selection, such as `Balance 2`, when multiple online targets are available,
 - remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
 - remaining: add more lifecycle-style mocked runtime coverage beyond pure reducer tests.
 

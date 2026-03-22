@@ -153,3 +153,5 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - `setting/` uses the helper key `pof_settings_ui_state_v1` to persist view state and drafts. That key must be ignored by `app-side` and future runtime sync.
 - With the current watch UI, lists and summary screens already refresh on runtime events, but this is not yet a fully reactive rendering system.
 - Stage 6 now reconciles active sessions from stored timestamps on app entry and coalesces phone-side storage change pushes, but hardware validation still remains.
+- In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.
+- Zeus Bridge may ask the user to choose the active online target, for example `Balance 2`, when multiple candidates are available.
