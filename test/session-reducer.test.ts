@@ -110,3 +110,70 @@ test("abortSession keeps the in-progress step out of completed metrics", () => {
   expect(historyEntry.deviationSummary.completedSteps).toBe(0);
   expect(historyEntry.recipeSnapshot.name).toBe(recipeRecord.name);
 });
+
+test("session reducer null and no-op guards stay stable", () => {
+  expect(advanceSession(null)).toBeNull();
+  expect(tickSession(null)).toBeNull();
+  expect(abortSession(null)).toBeNull();
+  expect(resumeSession(null)).toBeNull();
+
+  const recipeRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1711111111111);
+  const activeSession = createActiveBrewSession(recipeRecord, { now: 1711111111111 });
+
+  expect(tickSession(activeSession, { now: 1711111112111 })).toBe(activeSession);
+  expect(
+    tickSession(
+      {
+        ...activeSession,
+        currentStepIndex: recipeRecord.steps.length
+      },
+      { now: 1711111112111 }
+    )
+  ).toMatchObject({
+    currentStepIndex: recipeRecord.steps.length
+  });
+});
+
+test("advanceSession expires invalid step pointers and resumeSession handles invalid or pending states", () => {
+  const recipeRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1711111111111);
+  const activeSession = createActiveBrewSession(recipeRecord, { now: 1711111111111 });
+
+  const expiredAdvance = advanceSession(
+    {
+      ...activeSession,
+      currentStepIndex: recipeRecord.steps.length
+    },
+    { now: 1711111113111 }
+  );
+  expect(expiredAdvance.status).toBe("expired");
+
+  expect(
+    resumeSession(
+      {
+        ...activeSession,
+        recipeSnapshot: null
+      },
+      { now: 1711111113111 }
+    )
+  ).toBeNull();
+
+  expect(
+    resumeSession(
+      {
+        ...activeSession,
+        currentStepIndex: recipeRecord.steps.length
+      },
+      { now: 1711111113111 }
+    ).status
+  ).toBe("expired");
+
+  const timedSession = advanceSession(activeSession, { now: 1711111112111 });
+  expect(
+    resumeSession(timedSession, {
+      now: timedSession.currentStepStartedAt + 1_000
+    })
+  ).toMatchObject({
+    currentStepIndex: 1,
+    status: "running"
+  });
+});

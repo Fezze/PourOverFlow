@@ -135,6 +135,10 @@ test("duplicateRecipeRecord creates a separate user recipe and bumps the recipe 
     source: "user"
   });
   expect(readPhoneSyncMeta(settingsStorage).recipeCatalogRevision).toBe(2);
+  expect(duplicateRecipeRecord(settingsStorage, "missing_recipe")).toEqual({
+    ok: false,
+    issues: ["Recipe record not found."]
+  });
 });
 
 test("deleteRecipeRecord keeps history entries intact", () => {
@@ -234,4 +238,60 @@ test("safeParseJson logs invalid JSON once but stays quiet for empty values", ()
   } finally {
     consoleSpy.mockRestore();
   }
+});
+
+test("deleteRecipeRecord and updateHistoryEntryFeedback fail cleanly for missing records", () => {
+  const settingsStorage = createMockSettingsStorage();
+  ensurePhoneStorage(settingsStorage);
+
+  expect(deleteRecipeRecord(settingsStorage, "missing_recipe")).toBe(false);
+  expect(updateHistoryEntryFeedback(settingsStorage, "missing_history", { userNote: "Nope" })).toEqual({
+    ok: false,
+    issues: ["History entry not found."]
+  });
+});
+
+test("saveRecipeRecord rejects unsupported tools and updateHistoryEntryFeedback normalizes blank ratings", () => {
+  const settingsStorage = createMockSettingsStorage();
+  ensurePhoneStorage(settingsStorage);
+
+  const invalidSave = saveRecipeRecord(settingsStorage, createValidDraft("tool_unknown"));
+  expect(invalidSave.ok).toBe(false);
+  expect(invalidSave.issues).toContain("Recipe toolId must point at the supported tool catalog.");
+
+  const recipeRecord = readRecipeRecord(settingsStorage, "seed_ap_daily_clean");
+  const historyEntry = {
+    schemaVersion: 1,
+    historyId: "hist_blank_rating_1711111111111_ab12",
+    sessionId: "sess_blank_rating_1711111111111_ab12",
+    recipeId: recipeRecord.recipeId,
+    toolId: recipeRecord.toolId,
+    recipeSnapshot: createRecipeSnapshot(recipeRecord),
+    status: "completed",
+    startedAt: 1711111111111,
+    endedAt: 1711111112222,
+    elapsedMs: 1111,
+    stepRunResults: [],
+    deviationSummary: {
+      totalDeltaMs: 0,
+      worstStepDeltaMs: 0,
+      completedSteps: recipeRecord.steps.length,
+      totalSteps: recipeRecord.steps.length
+    },
+    syncedFrom: "watch",
+    createdAt: 1711111112222,
+    updatedAt: 1711111112222
+  };
+
+  expect(saveHistoryEntry(settingsStorage, historyEntry).ok).toBe(true);
+  expect(
+    updateHistoryEntryFeedback(settingsStorage, historyEntry.historyId, {
+      userNote: "Rounded cup",
+      userRating: ""
+    }).ok
+  ).toBe(true);
+  expect(readHistoryEntry(settingsStorage, historyEntry.historyId)).toMatchObject({
+    userNote: "Rounded cup"
+  });
+  expect(readHistoryEntry(settingsStorage, historyEntry.historyId)).not.toHaveProperty("userRating");
 });

@@ -51,6 +51,7 @@ This project must be run in English.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
+- Current meaningful coverage baselines after the latest test expansion are `93.30% / 86.05% / 98.25% / 93.19%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
@@ -64,6 +65,7 @@ Playwright coverage here is intentionally limited to the browser module harness 
 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
+- literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `watch-store`, `phone-store`, `validators`, `feedback`, and the browser-harness copies of `session-reducer` and `recipe-engine`,
 - fuller mocked page-shell runtime coverage if widget refresh behavior starts regressing.
 
 ## Read first

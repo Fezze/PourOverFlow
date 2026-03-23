@@ -67,6 +67,7 @@ The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness/`.
+- current meaningful local coverage baselines are `93.30% / 86.05% / 98.25% / 93.19%` for Vitest and `93.63% / 83.05% / 93.95% / 93.63%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in sequence without relying on a wrapper script or CI.
 - `zeus build` remains the required compile gate after larger changes.

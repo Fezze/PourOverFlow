@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __zeusRuntime, deliverBleMessage, resetZeppRuntime, setBleConnected, setLocalStorageState } from "../zeus-runtime/runtime.ts";
 import { getSupportedTools } from "../../shared/constants/tool-catalog.js";
@@ -23,6 +23,8 @@ import { createSyncEnvelope } from "../../shared/sync/contracts.js";
 import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../../shared/sync/device-codec.js";
 import { SYNC_MESSAGE_TYPES } from "../../shared/sync/message-types.js";
 import { WATCH_STORAGE_KEYS } from "../../shared/storage/keys.js";
+import { createActiveBrewSession } from "../../shared/engine/recipe-engine.js";
+import * as sessionReducer from "../../shared/engine/session-reducer.js";
 import {
   getPendingHistoryQueue,
   getRecipesForTool,
@@ -53,8 +55,13 @@ import {
   startRecipe,
   tickActiveSession
 } from "../../shared/watch/router.js";
-import { destroyWatchSyncBridge, initWatchSyncBridge } from "../../shared/watch/sync-bridge.js";
-import { createActiveBrewSession } from "../../shared/engine/recipe-engine.js";
+import {
+  destroyWatchSyncBridge,
+  flushPendingHistoryQueue,
+  initWatchSyncBridge,
+  primeWatchSyncBridge,
+  queueHistoryEntryForSync
+} from "../../shared/watch/sync-bridge.js";
 
 function buildFlowFixture() {
   const recipeRecord = {
@@ -424,6 +431,154 @@ describe("mocked Zepp runtime watch flow", () => {
         })
       ])
     );
+  });
+
+  it("keeps router state unchanged when ticking a still-running timed step", () => {
+    seedCachedCatalog();
+
+    const recipeSummary = getRecipeListForSelectedTool()[0];
+    startRecipe(recipeSummary);
+    advanceOrCompleteActiveSession();
+    __zeusRuntime.router.replace.mockClear();
+
+    const runningSession = readActiveSession();
+    const tickResult = tickActiveSession(runningSession.currentStepStartedAt + 1_000);
+
+    expect(tickResult).toMatchObject({
+      completed: false,
+      activeSession: expect.objectContaining({
+        currentStepIndex: 1,
+        status: "running"
+      })
+    });
+    expect(readActiveSession()).toMatchObject({
+      currentStepIndex: 1,
+      status: "running"
+    });
+    expect(__zeusRuntime.router.replace).not.toHaveBeenCalled();
+  });
+
+  it("finalizes or clears resume paths when the reducer reports completed, expired, or invalid sessions", () => {
+    seedCachedCatalog();
+
+    const recipeSummary = getRecipeListForSelectedTool()[0];
+    startRecipe(recipeSummary);
+    const activeSession = readActiveSession();
+    __zeusRuntime.router.replace.mockClear();
+
+    const completeSpy = vi.spyOn(sessionReducer, "resumeSession").mockReturnValueOnce({
+      ...activeSession,
+      status: "completed",
+      sessionEndedAt: 9_999
+    });
+
+    expect(resumeActiveSession()).toBe(false);
+    expect(readActiveSession()).toBeNull();
+    expect(__zeusRuntime.router.replace).toHaveBeenCalledWith({
+      url: PAGE_URLS.resultSummary
+    });
+    completeSpy.mockRestore();
+
+    startRecipe(recipeSummary);
+    const activeSessionAgain = readActiveSession();
+    const expiredSpy = vi.spyOn(sessionReducer, "resumeSession").mockReturnValueOnce({
+      ...activeSessionAgain,
+      status: "expired",
+      sessionEndedAt: 10_000
+    });
+
+    expect(resumeActiveSession()).toBe(false);
+    expect(readActiveSession()).toBeNull();
+    expiredSpy.mockRestore();
+
+    startRecipe(recipeSummary);
+    const invalidSpy = vi.spyOn(sessionReducer, "resumeSession").mockReturnValueOnce(null);
+
+    expect(resumeActiveSession()).toBe(false);
+    expect(readActiveSession()).toBeNull();
+    invalidSpy.mockRestore();
+  });
+
+  it("keeps sync bridge helper calls safe when offline and ignores unknown incoming messages", () => {
+    seedCachedCatalog();
+
+    expect(primeWatchSyncBridge()).toBe(false);
+    expect(queueHistoryEntryForSync({ historyId: "hist_offline" })).toBe(false);
+    expect(flushPendingHistoryQueue()).toBe(false);
+
+    connectWatchBridge();
+    clearSentBridgeFrames();
+    const unknownEnvelope = new TextEncoder().encode(
+      JSON.stringify({
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        messageType: "UNKNOWN_MESSAGE_TYPE",
+        requestId: "req_unknown",
+        sentAt: 4_000,
+        payload: {
+          ignored: true
+        }
+      })
+    ).buffer;
+    const unknownFrame = buildAppBridgeDataFrame(unknownEnvelope, {
+      port2: 321
+    });
+    deliverBleMessage(unknownFrame.buffer, unknownFrame.size);
+
+    expect(getPendingHistoryQueue()).toEqual([]);
+    expect(readLastResult()).toBeNull();
+  });
+
+  it("survives BLE send failures during shake and bootstrap attempts", () => {
+    seedCachedCatalog();
+    initWatchSyncBridge();
+
+    __zeusRuntime.ble.send.mockImplementation(() => {
+      throw new Error("ble send failed");
+    });
+
+    expect(setBleConnected(true)).toBeUndefined();
+    expect(refreshPhoneSnapshot()).toBe(false);
+    expect(primeWatchSyncBridge()).toBe(false);
+    expect(queueHistoryEntryForSync({ historyId: "hist_send_fail" })).toBe(false);
+  });
+
+  it("ignores partial, invalid, and undecodable inbound bridge payloads", () => {
+    seedCachedCatalog();
+    connectWatchBridge();
+    const initialRecipeCount = getRecipesForTool("tool_aeropress").length;
+
+    const chunkedEnvelope = createSyncEnvelope(
+      SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT,
+      {
+        recipeCatalogRevision: 77,
+        notes: "x".repeat(10_000)
+      },
+      {
+        requestId: "req_partial_chunks",
+        sentAt: 5_000
+      }
+    );
+    const { buffer: chunkedPayload } = encodeEnvelopeForBle(chunkedEnvelope);
+    const chunkFrames = buildChunkedBridgeTransportPayloads(chunkedPayload, {
+      maxChunkPayloadSize: 256
+    });
+
+    const partialChunkFrame = buildAppBridgeDataFrame(chunkFrames[0], { port2: 321 });
+    deliverBleMessage(partialChunkFrame.buffer, partialChunkFrame.size);
+
+    const invalidTransportFrame = buildAppBridgeDataFrame(new Uint8Array([1, 2, 3]).buffer, {
+      port2: 321
+    });
+    deliverBleMessage(invalidTransportFrame.buffer, invalidTransportFrame.size);
+
+    const undecodablePayload = new TextEncoder().encode("{broken").buffer;
+    const undecodableFrame = buildAppBridgeDataFrame(undecodablePayload, {
+      port2: 321
+    });
+    deliverBleMessage(undecodableFrame.buffer, undecodableFrame.size);
+
+    expect(readLastResult()).toBeNull();
+    expect(getRecipesForTool("tool_aeropress")).toHaveLength(initialRecipeCount);
   });
 
   it("keeps the abort and route helpers wired to the expected page transitions", () => {
