@@ -247,6 +247,7 @@ Make sure v1 behaves sensibly after interruption.
 
 - mocked resume,
 - queue replay,
+- Playwright simulator coverage for manual flow runs,
 - real-device tests for screen sleep, haptics, and sound.
 
 ### Status
@@ -261,6 +262,9 @@ Make sure v1 behaves sensibly after interruption.
 - done: pure logic tests cover resume transitions and aborted-session metrics,
 - done: mocked Zepp runtime tests now cover cached watch browse, full brew completion from `RecipeSnapshot`, incoming catalog sync, and pending-history replay with ACK handling,
 - done: Vitest now runs both the pure logic suite and the mocked Zepp runtime suite, and `npm run test:coverage` emits coverage reports,
+- done: shared helper coverage now includes feedback cues, recipe-engine utilities, display guard behavior, runtime event delivery, and router resume / discard / abort flows,
+- done: `npm run test:playwright:coverage` now attaches to a running Zepp simulator through `DevToolsActivePort` and can generate a separate simulator-side V8 coverage report in `coverage/playwright/`,
+- done: `npm run test:playwright:coverage:harness` now gives the same script a no-simulator module-harness mode that imports and executes real browser-safe project modules in a local browser process,
 - note: in local simulator workflows, `zeus dev` may be the more reliable way to push the app than bridge `install`,
 - note: Zeus Bridge may prompt for explicit target selection, such as `Balance 2`, when multiple online targets are available,
 - note: `zeus dev` itself may prompt for explicit preview-device selection, such as `Amazfit Balance 2`, when several simulator targets are installed,
@@ -271,6 +275,8 @@ Make sure v1 behaves sensibly after interruption.
 - follow-up: simulator console previously showed `Failed to send watch sync envelope TypeError: not a function` during watch bootstrap from `shared/watch/sync-bridge.js`; verify the actual `@zos/ble` send API shape for the `API 4.0` target and replace the simulator-only heuristic with a more authoritative transport check if possible,
 - remaining: validate on a real watch that partial slice pushes keep recipe edits responsive and no-phone startup no longer feels blocked,
 - remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
+- remaining: run the Playwright simulator coverage flow against a live simulator session and decide whether its report quality is good enough to keep as a long-term regression tool,
+- remaining: decide whether to expand the Playwright module harness to Zepp-dependent modules via browser stubs for `@zos/*`, or keep it focused on browser-safe shared modules only,
 - remaining: add page-shell mocked runtime coverage for runtime-event refresh and widget rebuild behavior if UI regressions appear.
 
 ## Stage 7 - experimental background reminder spike

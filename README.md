@@ -64,7 +64,12 @@ The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects
 
 - `npm test` runs the full Vitest suite, including the pure logic tests and the mocked Zepp runtime flow tests.
 - `npm run test:coverage` generates Vitest coverage reports in `coverage/`.
+- `npm run test:playwright:coverage -- --duration-ms 15000` attaches to the running Zepp simulator through `DevToolsActivePort` and generates simulator-side Playwright/V8 coverage in `coverage/playwright/simulator/`.
+- `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness/`.
+- `npm run test:playwright:coverage:mock` is kept as a compatibility alias for the same harness run.
 - `zeus build` remains the required compile gate after larger changes.
+
+Playwright coverage in this repo is experimental. The simulator mode measures code that executes in the simulator renderer while the app flow is actually running, so it complements but does not replace Vitest coverage or real-device validation. The harness mode executes real browser-safe project modules in a local browser process, so it is meaningful for shared logic and sync helpers, but it still does not prove Zepp-only runtime behavior.
 
 ## What is still missing in the repo
 

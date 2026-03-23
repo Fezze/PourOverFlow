@@ -48,13 +48,15 @@ This project must be run in English.
 
 - Run `npm test` to execute the full Vitest suite across pure logic and mocked Zepp runtime flow tests.
 - Run `npm run test:coverage` when you want local JS coverage output.
+- Run `npm run test:playwright:coverage -- --duration-ms 15000` when the Zepp simulator is already running and you want renderer-side V8 coverage for a manual simulator flow.
+- Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - Run `zeus build` after larger changes to keep the device package healthy.
+
+Playwright coverage here is not normal web-app coverage. The simulator mode attaches to the simulator's Chromium DevTools endpoint, collects V8 coverage while the watch flow is running, and writes a separate report under `coverage/playwright/simulator/`. The harness mode writes under `coverage/playwright/harness/` and executes real browser-safe project modules through a local HTTP harness page.
 
 ## What is still missing
 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
-- hard feedback validation on a real device,
-- real-device validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
 - fuller mocked page-shell runtime coverage if widget refresh behavior starts regressing.
 
@@ -166,6 +168,8 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - The current sync path is no longer full-bootstrap-only: the phone side now classifies storage changes by slice and answers `REQUEST_BOOTSTRAP` only for stale revisions.
 - Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
+- The repo now also includes an experimental Playwright simulator coverage script under `scripts/playwright-simulator-coverage.mjs`; it depends on a live simulator DevTools endpoint and should be treated as simulator-only instrumentation, not as proof of real-device behavior.
+- The same script now also supports `--module-harness`, which launches a local Chromium-family browser against `test/fixtures/playwright-coverage/module-harness.html` and executes real project-module scenarios for browser-safe shared code.
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.
 - Zeus Bridge may ask the user to choose the active online target, for example `Balance 2`, when multiple candidates are available.
 - `zeus dev` may also ask the user to choose the preview target, for example `Amazfit Balance 2`, when multiple simulator device profiles are available.

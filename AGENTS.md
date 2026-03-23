@@ -150,6 +150,8 @@ The first implementation task from the current repo state is Stage 6:
 - Watch-side bootstrap and queue replay should fail fast when the bridge is disconnected so offline startup stays responsive instead of repeatedly attempting transport.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/`; use it for flow-level watch tests before leaning on the simulator for every regression.
 - `npm test` now runs the unified Vitest suite, and `npm run test:coverage` is the repo-standard JS coverage command.
+- The repo also includes `npm run test:playwright:coverage`, which attaches to the running simulator through `DevToolsActivePort` and writes simulator-side V8 coverage under `coverage/playwright/`; treat it as experimental simulator instrumentation, not as a replacement for Vitest or real-device checks.
+- The same script also supports `npm run test:playwright:coverage:harness`, which opens a local browser harness page and executes real browser-safe project modules for Playwright/V8 coverage without a simulator; keep treating it as complementary to Vitest, not as proof of Zepp-only runtime behavior.
 
 ## When to update documents
 

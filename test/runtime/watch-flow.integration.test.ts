@@ -20,21 +20,29 @@ import {
   isCatalogReady,
   readActiveSession,
   readLastResult,
-  readWatchSyncMeta
+  readWatchSyncMeta,
+  writeActiveSession
 } from "../../shared/storage/watch-store.js";
 import {
+  abortActiveBrew,
+  discardActiveSessionFromHome,
   PAGE_URLS,
   advanceOrCompleteActiveSession,
+  goHome,
+  goToResultSummary,
+  goToToolList,
   getHomeScaffoldState,
   getRecipeListForSelectedTool,
   getToolList,
   refreshPhoneSnapshot,
+  resumeActiveSession,
   retryPendingHistorySync,
   selectTool,
   startRecipe,
   tickActiveSession
 } from "../../shared/watch/router.js";
 import { destroyWatchSyncBridge, initWatchSyncBridge } from "../../shared/watch/sync-bridge.js";
+import { createActiveBrewSession } from "../../shared/engine/recipe-engine.js";
 
 function buildFlowFixture() {
   const recipeRecord = {
@@ -226,6 +234,38 @@ describe("mocked Zepp runtime watch flow", () => {
     });
   });
 
+  it("resumes a persisted active session back into the brew screen", () => {
+    const fixture = seedCachedCatalog();
+    const activeSession = createActiveBrewSession(fixture.recipeSnapshot, { now: 1_000 });
+
+    writeActiveSession(activeSession);
+    __zeusRuntime.router.replace.mockClear();
+
+    expect(resumeActiveSession()).toBe(true);
+    expect(__zeusRuntime.router.replace).toHaveBeenCalledWith({
+      url: PAGE_URLS.brewActive
+    });
+  });
+
+  it("discards an active session from home and stores an aborted summary", () => {
+    seedCachedCatalog();
+
+    const recipeSummary = getRecipeListForSelectedTool()[0];
+    startRecipe(recipeSummary);
+    __zeusRuntime.router.replace.mockClear();
+
+    expect(discardActiveSessionFromHome()).toBe(true);
+    expect(readActiveSession()).toBeNull();
+    expect(readLastResult()).toMatchObject({
+      recipeName: recipeSummary.name,
+      status: "aborted"
+    });
+    expect(getPendingHistoryQueue()).toHaveLength(1);
+    expect(__zeusRuntime.router.replace).toHaveBeenCalledWith({
+      url: PAGE_URLS.home
+    });
+  });
+
   it("applies incoming catalog sync envelopes through the mocked bridge", () => {
     const fixture = buildFlowFixture();
 
@@ -274,6 +314,32 @@ describe("mocked Zepp runtime watch flow", () => {
     expect(readWatchSyncMeta()).toMatchObject({
       historyRevision: 9,
       lastAckedHistoryId: pendingEntry.historyId
+    });
+  });
+
+  it("covers missing-session guards and basic route helpers", () => {
+    expect(startRecipe({
+      recipeId: "missing_recipe",
+      toolId: "tool_aeropress"
+    })).toBe(false);
+    expect(resumeActiveSession()).toBe(false);
+    expect(discardActiveSessionFromHome()).toBe(false);
+    expect(tickActiveSession()).toBeNull();
+    expect(advanceOrCompleteActiveSession()).toBeNull();
+
+    abortActiveBrew();
+    goHome();
+    goToToolList();
+    goToResultSummary();
+
+    expect(__zeusRuntime.router.replace).toHaveBeenCalledWith({
+      url: PAGE_URLS.home
+    });
+    expect(__zeusRuntime.router.push).toHaveBeenCalledWith({
+      url: PAGE_URLS.toolList
+    });
+    expect(__zeusRuntime.router.push).toHaveBeenCalledWith({
+      url: PAGE_URLS.resultSummary
     });
   });
 });
