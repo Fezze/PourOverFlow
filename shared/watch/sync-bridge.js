@@ -44,13 +44,20 @@ function canAttemptBridgeSend() {
   return typeof bleSend === "function";
 }
 
-function markBridgeHandshakeResolved(reason) {
+function isBridgeTransportConnected() {
+  return Boolean(connectStatus()) || isWatchConnected();
+}
+
+function markBridgeHandshakeResolved(reason, options = {}) {
   if (!hasResolvedShake) {
     console.log(`Watch sync handshake resolved via ${reason}: appSidePort=${appSidePort}`);
   }
 
   hasResolvedShake = true;
-  setConnectionStatus(true);
+
+  if (options.markConnected) {
+    setConnectionStatus(true);
+  }
 }
 
 function sendBuffer(buffer, size, label) {
@@ -161,7 +168,7 @@ function handleIncomingMessage(index, data, size) {
   }
 
   if (bridgeFrame && bridgeFrame.type === APP_BRIDGE_MESSAGE_TYPES.SHAKE) {
-    markBridgeHandshakeResolved("remote-shake");
+    markBridgeHandshakeResolved("remote-shake", { markConnected: true });
     console.log(`Watch sync bridge shake received: appSidePort=${appSidePort}`);
     flushStartupSyncIfReady();
     return;
@@ -195,6 +202,7 @@ function handleIncomingMessage(index, data, size) {
     return;
   }
 
+  markBridgeHandshakeResolved("incoming-sync-envelope", { markConnected: true });
   console.log(`Watch sync bridge received type=${syncEnvelope.messageType} index=${index} size=${size}`);
 
   switch (syncEnvelope.messageType) {
@@ -284,7 +292,7 @@ export function primeWatchSyncBridge() {
   shouldBootstrapAfterShake = true;
   shouldFlushQueueAfterShake = true;
 
-  if (!canAttemptBridgeSend()) {
+  if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
     return false;
   }
 
@@ -297,13 +305,18 @@ export function primeWatchSyncBridge() {
 }
 
 export function requestBootstrap() {
-  if (!canAttemptBridgeSend()) {
+  if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
+    console.log(
+      `Skipping watch bootstrap request connected=${isBridgeTransportConnected()} bleSendType=${typeof bleSend}`
+    );
     return false;
   }
 
   if (!hasBridgeHandshake()) {
-    shouldBootstrapAfterShake = true;
     sendShake();
+  }
+
+  if (!hasBridgeHandshake()) {
     return false;
   }
 
@@ -319,13 +332,15 @@ export function requestBootstrap() {
 }
 
 export function queueHistoryEntryForSync(historyEntry) {
-  if (!canAttemptBridgeSend()) {
+  if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
     return false;
   }
 
   if (!hasBridgeHandshake()) {
-    shouldFlushQueueAfterShake = true;
     sendShake();
+  }
+
+  if (!hasBridgeHandshake()) {
     return false;
   }
 
@@ -337,13 +352,15 @@ export function queueHistoryEntryForSync(historyEntry) {
 }
 
 export function flushPendingHistoryQueue() {
-  if (!canAttemptBridgeSend()) {
+  if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
     return false;
   }
 
   if (!hasBridgeHandshake()) {
-    shouldFlushQueueAfterShake = true;
     sendShake();
+  }
+
+  if (!hasBridgeHandshake()) {
     return false;
   }
 

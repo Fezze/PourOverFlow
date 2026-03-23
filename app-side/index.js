@@ -13,6 +13,12 @@ import {
   buildPhoneToolCatalogSnapshot
 } from "../shared/sync/normalize";
 import {
+  getBootstrapResponseSlices,
+  getOrderedPhoneSyncSlices,
+  getStorageChangeSlices,
+  PHONE_SYNC_SLICES
+} from "../shared/sync/phone-sync-plan.js";
+import {
   buildChunkedBridgeTransportPayloads,
   createBridgeTransportState,
   readBridgeTransportPayload
@@ -45,34 +51,65 @@ function sendEnvelope(syncEnvelope) {
   }
 }
 
-function pushBootstrapSnapshots(settingsStorage, requestId) {
-  const phoneSnapshot = readPhoneSnapshot(settingsStorage);
-
-  sendEnvelope(
-    createSyncEnvelope(
-      SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG,
-      buildPhoneToolCatalogSnapshot(phoneSnapshot),
-      { requestId }
-    )
-  );
-  sendEnvelope(
-    createSyncEnvelope(
-      SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT,
-      buildPhoneCatalogSnapshot(settingsStorage, phoneSnapshot),
-      { requestId }
-    )
-  );
-  sendEnvelope(
-    createSyncEnvelope(
-      SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT,
-      buildPhoneHistorySnapshot(phoneSnapshot),
-      { requestId }
-    )
-  );
+function pushSnapshotSlice(settingsStorage, phoneSnapshot, slice, requestId) {
+  switch (slice) {
+    case PHONE_SYNC_SLICES.TOOLS:
+      return sendEnvelope(
+        createSyncEnvelope(
+          SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG,
+          buildPhoneToolCatalogSnapshot(phoneSnapshot),
+          { requestId }
+        )
+      );
+    case PHONE_SYNC_SLICES.CATALOG:
+      return sendEnvelope(
+        createSyncEnvelope(
+          SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT,
+          buildPhoneCatalogSnapshot(settingsStorage, phoneSnapshot),
+          { requestId }
+        )
+      );
+    case PHONE_SYNC_SLICES.HISTORY:
+      return sendEnvelope(
+        createSyncEnvelope(
+          SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT,
+          buildPhoneHistorySnapshot(phoneSnapshot),
+          { requestId }
+        )
+      );
+    default:
+      return false;
+  }
 }
 
-function createBootstrapPushScheduler() {
+function pushSnapshotSlices(settingsStorage, options = {}) {
+  const phoneSnapshot = readPhoneSnapshot(settingsStorage);
+  const orderedSlices = getOrderedPhoneSyncSlices(
+    options.slices || [
+      PHONE_SYNC_SLICES.TOOLS,
+      PHONE_SYNC_SLICES.CATALOG,
+      PHONE_SYNC_SLICES.HISTORY
+    ]
+  );
+
+  if (!orderedSlices.length) {
+    console.log("App-side skipped snapshot push because the watch is already up to date");
+    return false;
+  }
+
+  console.log(`App-side pushing sync slices: ${orderedSlices.join(", ")}`);
+  let sentAny = false;
+
+  orderedSlices.forEach((slice) => {
+    sentAny = pushSnapshotSlice(settingsStorage, phoneSnapshot, slice, options.requestId) || sentAny;
+  });
+
+  return sentAny;
+}
+
+function createSnapshotPushScheduler() {
   let pendingTimerId = null;
+  const pendingSlices = new Set();
 
   function clearPendingTimer() {
     if (pendingTimerId !== null) {
@@ -82,18 +119,36 @@ function createBootstrapPushScheduler() {
   }
 
   return {
-    flush(settingsStorage, requestId) {
+    flush(settingsStorage, options = {}) {
       clearPendingTimer();
-      pushBootstrapSnapshots(settingsStorage, requestId);
+      const slices = getOrderedPhoneSyncSlices(options.slices || pendingSlices);
+      pendingSlices.clear();
+      return pushSnapshotSlices(settingsStorage, {
+        requestId: options.requestId,
+        slices
+      });
     },
-    schedule(settingsStorage) {
+    schedule(settingsStorage, changedKey) {
+      const slices = getStorageChangeSlices(changedKey);
+
+      if (!slices.length) {
+        return false;
+      }
+
+      slices.forEach((slice) => pendingSlices.add(slice));
       clearPendingTimer();
       pendingTimerId = setTimeout(() => {
         pendingTimerId = null;
-        pushBootstrapSnapshots(settingsStorage);
+        const scheduledSlices = getOrderedPhoneSyncSlices(pendingSlices);
+        pendingSlices.clear();
+        pushSnapshotSlices(settingsStorage, {
+          slices: scheduledSlices
+        });
       }, STORAGE_PUSH_DEBOUNCE_MS);
+      return true;
     },
     destroy() {
+      pendingSlices.clear();
       clearPendingTimer();
     }
   };
@@ -106,8 +161,8 @@ function ensureAppSideRuntime(service) {
 
   try {
     const settingsStorage = settings.settingsStorage;
-    const bootstrapPushScheduler = createBootstrapPushScheduler();
-    service.bootstrapPushScheduler = bootstrapPushScheduler;
+    const snapshotPushScheduler = createSnapshotPushScheduler();
+    service.snapshotPushScheduler = snapshotPushScheduler;
     service.settingsStorage = settingsStorage;
     const snapshot = ensurePhoneStorage(settingsStorage);
     console.log(
@@ -145,7 +200,13 @@ function ensureAppSideRuntime(service) {
       console.log(`App-side decoded sync envelope type=${syncEnvelope.messageType}`);
 
       if (syncEnvelope.messageType === SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP) {
-        bootstrapPushScheduler.flush(settingsStorage, syncEnvelope.requestId);
+        const phoneSnapshot = readPhoneSnapshot(settingsStorage);
+        const responseSlices = getBootstrapResponseSlices(syncEnvelope.payload, phoneSnapshot.syncMeta);
+
+        snapshotPushScheduler.flush(settingsStorage, {
+          requestId: syncEnvelope.requestId,
+          slices: responseSlices
+        });
         return;
       }
 
@@ -169,7 +230,10 @@ function ensureAppSideRuntime(service) {
             }
           )
         );
-        bootstrapPushScheduler.flush(settingsStorage, syncEnvelope.requestId);
+        snapshotPushScheduler.flush(settingsStorage, {
+          requestId: syncEnvelope.requestId,
+          slices: [PHONE_SYNC_SLICES.HISTORY]
+        });
       }
     });
 
@@ -182,7 +246,7 @@ function ensureAppSideRuntime(service) {
       console.log(
         `settingsStorage changed: ${key} (tools=${nextSnapshot.tools.length}, recipes=${nextSnapshot.recipeIndex.length}, history=${nextSnapshot.historyIndex.length})`
       );
-      bootstrapPushScheduler.schedule(settingsStorage);
+      snapshotPushScheduler.schedule(settingsStorage, key);
     });
 
     service.runtimeReady = true;
@@ -206,9 +270,9 @@ AppSideService({
     ensureAppSideRuntime(this);
   },
   onDestroy() {
-    if (this.bootstrapPushScheduler) {
-      this.bootstrapPushScheduler.destroy();
-      this.bootstrapPushScheduler = null;
+    if (this.snapshotPushScheduler) {
+      this.snapshotPushScheduler.destroy();
+      this.snapshotPushScheduler = null;
     }
   }
 });

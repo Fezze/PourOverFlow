@@ -145,6 +145,11 @@ The first implementation task from the current repo state is Stage 6:
 - `shared/watch/layouts.js` now depends on `getDeviceInfo()` together with `data:os.device.info`; keep that permission in the manifest baseline, and keep the fallback path so a permission issue does not immediately crash first paint.
 - In the latest simulator debugging pass, `page/home/index.js` reached full widget render successfully; a simulator-console `ui pause` line alone is not enough evidence that the page crashed during build.
 - Current WIP state: automatic startup bootstrap is restored for real hardware, while `shared/watch/sync-bridge.js` skips simulator auto-bootstrap using a battery heuristic (`Battery().getCurrent() === 0`) until the simulator-side `@zos/ble.send` behavior is better understood.
+- Real-watch feedback showed that recipe bootstrap sync works end to end; the watch can display synced recipes from the phone even when the simulator bridge remains noisy.
+- `app-side` no longer needs to replay the full bootstrap payload set on every storage change. It now classifies phone-side writes by slice and can answer `REQUEST_BOOTSTRAP` only for stale revisions.
+- Watch-side bootstrap and queue replay should fail fast when the bridge is disconnected so offline startup stays responsive instead of repeatedly attempting transport.
+- The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/`; use it for flow-level watch tests before leaning on the simulator for every regression.
+- `npm test` now runs the unified Vitest suite, and `npm run test:coverage` is the repo-standard JS coverage command.
 
 ## When to update documents
 

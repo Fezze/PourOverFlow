@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { expect, test } from "vitest";
 
 import { createRecipeSnapshot } from "../shared/domain/schema.js";
 import { createSyncEnvelope, validateSyncEnvelope } from "../shared/sync/contracts.js";
@@ -45,9 +44,9 @@ test("sync envelopes encode and decode through peerSocket codec", () => {
   });
   const decodedEnvelope = decodeEnvelopeFromPeerSocket(encodeEnvelopeForPeerSocket(syncEnvelope));
 
-  assert.deepEqual(validateSyncEnvelope(decodedEnvelope), []);
-  assert.equal(decodedEnvelope.messageType, SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP);
-  assert.equal(decodedEnvelope.payload.knownRecipeCatalogRevision, 2);
+  expect(validateSyncEnvelope(decodedEnvelope)).toEqual([]);
+  expect(decodedEnvelope.messageType).toBe(SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP);
+  expect(decodedEnvelope.payload.knownRecipeCatalogRevision).toBe(2);
 });
 
 test("sync envelopes survive app bridge framing on both watch and phone codecs", () => {
@@ -64,16 +63,16 @@ test("sync envelopes survive app bridge framing on both watch and phone codecs",
     data: framedForPhone.buffer
   });
 
-  assert.deepEqual(validateSyncEnvelope(decodedOnPhone), []);
-  assert.equal(decodedOnPhone.payload.knownHistoryRevision, 6);
+  expect(validateSyncEnvelope(decodedOnPhone)).toEqual([]);
+  expect(decodedOnPhone.payload.knownHistoryRevision).toBe(6);
 
   const framedForWatch = buildAppBridgeDataFrame(encodeEnvelopeForBle(syncEnvelope).buffer, {
     port2: 77
   });
   const decodedOnWatch = decodeEnvelopeFromBlePayload(framedForWatch.buffer, framedForWatch.size);
 
-  assert.deepEqual(validateSyncEnvelope(decodedOnWatch), []);
-  assert.equal(decodedOnWatch.payload.knownToolCatalogRevision, 4);
+  expect(validateSyncEnvelope(decodedOnWatch)).toEqual([]);
+  expect(decodedOnWatch.payload.knownToolCatalogRevision).toBe(4);
 });
 
 test("bridge transport reassembles large chunked sync envelopes on raw and app-framed paths", () => {
@@ -86,7 +85,7 @@ test("bridge transport reassembles large chunked sync envelopes on raw and app-f
     maxChunkPayloadSize: 512
   });
 
-  assert.ok(transportFrames.length > 1);
+  expect(transportFrames.length).toBeGreaterThan(1);
 
   const sideTransportState = createBridgeTransportState();
   let sidePayload = null;
@@ -98,10 +97,10 @@ test("bridge transport reassembles large chunked sync envelopes on raw and app-f
     }
   });
 
-  assert.ok(sidePayload instanceof ArrayBuffer);
+  expect(sidePayload instanceof ArrayBuffer).toBe(true);
   const decodedOnPhone = decodeEnvelopeFromPeerSocket(sidePayload);
-  assert.deepEqual(validateSyncEnvelope(decodedOnPhone), []);
-  assert.equal(decodedOnPhone.payload.recipeCatalogRevision, 99);
+  expect(validateSyncEnvelope(decodedOnPhone)).toEqual([]);
+  expect(decodedOnPhone.payload.recipeCatalogRevision).toBe(99);
 
   const watchTransportState = createBridgeTransportState();
   let watchPayload = null;
@@ -116,10 +115,10 @@ test("bridge transport reassembles large chunked sync envelopes on raw and app-f
     }
   });
 
-  assert.ok(watchPayload instanceof ArrayBuffer);
+  expect(watchPayload instanceof ArrayBuffer).toBe(true);
   const decodedOnWatch = decodeEnvelopeFromBlePayload(watchPayload, watchPayload.byteLength);
-  assert.deepEqual(validateSyncEnvelope(decodedOnWatch), []);
-  assert.equal(decodedOnWatch.payload.recipeCatalogRevision, 99);
+  expect(validateSyncEnvelope(decodedOnWatch)).toEqual([]);
+  expect(decodedOnWatch.payload.recipeCatalogRevision).toBe(99);
 });
 
 test("normalize builds full phone bootstrap snapshots from seeded storage", () => {
@@ -130,10 +129,10 @@ test("normalize builds full phone bootstrap snapshots from seeded storage", () =
   const catalogSnapshot = buildPhoneCatalogSnapshot(settingsStorage, phoneSnapshot);
   const historySnapshot = buildPhoneHistorySnapshot(phoneSnapshot);
 
-  assert.equal(toolSnapshot.tools.length, 6);
-  assert.equal(catalogSnapshot.recipeCatalogRevision, 1);
-  assert.equal(Object.keys(catalogSnapshot.recipeSnapshotsById).length, 12);
-  assert.equal(historySnapshot.latestResult, null);
+  expect(toolSnapshot.tools).toHaveLength(6);
+  expect(catalogSnapshot.recipeCatalogRevision).toBe(1);
+  expect(Object.keys(catalogSnapshot.recipeSnapshotsById)).toHaveLength(12);
+  expect(historySnapshot.latestResult).toBeNull();
 });
 
 test("history snapshot exposes latest result after phone-side history save", () => {
@@ -167,8 +166,8 @@ test("history snapshot exposes latest result after phone-side history save", () 
   const saveResult = saveHistoryEntry(settingsStorage, historyEntry);
   const historySnapshot = buildPhoneHistorySnapshot(ensurePhoneStorage(settingsStorage));
 
-  assert.equal(saveResult.ok, true);
-  assert.equal(historySnapshot.historyRevision, 1);
-  assert.equal(historySnapshot.latestResult.historyId, historyEntry.historyId);
-  assert.equal(historySnapshot.latestResult.recipeName, recipeRecord.name);
+  expect(saveResult.ok).toBe(true);
+  expect(historySnapshot.historyRevision).toBe(1);
+  expect(historySnapshot.latestResult.historyId).toBe(historyEntry.historyId);
+  expect(historySnapshot.latestResult.recipeName).toBe(recipeRecord.name);
 });

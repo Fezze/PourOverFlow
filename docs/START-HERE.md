@@ -40,13 +40,23 @@ This project must be run in English.
 - timestamp-based active session reconciliation on app entry,
 - active-brew display guard handling for wake-up relaunch and page bright time,
 - debounced storage-driven snapshot pushes in `app-side/`,
-- baseline logic tests for validators, phone storage, sync contracts, and the session reducer.
+- revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
+- baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
+- mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay.
+
+## Test loop
+
+- Run `npm test` to execute the full Vitest suite across pure logic and mocked Zepp runtime flow tests.
+- Run `npm run test:coverage` when you want local JS coverage output.
+- Run `zeus build` after larger changes to keep the device package healthy.
 
 ## What is still missing
 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
-- mocked Zepp runtime tests and lifecycle / queue replay coverage.
+- real-device validation of wake-up relaunch and anti-sleep behavior on a real device,
+- hard feedback validation on a real device,
+- fuller mocked page-shell runtime coverage if widget refresh behavior starts regressing.
 
 ## Read first
 
@@ -153,6 +163,9 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - `setting/` uses the helper key `pof_settings_ui_state_v1` to persist view state and drafts. That key must be ignored by `app-side` and future runtime sync.
 - With the current watch UI, lists and summary screens already refresh on runtime events, but this is not yet a fully reactive rendering system.
 - Stage 6 now reconciles active sessions from stored timestamps on app entry and coalesces phone-side storage change pushes, but hardware validation still remains.
+- The current sync path is no longer full-bootstrap-only: the phone side now classifies storage changes by slice and answers `REQUEST_BOOTSTRAP` only for stale revisions.
+- Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
+- The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.
 - Zeus Bridge may ask the user to choose the active online target, for example `Balance 2`, when multiple candidates are available.
 - `zeus dev` may also ask the user to choose the preview target, for example `Amazfit Balance 2`, when multiple simulator device profiles are available.

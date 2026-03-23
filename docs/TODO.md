@@ -233,7 +233,8 @@ Make sure v1 behaves sensibly after interruption.
 - last result summary,
 - fallbacks for empty or corrupted cache,
 - real-device validation of `Buzzer` / `SystemSounds` and silent mode behavior,
-- consider coalescing or debouncing full snapshot pushes from `app-side` during Settings edits to reduce bridge chatter.
+- avoid heavy repeated full-snapshot pushes during Settings edits,
+- avoid watch-side startup or retry behavior that makes the app feel blocked when the phone connection is unavailable.
 
 ### Acceptance
 
@@ -254,7 +255,12 @@ Make sure v1 behaves sensibly after interruption.
 - done: active sessions are reconciled from persisted timestamps on app entry,
 - done: corrupted `active_session_v1` and `last_result_v1` fall back safely instead of crashing resume paths,
 - done: `app-side` coalesces storage-driven full snapshot pushes with a short debounce,
+- done: `app-side` now classifies storage changes by slice and pushes only `tools`, `catalog`, or `history` when that slice changes,
+- done: bootstrap requests are now revision-aware by slice, so the phone may skip unchanged snapshots instead of replaying the full bootstrap set,
+- done: watch-side bootstrap and queue replay now fail fast when the phone bridge is disconnected instead of repeatedly trying to send during offline startup,
 - done: pure logic tests cover resume transitions and aborted-session metrics,
+- done: mocked Zepp runtime tests now cover cached watch browse, full brew completion from `RecipeSnapshot`, incoming catalog sync, and pending-history replay with ACK handling,
+- done: Vitest now runs both the pure logic suite and the mocked Zepp runtime suite, and `npm run test:coverage` emits coverage reports,
 - note: in local simulator workflows, `zeus dev` may be the more reliable way to push the app than bridge `install`,
 - note: Zeus Bridge may prompt for explicit target selection, such as `Balance 2`, when multiple online targets are available,
 - note: `zeus dev` itself may prompt for explicit preview-device selection, such as `Amazfit Balance 2`, when several simulator targets are installed,
@@ -263,8 +269,9 @@ Make sure v1 behaves sensibly after interruption.
 - done: a later simulator pass confirmed that `page/home/index.js` reached full widget render successfully; `ui pause` alone was not proof of a home-page render crash,
 - done: automatic startup bootstrap is restored for real hardware, while `shared/watch/sync-bridge.js` now skips automatic bootstrap only when a simulator battery heuristic (`Battery().getCurrent() === 0`) is detected,
 - follow-up: simulator console previously showed `Failed to send watch sync envelope TypeError: not a function` during watch bootstrap from `shared/watch/sync-bridge.js`; verify the actual `@zos/ble` send API shape for the `API 4.0` target and replace the simulator-only heuristic with a more authoritative transport check if possible,
+- remaining: validate on a real watch that partial slice pushes keep recipe edits responsive and no-phone startup no longer feels blocked,
 - remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
-- remaining: add more lifecycle-style mocked runtime coverage beyond pure reducer tests.
+- remaining: add page-shell mocked runtime coverage for runtime-event refresh and widget rebuild behavior if UI regressions appear.
 
 ## Stage 7 - experimental background reminder spike
 

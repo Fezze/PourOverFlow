@@ -27,6 +27,8 @@ Implementation state after Stage 6 code implementation:
 - `catalog_cache_v1`, `last_result_v1`, `sync_meta_v1`, and `active_session_v1` are already persisted locally on the watch,
 - active sessions are reconciled from timestamps on app entry before new phone bootstrap is required,
 - phone-side storage-driven bootstrap pushes are coalesced with a short debounce,
+- phone-side sync now schedules only the affected slice (`tools`, `catalog`, or `history`) instead of pushing a full bootstrap snapshot on every storage write,
+- bootstrap requests are revision-aware, so the phone may answer with only the stale slices or with nothing if the watch is already up to date,
 - real-device validation for wake, anti-sleep, and feedback behavior still remains a Stage 6 follow-up.
 
 ## Phone-side storage keys
@@ -137,14 +139,14 @@ Seeding must be idempotent. Later launches must not overwrite user data.
 1. `home` reads `catalog_cache_v1`, `last_result_v1`, `sync_meta_v1`, and `active_session_v1`.
 2. The UI starts immediately from cache if it exists.
 3. The watch sends `REQUEST_BOOTSTRAP`.
-4. `app-side/` reads phone records and sends snapshots.
+4. `app-side/` reads phone records and sends only the stale snapshot slices.
 5. The watch updates `catalog_cache_v1`, `last_result_v1`, and `sync_meta_v1`.
 
 At the current stage, some watch pages may still require a rebuild to fully show a new snapshot that arrives after the first render.
 
 ### Phone answer order
 
-`app-side/` should send responses in this order:
+When `app-side/` needs to send more than one slice in the same pass, it should use this order:
 
 1. `PUSH_TOOL_CATALOG`
 2. `PUSH_CATALOG_SNAPSHOT`
@@ -152,7 +154,15 @@ At the current stage, some watch pages may still require a rebuild to fully show
 
 This simplifies watch bootstrap and `toolId` validation.
 
+`REQUEST_BOOTSTRAP` is revision-aware:
+
+- if the watch already has the current `toolCatalogRevision`, skip `PUSH_TOOL_CATALOG`,
+- if the watch already has the current `recipeCatalogRevision`, skip `PUSH_CATALOG_SNAPSHOT`,
+- if the watch already has the current `historyRevision`, skip `PUSH_HISTORY_SNAPSHOT`,
+- if all revisions already match, the phone may send nothing.
+
 The `settingsStorage` listener inside `app-side/` must ignore `pof_settings_ui_state_v1` changes so that drafts and view transitions in Settings App do not trigger false sync refreshes.
+It should also classify storage writes by slice and push only the affected snapshot payload instead of replaying the full bootstrap set.
 
 ## Message contracts
 
@@ -332,6 +342,7 @@ During resume:
 - the watch works from `catalog_cache_v1`,
 - the watch can continue the current session from local state if the runtime is still alive,
 - results are buffered into `pendingHistoryQueue`.
+- bootstrap and queue replay should fail fast when the bridge is disconnected; the watch UI must not stall waiting on repeated send attempts.
 
 ### Corrupted cache
 
@@ -342,7 +353,7 @@ During resume:
 ### Revision mismatch
 
 - `REQUEST_BOOTSTRAP` is never used for merge,
-- the phone always sends the full current snapshot,
+- the phone sends the full current snapshot for each stale slice,
 - v1 does not implement conflict resolution between two editing sources.
 
 ## Frozen decisions
@@ -351,4 +362,4 @@ During resume:
 - `index + records`, not one blob.
 - `PUSH_HISTORY_SNAPSHOT` carries only the latest result, not full history.
 - `pendingHistoryQueue` lives in `sync_meta_v1`.
-- Bootstrap is always a full refresh, not delta sync.
+- Bootstrap is revision-aware by slice. Each stale slice is sent as a full snapshot, not as record-by-record patching.

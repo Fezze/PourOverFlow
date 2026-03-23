@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { expect, test } from "vitest";
 
 import { getSeedRecipeRecords } from "../shared/domain/seed-library.js";
 import { validateRecipeRecord } from "../shared/domain/validators.js";
@@ -9,7 +8,7 @@ test("all seed recipes pass recipe validation", () => {
     validateRecipeRecord(recipeRecord).map((issue) => `${recipeRecord.recipeId}: ${issue}`)
   );
 
-  assert.deepEqual(issues, []);
+  expect(issues).toEqual([]);
 });
 
 test("recipe validation rejects unsupported tool ids", () => {
@@ -19,10 +18,7 @@ test("recipe validation rejects unsupported tool ids", () => {
     toolId: "tool_unknown"
   });
 
-  assert.ok(
-    issues.includes("Recipe toolId must point at the supported tool catalog."),
-    issues.join("\n")
-  );
+  expect(issues, issues.join("\n")).toContain("Recipe toolId must point at the supported tool catalog.");
 });
 
 test("recipe validation rejects recipes without finish step at the end", () => {
@@ -39,5 +35,5 @@ test("recipe validation rejects recipes without finish step at the end", () => {
     steps: brokenSteps
   });
 
-  assert.ok(issues.includes("Recipe must end with a finish step."), issues.join("\n"));
+  expect(issues, issues.join("\n")).toContain("Recipe must end with a finish step.");
 });

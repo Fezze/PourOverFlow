@@ -4,7 +4,7 @@ PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a w
 
 ## Current status
 
-The repo already has Stages 3, 4, and 5 completed, and the code-facing part of Stage 6 is now in place. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, and baseline logic tests.
+The repo already has Stages 3, 4, and 5 completed, and the code-facing part of Stage 6 is now in place. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, baseline logic tests, and mocked Zepp runtime integration tests for cached watch flow and queue replay.
 
 ## Project language
 
@@ -60,10 +60,16 @@ This project is to be run in English.
 
 The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): real-device validation of wake-up relaunch, anti-sleep behavior, haptic/audio feedback, and lifecycle edge cases that cannot be proven by simulator or pure tests alone.
 
+## Test commands
+
+- `npm test` runs the full Vitest suite, including the pure logic tests and the mocked Zepp runtime flow tests.
+- `npm run test:coverage` generates Vitest coverage reports in `coverage/`.
+- `zeus build` remains the required compile gate after larger changes.
+
 ## What is still missing in the repo
 
 - hard validation of wake-up relaunch, anti-sleep, haptic, and audio behavior on a real device,
-- fuller mocked Zepp runtime coverage for lifecycle and queue replay,
+- fuller page-shell mocked Zepp runtime coverage for widget refresh and page lifecycle,
 - a scalable watch recipe browse pattern for more than two recipes per brewer.
 
 ## Important technical limits

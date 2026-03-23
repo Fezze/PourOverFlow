@@ -6,6 +6,11 @@
   "description": "PourOverFlow Zepp OS scaffold",
   "scripts": {
     "build": "zeus build",
-    "test": "node --test --experimental-specifier-resolution=node"
+    "test": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts",
+    "test:coverage": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.1",
+    "vitest": "^4.1.1"
   }
 }

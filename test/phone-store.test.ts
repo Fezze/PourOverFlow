@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { expect, test } from "vitest";
 
 import { createRecipeSnapshot } from "../shared/domain/schema.js";
 import {
@@ -90,12 +89,12 @@ test("ensurePhoneStorage seeds tool catalog, seed recipes and sync meta", () => 
   const settingsStorage = createMockSettingsStorage();
   const snapshot = ensurePhoneStorage(settingsStorage);
 
-  assert.equal(snapshot.tools.length, 6);
-  assert.equal(snapshot.recipeIndex.length, 12);
-  assert.equal(snapshot.historyIndex.length, 0);
-  assert.equal(snapshot.syncMeta.toolCatalogRevision, 1);
-  assert.equal(snapshot.syncMeta.recipeCatalogRevision, 1);
-  assert.ok(settingsStorage.getItem(getPhoneRecipeRecordKey("seed_ap_daily_clean")));
+  expect(snapshot.tools).toHaveLength(6);
+  expect(snapshot.recipeIndex).toHaveLength(12);
+  expect(snapshot.historyIndex).toHaveLength(0);
+  expect(snapshot.syncMeta.toolCatalogRevision).toBe(1);
+  expect(snapshot.syncMeta.recipeCatalogRevision).toBe(1);
+  expect(settingsStorage.getItem(getPhoneRecipeRecordKey("seed_ap_daily_clean"))).toBeTruthy();
 });
 
 test("saveRecipeRecord persists a user recipe into index plus record storage", () => {
@@ -104,16 +103,16 @@ test("saveRecipeRecord persists a user recipe into index plus record storage", (
 
   const result = saveRecipeRecord(settingsStorage, createValidDraft());
 
-  assert.equal(result.ok, true);
-  assert.equal(result.issues.length, 0);
-  assert.equal(result.recipeRecord.source, "user");
-  assert.ok(result.recipeRecord.recipeId.startsWith("recipe_"));
+  expect(result.ok).toBe(true);
+  expect(result.issues).toHaveLength(0);
+  expect(result.recipeRecord.source).toBe("user");
+  expect(result.recipeRecord.recipeId.startsWith("recipe_")).toBe(true);
 
   const storedRecipe = readRecipeRecord(settingsStorage, result.recipeRecord.recipeId);
   const syncMeta = readPhoneSyncMeta(settingsStorage);
 
-  assert.equal(storedRecipe.name, "Test Recipe");
-  assert.equal(syncMeta.recipeCatalogRevision, 2);
+  expect(storedRecipe.name).toBe("Test Recipe");
+  expect(syncMeta.recipeCatalogRevision).toBe(2);
 });
 
 test("deleteRecipeRecord keeps history entries intact", () => {
@@ -145,17 +144,14 @@ test("deleteRecipeRecord keeps history entries intact", () => {
   };
 
   const saveHistoryResult = saveHistoryEntry(settingsStorage, historyEntry);
-  assert.equal(saveHistoryResult.ok, true);
+  expect(saveHistoryResult.ok).toBe(true);
 
   const deleted = deleteRecipeRecord(settingsStorage, recipeRecord.recipeId);
 
-  assert.equal(deleted, true);
-  assert.equal(readRecipeRecord(settingsStorage, recipeRecord.recipeId), null);
-  assert.equal(readHistoryIndex(settingsStorage).length, 1);
-  assert.equal(
-    readHistoryEntry(settingsStorage, historyEntry.historyId).recipeSnapshot.name,
-    recipeRecord.name
-  );
+  expect(deleted).toBe(true);
+  expect(readRecipeRecord(settingsStorage, recipeRecord.recipeId)).toBeNull();
+  expect(readHistoryIndex(settingsStorage)).toHaveLength(1);
+  expect(readHistoryEntry(settingsStorage, historyEntry.historyId).recipeSnapshot.name).toBe(recipeRecord.name);
 });
 
 test("safeParseJson falls back on invalid JSON", () => {
@@ -163,7 +159,7 @@ test("safeParseJson falls back on invalid JSON", () => {
   console.log = () => {};
 
   try {
-    assert.deepEqual(safeParseJson("{broken", ["fallback"]), ["fallback"]);
+    expect(safeParseJson("{broken", ["fallback"])).toEqual(["fallback"]);
   } finally {
     console.log = originalConsoleLog;
   }

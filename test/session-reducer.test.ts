@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { expect, test } from "vitest";
 
 import { getSeedRecipeRecordById } from "../shared/domain/seed-library.js";
 import {
@@ -13,10 +12,10 @@ test("createActiveBrewSession starts manual prep steps in waiting_for_confirm", 
   const recipeRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1711111111111);
   const activeSession = createActiveBrewSession(recipeRecord, { now: 1711111111111 });
 
-  assert.equal(activeSession.status, "waiting_for_confirm");
-  assert.equal(activeSession.currentStepIndex, 0);
-  assert.equal(getCurrentSessionStep(activeSession).kind, "instruction");
-  assert.equal(activeSession.expectedStepEndAt, undefined);
+  expect(activeSession.status).toBe("waiting_for_confirm");
+  expect(activeSession.currentStepIndex).toBe(0);
+  expect(getCurrentSessionStep(activeSession).kind).toBe("instruction");
+  expect(activeSession.expectedStepEndAt).toBeUndefined();
 });
 
 test("advanceSession enters timed steps with countdown metadata", () => {
@@ -24,11 +23,11 @@ test("advanceSession enters timed steps with countdown metadata", () => {
   const activeSession = createActiveBrewSession(recipeRecord, { now: 1711111111111 });
   const nextSession = advanceSession(activeSession, { now: 1711111112111 });
 
-  assert.equal(nextSession.currentStepIndex, 1);
-  assert.equal(getCurrentSessionStep(nextSession).kind, "timed_action");
-  assert.equal(nextSession.status, "running");
-  assert.equal(nextSession.expectedStepEndAt, 1711111127111);
-  assert.equal(nextSession.stepRunResults.length, 1);
+  expect(nextSession.currentStepIndex).toBe(1);
+  expect(getCurrentSessionStep(nextSession).kind).toBe("timed_action");
+  expect(nextSession.status).toBe("running");
+  expect(nextSession.expectedStepEndAt).toBe(1711111127111);
+  expect(nextSession.stepRunResults).toHaveLength(1);
 });
 
 test("tickSession auto-advances timed steps without confirmation requirement", () => {
@@ -37,9 +36,9 @@ test("tickSession auto-advances timed steps without confirmation requirement", (
   const timedSession = advanceSession(activeSession, { now: 1711111112111 });
   const tickedSession = tickSession(timedSession, { now: timedSession.expectedStepEndAt + 1 });
 
-  assert.equal(tickedSession.currentStepIndex, 2);
-  assert.equal(getCurrentSessionStep(tickedSession).kind, "timed_wait");
-  assert.equal(tickedSession.stepRunResults.length, 2);
+  expect(tickedSession.currentStepIndex).toBe(2);
+  expect(getCurrentSessionStep(tickedSession).kind).toBe("timed_wait");
+  expect(tickedSession.stepRunResults).toHaveLength(2);
 });
 
 test("tickSession waits for manual confirmation when timed step requires it", () => {
@@ -57,9 +56,9 @@ test("tickSession waits for manual confirmation when timed step requires it", ()
   const timedSession = advanceSession(activeSession, { now: 1711111112111 });
   const tickedSession = tickSession(timedSession, { now: timedSession.expectedStepEndAt + 1 });
 
-  assert.equal(tickedSession.currentStepIndex, 1);
-  assert.equal(tickedSession.status, "waiting_for_confirm");
-  assert.equal(tickedSession.stepRunResults.length, 1);
+  expect(tickedSession.currentStepIndex).toBe(1);
+  expect(tickedSession.status).toBe("waiting_for_confirm");
+  expect(tickedSession.stepRunResults).toHaveLength(1);
 });
 
 test("resumeSession auto-advances elapsed timed steps after app return", () => {
@@ -70,10 +69,10 @@ test("resumeSession auto-advances elapsed timed steps after app return", () => {
     now: timedSession.expectedStepEndAt + 5000
   });
 
-  assert.equal(resumedSession.currentStepIndex, 2);
-  assert.equal(getCurrentSessionStep(resumedSession).kind, "timed_wait");
-  assert.equal(resumedSession.status, "running");
-  assert.equal(resumedSession.stepRunResults.length, 2);
+  expect(resumedSession.currentStepIndex).toBe(2);
+  expect(getCurrentSessionStep(resumedSession).kind).toBe("timed_wait");
+  expect(resumedSession.status).toBe("running");
+  expect(resumedSession.stepRunResults).toHaveLength(2);
 });
 
 test("resumeSession pauses on elapsed timed steps that require confirmation", () => {
@@ -93,9 +92,9 @@ test("resumeSession pauses on elapsed timed steps that require confirmation", ()
     now: timedSession.expectedStepEndAt + 5000
   });
 
-  assert.equal(resumedSession.currentStepIndex, 1);
-  assert.equal(resumedSession.status, "waiting_for_confirm");
-  assert.equal(resumedSession.stepRunResults.length, 1);
+  expect(resumedSession.currentStepIndex).toBe(1);
+  expect(resumedSession.status).toBe("waiting_for_confirm");
+  expect(resumedSession.stepRunResults).toHaveLength(1);
 });
 
 test("abortSession keeps the in-progress step out of completed metrics", () => {
@@ -104,10 +103,10 @@ test("abortSession keeps the in-progress step out of completed metrics", () => {
   const abortedSession = abortSession(activeSession, { now: 1711111115111 });
   const historyEntry = buildHistoryEntryFromSession(abortedSession, { now: 1711111115111 });
 
-  assert.equal(abortedSession.status, "aborted");
-  assert.equal(abortedSession.stepRunResults.length, 0);
-  assert.equal(historyEntry.status, "aborted");
-  assert.equal(historyEntry.stepRunResults.length, 0);
-  assert.equal(historyEntry.deviationSummary.completedSteps, 0);
-  assert.equal(historyEntry.recipeSnapshot.name, recipeRecord.name);
+  expect(abortedSession.status).toBe("aborted");
+  expect(abortedSession.stepRunResults).toHaveLength(0);
+  expect(historyEntry.status).toBe("aborted");
+  expect(historyEntry.stepRunResults).toHaveLength(0);
+  expect(historyEntry.deviationSummary.completedSteps).toBe(0);
+  expect(historyEntry.recipeSnapshot.name).toBe(recipeRecord.name);
 });
