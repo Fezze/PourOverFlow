@@ -6,6 +6,7 @@ export const DEFAULT_PLAYWRIGHT_COVERAGE_MODE = "simulator";
 export const DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR = "coverage/playwright/simulator";
 export const DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR = "coverage/playwright/harness";
 export const DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV = "PLAYWRIGHT_COVERAGE_BROWSER";
+export const DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS = 2000;
 
 const WINDOWS_CHROMIUM_CANDIDATES = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -19,6 +20,7 @@ export function parsePlaywrightCoverageArgs(argv = []) {
     mode: DEFAULT_PLAYWRIGHT_COVERAGE_MODE,
     durationMs: DEFAULT_PLAYWRIGHT_COVERAGE_DURATION_MS,
     outputDir: DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR,
+    collectCoverage: false,
     verbose: false
   };
 
@@ -29,7 +31,17 @@ export function parsePlaywrightCoverageArgs(argv = []) {
       continue;
     }
 
-    if (arg === "--mock-page" || arg === "--module-harness") {
+    if (arg === "--coverage") {
+      options.collectCoverage = true;
+      continue;
+    }
+
+    if (arg === "--no-coverage") {
+      options.collectCoverage = false;
+      continue;
+    }
+
+    if (arg === "--module-harness") {
       options.mode = "module-harness";
       if (options.outputDir === DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR) {
         options.outputDir = DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR;
@@ -200,6 +212,27 @@ export function toCoverageDisplayPath(absolutePath, { cwd, lastAppInfo }) {
   }
 
   return normalizeDisplaySegment(normalizedAbsolutePath);
+}
+
+export function getSimulatorAppSourceCandidates(cwd) {
+  const root = path.resolve(cwd);
+  return [
+    path.join(root, "app.json"),
+    path.join(root, "app.js"),
+    path.join(root, "page"),
+    path.join(root, "app-side"),
+    path.join(root, "setting"),
+    path.join(root, "shared"),
+    path.join(root, "assets")
+  ];
+}
+
+export function isSimulatorDeploymentForCurrentProject(lastAppInfo, cwd) {
+  if (!lastAppInfo?.user_app_path) {
+    return false;
+  }
+
+  return normalizeComparablePath(lastAppInfo.user_app_path) === normalizeComparablePath(cwd);
 }
 
 function isSubPathOf(candidatePath, rootPath) {

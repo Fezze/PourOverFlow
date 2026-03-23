@@ -1,7 +1,7 @@
 import path from "node:path";
 import http from "node:http";
 import { chromium } from "playwright-core";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import istanbulCoverage from "istanbul-lib-coverage";
 import istanbulReport from "istanbul-lib-report";
 import istanbulReports from "istanbul-reports";
@@ -9,8 +9,11 @@ import v8ToIstanbul from "v8-to-istanbul";
 import {
   buildCoverageRoots,
   buildCoverageRootsWithAdditionalRoots,
+  DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS,
   DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV,
+  getSimulatorAppSourceCandidates,
   isInspectablePageUrl,
+  isSimulatorDeploymentForCurrentProject,
   isRelevantCoveragePathWithOptions,
   getMockBrowserExecutableCandidates,
   normalizeCoverageFilePathWithOptions,
@@ -27,20 +30,27 @@ const { create: createReport } = istanbulReports;
 await main();
 
 async function main() {
+  let options = null;
   try {
-    const options = parsePlaywrightCoverageArgs(process.argv.slice(2));
+    options = parsePlaywrightCoverageArgs(process.argv.slice(2));
     if (options.mode === "module-harness") {
       await runModuleHarnessCoverage(options);
       return;
     }
 
+    if (options.collectCoverage) {
+      throw new Error(
+        "Simulator Playwright V8 coverage was removed from the repo-standard test menu because the current Zepp simulator exposes shell/framework/preload scripts instead of reliable PourOverFlow app-code coverage. Use `npm run test:playwright` for simulator smoke or `npm run test:playwright:coverage:harness` for meaningful Playwright coverage."
+      );
+    }
+
     await runSimulatorCoverage(options);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`Playwright simulator coverage failed: ${message}`);
-    if (message.includes("ECONNREFUSED")) {
+    console.error(`Playwright validation failed: ${message}`);
+    if (options?.mode !== "module-harness" && message.includes("ECONNREFUSED")) {
       console.error(
-        "The Zepp simulator DevTools endpoint was not reachable. Start the simulator, deploy with `zeus dev`, and then rerun `npm run test:playwright:coverage`."
+        "The Zepp simulator DevTools endpoint was not reachable. Start the simulator, deploy with `zeus dev`, and then rerun `npm run test:playwright`."
       );
     }
     process.exitCode = 1;
@@ -68,20 +78,50 @@ async function runSimulatorCoverage(options) {
   metadata.coverageRoots = coverageRoots;
   metadata.lastAppInfo = lastAppInfo;
 
-  const browser = await chromium.connectOverCDP(`http://127.0.0.1:${devToolsInfo.port}`);
+  await assertFreshSimulatorDeployment({
+    projectRoot: PROJECT_ROOT,
+    lastAppInfo
+  });
+
+  if (!options.collectCoverage) {
+    const pageRegistry = await pollInspectableSimulatorPages({
+      devToolsPort: devToolsInfo.port,
+      durationMs: options.durationMs,
+      verbose: options.verbose
+    });
+
+    if (pageRegistry.length === 0) {
+      throw new Error(
+        "Playwright simulator smoke run observed no inspectable simulator pages. Start the simulator, deploy with `zeus dev`, keep the app open, and rerun `npm run test:playwright`."
+      );
+    }
+
+    console.log(
+      `Playwright simulator smoke run observed ${pageRegistry.length} inspectable page(s) without collecting coverage.`
+    );
+    return;
+  }
+
+  const sessions = new Map();
+  const pageRegistry = [];
 
   try {
-    const sessions = new Map();
-    const pageRegistry = [];
     const deadline = Date.now() + options.durationMs;
     while (Date.now() < deadline) {
-      await attachCoverageToNewPages(browser, sessions, pageRegistry, options.verbose);
+      await attachCoverageToNewSimulatorPages({
+        devToolsPort: devToolsInfo.port,
+        sessions,
+        pageRegistry,
+        verbose: options.verbose
+      });
       await sleep(500);
     }
 
+    metadata.observedPages = pageRegistry;
+
     const rawEntries = [];
     for (const coverageSession of sessions.values()) {
-      const collected = await stopCoverageSession(coverageSession);
+      const collected = await stopSimulatorCoverageSession(coverageSession);
       rawEntries.push(...collected);
     }
 
@@ -96,7 +136,9 @@ async function runSimulatorCoverage(options) {
         "Playwright simulator coverage found no relevant app scripts. Keep the simulator app open and interact with the flow while coverage is collecting."
     });
   } finally {
-    await browser.close();
+    for (const coverageSession of sessions.values()) {
+      await coverageSession.session.close();
+    }
   }
 }
 
@@ -140,10 +182,12 @@ async function runModuleHarnessCoverage(options) {
 
   try {
     const page = await browser.newPage();
-    await page.coverage.startJSCoverage({
-      reportAnonymousScripts: false,
-      resetOnNavigation: false
-    });
+    if (options.collectCoverage) {
+      await page.coverage.startJSCoverage({
+        reportAnonymousScripts: false,
+        resetOnNavigation: false
+      });
+    }
     await page.goto(harnessBaseUrl);
     await page.waitForFunction(() => window.__POF_PLAYWRIGHT_COVERAGE_STATE__?.done === true, undefined, {
       timeout: options.durationMs
@@ -155,6 +199,11 @@ async function runModuleHarnessCoverage(options) {
         `Module harness failed: ${harnessState?.error || statusText || "unknown error"}`
       );
     }
+    if (!options.collectCoverage) {
+      console.log("Playwright module harness smoke run completed without collecting coverage.");
+      return;
+    }
+
     const rawEntries = await page.coverage.stopJSCoverage();
     await writeCoverageArtifacts({
       metadata,
@@ -173,12 +222,88 @@ async function runModuleHarnessCoverage(options) {
   }
 }
 
+async function pollInspectableSimulatorPages({ devToolsPort, durationMs, verbose }) {
+  const pageRegistry = [];
+  const deadline = Date.now() + durationMs;
+
+  while (Date.now() < deadline) {
+    const pages = await fetchInspectableSimulatorPages(devToolsPort);
+    for (const page of pages) {
+      if (!pageRegistry.some((entry) => entry.url === page.url)) {
+        pageRegistry.push({
+          url: page.url,
+          title: page.title ?? null,
+          observedAt: new Date().toISOString()
+        });
+        if (verbose) {
+          console.log(`Observed simulator page: ${page.url || "about:blank"}`);
+        }
+      }
+    }
+    await sleep(500);
+  }
+
+  return pageRegistry;
+}
+
+async function fetchInspectableSimulatorPages(devToolsPort) {
+  const response = await fetch(`http://127.0.0.1:${devToolsPort}/json/list`);
+  if (!response.ok) {
+    throw new Error(`Simulator DevTools list request failed with status ${response.status}.`);
+  }
+
+  const payload = await response.json();
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return payload.filter((page) => isInspectablePageUrl(page?.url));
+}
+
 function resolveAppData() {
   if (!process.env.APPDATA) {
     throw new Error("APPDATA is not available, so the simulator DevTools port file could not be located.");
   }
 
   return process.env.APPDATA;
+}
+
+async function assertFreshSimulatorDeployment({ projectRoot, lastAppInfo }) {
+  if (!lastAppInfo) {
+    throw new Error(
+      "Simulator deployment metadata is missing. Deploy the current repo with `zeus dev` before running simulator tests."
+    );
+  }
+
+  if (!isSimulatorDeploymentForCurrentProject(lastAppInfo, projectRoot)) {
+    throw new Error(
+      `Simulator last_app_info.json points at ${lastAppInfo.user_app_path || "an unknown project"}, not ${projectRoot}. Deploy the current repo with \`zeus dev\` before running simulator tests.`
+    );
+  }
+
+  if (!lastAppInfo.sim_app_path) {
+    throw new Error(
+      "Simulator deployment metadata does not contain sim_app_path. Deploy the current repo with `zeus dev` before running simulator tests."
+    );
+  }
+
+  const latestSourceMtimeMs = await getLatestMtimeMs(getSimulatorAppSourceCandidates(projectRoot));
+  const latestDeployedMtimeMs = await getLatestMtimeMs([lastAppInfo.sim_app_path]);
+
+  if (!Number.isFinite(latestDeployedMtimeMs)) {
+    throw new Error(
+      `Simulator app path ${lastAppInfo.sim_app_path} does not contain a deployed app build. Deploy the current repo with \`zeus dev\` before running simulator tests.`
+    );
+  }
+
+  if (
+    Number.isFinite(latestSourceMtimeMs) &&
+    latestSourceMtimeMs > latestDeployedMtimeMs + DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS
+  ) {
+    throw new Error(
+      `Simulator deployment is stale. Latest local app source change is newer than the deployed simulator app by more than ${DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS}ms. Redeploy with \`zeus dev\` before running simulator tests.`
+    );
+  }
 }
 
 async function readJsonIfExists(filePath) {
@@ -201,58 +326,51 @@ async function resolveMockBrowserExecutable() {
   );
 }
 
-async function attachCoverageToNewPages(browser, sessions, pageRegistry, verbose) {
-  for (const context of browser.contexts()) {
-    for (const page of context.pages()) {
-      if (sessions.has(page) || !isInspectablePageUrl(page.url())) {
-        continue;
-      }
+async function attachCoverageToNewSimulatorPages({ devToolsPort, sessions, pageRegistry, verbose }) {
+  const pages = await fetchInspectableSimulatorPages(devToolsPort);
+  for (const page of pages) {
+    if (!page?.webSocketDebuggerUrl || sessions.has(page.webSocketDebuggerUrl)) {
+      continue;
+    }
 
-      try {
-        const session = await context.newCDPSession(page);
-        await session.send("Profiler.enable");
-        await session.send("Profiler.startPreciseCoverage", {
-          callCount: true,
-          detailed: true
-        });
-        sessions.set(page, {
-          session,
-          pageUrl: page.url(),
-          attachedAt: new Date().toISOString()
-        });
-        pageRegistry.push({
-          url: page.url(),
-          attachedAt: new Date().toISOString()
-        });
-        if (verbose) {
-          console.log(`Attached coverage to page: ${page.url() || "about:blank"}`);
-        }
-      } catch (error) {
-        if (verbose) {
-          console.warn(`Skipping page that refused coverage attach: ${page.url()} :: ${String(error)}`);
-        }
+    try {
+      const session = await createCdpSession(page.webSocketDebuggerUrl);
+      await session.send("Profiler.enable");
+      await session.send("Profiler.startPreciseCoverage", {
+        callCount: true,
+        detailed: true
+      });
+      sessions.set(page.webSocketDebuggerUrl, {
+        session,
+        pageUrl: page.url,
+        attachedAt: new Date().toISOString()
+      });
+      pageRegistry.push({
+        url: page.url,
+        attachedAt: new Date().toISOString()
+      });
+      if (verbose) {
+        console.log(`Attached coverage to simulator page: ${page.url || "about:blank"}`);
+      }
+    } catch (error) {
+      if (verbose) {
+        console.warn(
+          `Skipping simulator page that refused coverage attach: ${page.url} :: ${String(error)}`
+        );
       }
     }
   }
 }
 
-async function stopCoverageSession(coverageSession) {
+async function stopSimulatorCoverageSession(coverageSession) {
   try {
     const { result } = await coverageSession.session.send("Profiler.takePreciseCoverage");
     return result ?? [];
   } catch {
     return [];
   } finally {
-    await safelySend(coverageSession.session, "Profiler.stopPreciseCoverage");
-    await safelySend(coverageSession.session, "Profiler.disable");
-  }
-}
-
-async function safelySend(session, method) {
-  try {
-    await session.send(method);
-  } catch {
-    // Ignore teardown errors for pages that vanished during collection.
+    await coverageSession.session.safelySend("Profiler.stopPreciseCoverage");
+    await coverageSession.session.safelySend("Profiler.disable");
   }
 }
 
@@ -341,6 +459,14 @@ async function writeCoverageArtifacts({
   await writeFile(path.join(outputDir, "v8-coverage.json"), JSON.stringify(rawEntries, null, 2));
 
   if (convertedFiles.length === 0) {
+    if (metadata.mode === "simulator" && isShellOnlySimulatorObservation(metadata.observedPages)) {
+      console.error(
+        "Playwright simulator coverage could not capture any app scripts because the current simulator DevTools endpoint is only exposing the Electron shell page, not the Zepp app runtime. The simulator smoke check can still confirm the shell is up, but app-code V8 coverage is not available through this endpoint right now."
+      );
+      process.exitCode = 1;
+      return;
+    }
+
     console.warn(emptyMessage);
     process.exitCode = 0;
     return;
@@ -373,12 +499,151 @@ async function fileExists(filePath) {
   }
 }
 
+async function getLatestMtimeMs(pathsToInspect) {
+  let latestMtimeMs = Number.NEGATIVE_INFINITY;
+
+  for (const candidatePath of pathsToInspect) {
+    const candidateMtimeMs = await getLatestPathMtimeMs(candidatePath);
+    if (candidateMtimeMs > latestMtimeMs) {
+      latestMtimeMs = candidateMtimeMs;
+    }
+  }
+
+  return latestMtimeMs;
+}
+
+async function getLatestPathMtimeMs(candidatePath) {
+  try {
+    const fileStats = await stat(candidatePath);
+    if (fileStats.isFile()) {
+      return fileStats.mtimeMs;
+    }
+
+    if (!fileStats.isDirectory()) {
+      return Number.NEGATIVE_INFINITY;
+    }
+
+    const queue = [candidatePath];
+    let latestMtimeMs = fileStats.mtimeMs;
+    while (queue.length > 0) {
+      const currentPath = queue.shift();
+      const entries = await readdir(currentPath, { withFileTypes: true });
+      for (const entry of entries) {
+        const entryPath = path.join(currentPath, entry.name);
+        const entryStats = await stat(entryPath);
+        if (entryStats.mtimeMs > latestMtimeMs) {
+          latestMtimeMs = entryStats.mtimeMs;
+        }
+        if (entryStats.isDirectory()) {
+          queue.push(entryPath);
+        }
+      }
+    }
+
+    return latestMtimeMs;
+  } catch {
+    return Number.NEGATIVE_INFINITY;
+  }
+}
+
+
 function sleep(durationMs) {
   return new Promise((resolve) => setTimeout(resolve, durationMs));
 }
 
-function pathToFileUrl(filePath) {
-  return `file:///${path.resolve(filePath).replace(/\\/g, "/")}`;
+async function createCdpSession(webSocketUrl) {
+  const socket = new WebSocket(webSocketUrl);
+  const pending = new Map();
+  let nextId = 1;
+
+  const openedSocket = await new Promise((resolve, reject) => {
+    const handleOpen = () => {
+      cleanup();
+      resolve(socket);
+    };
+    const handleError = (event) => {
+      cleanup();
+      reject(new Error(`Failed to open CDP socket: ${event.message || "unknown error"}`));
+    };
+    const cleanup = () => {
+      socket.removeEventListener("open", handleOpen);
+      socket.removeEventListener("error", handleError);
+    };
+
+    socket.addEventListener("open", handleOpen);
+    socket.addEventListener("error", handleError);
+  });
+
+  openedSocket.addEventListener("message", (event) => {
+    const message = parseCdpMessage(event.data);
+    if (!message?.id || !pending.has(message.id)) {
+      return;
+    }
+
+    const { resolve, reject } = pending.get(message.id);
+    pending.delete(message.id);
+    if (message.error) {
+      reject(new Error(`CDP ${message.error.code ?? "ERR"}: ${message.error.message ?? "unknown error"}`));
+      return;
+    }
+
+    resolve(message.result ?? {});
+  });
+
+  openedSocket.addEventListener("close", () => {
+    for (const { reject } of pending.values()) {
+      reject(new Error("CDP socket closed before a response was received."));
+    }
+    pending.clear();
+  });
+
+  return {
+    async send(method, params = {}) {
+      const id = nextId;
+      nextId += 1;
+
+      return new Promise((resolve, reject) => {
+        pending.set(id, { resolve, reject });
+        openedSocket.send(JSON.stringify({ id, method, params }));
+      });
+    },
+    async safelySend(method, params = {}) {
+      try {
+        return await this.send(method, params);
+      } catch {
+        return null;
+      }
+    },
+    async close() {
+      if (openedSocket.readyState === WebSocket.OPEN || openedSocket.readyState === WebSocket.CONNECTING) {
+        openedSocket.close();
+      }
+    }
+  };
+}
+
+function parseCdpMessage(rawData) {
+  try {
+    if (typeof rawData === "string") {
+      return JSON.parse(rawData);
+    }
+
+    if (rawData instanceof Buffer) {
+      return JSON.parse(rawData.toString("utf8"));
+    }
+
+    if (rawData instanceof ArrayBuffer) {
+      return JSON.parse(Buffer.from(rawData).toString("utf8"));
+    }
+
+    if (ArrayBuffer.isView(rawData)) {
+      return JSON.parse(Buffer.from(rawData.buffer, rawData.byteOffset, rawData.byteLength).toString("utf8"));
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 async function startStaticFileServer(rootDir) {
@@ -444,4 +709,14 @@ function getContentType(filePath) {
   }
 
   return "text/plain; charset=utf-8";
+}
+
+function isShellOnlySimulatorObservation(observedPages = []) {
+  return (
+    Array.isArray(observedPages) &&
+    observedPages.length > 0 &&
+    observedPages.every((page) =>
+      String(page?.url ?? "").startsWith("file:///C:/Program%20Files/simulator/resources/app.asar/")
+    )
+  );
 }
