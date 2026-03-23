@@ -8,10 +8,19 @@ import {
   createRecipeSummary,
   normalizeRecipeSteps
 } from "../../shared/domain/schema.js";
-import { buildAppBridgeDataFrame, buildAppBridgeShakeFrame } from "../../shared/sync/bridge-frame.js";
-import { buildChunkedBridgeTransportPayloads } from "../../shared/sync/bridge-transport.js";
+import {
+  APP_BRIDGE_MESSAGE_TYPES,
+  buildAppBridgeDataFrame,
+  buildAppBridgeShakeFrame,
+  parseAppBridgeFrame
+} from "../../shared/sync/bridge-frame.js";
+import {
+  buildChunkedBridgeTransportPayloads,
+  createBridgeTransportState,
+  readBridgeTransportPayload
+} from "../../shared/sync/bridge-transport.js";
 import { createSyncEnvelope } from "../../shared/sync/contracts.js";
-import { encodeEnvelopeForBle } from "../../shared/sync/device-codec.js";
+import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../../shared/sync/device-codec.js";
 import { SYNC_MESSAGE_TYPES } from "../../shared/sync/message-types.js";
 import { WATCH_STORAGE_KEYS } from "../../shared/storage/keys.js";
 import {
@@ -20,7 +29,10 @@ import {
   isCatalogReady,
   readActiveSession,
   readLastResult,
+  readSelectedRecipeId,
+  readSelectedToolId,
   readWatchSyncMeta,
+  writeSelectedRecipeId,
   writeActiveSession
 } from "../../shared/storage/watch-store.js";
 import {
@@ -157,6 +169,45 @@ function deliverSyncEnvelope(messageType, payload) {
   });
 }
 
+function clearSentBridgeFrames() {
+  __zeusRuntime.ble.send.mockClear();
+  __zeusRuntime.bleState.sentPayloads.length = 0;
+}
+
+function readSentSyncEnvelopes() {
+  const transportState = createBridgeTransportState();
+  const envelopes = [];
+
+  __zeusRuntime.bleState.sentPayloads.forEach(({ data, size }) => {
+    const bridgeFrame = parseAppBridgeFrame(data, size);
+
+    if (!bridgeFrame || bridgeFrame.type !== APP_BRIDGE_MESSAGE_TYPES.DATA) {
+      return;
+    }
+
+    const transportResult = readBridgeTransportPayload(
+      transportState,
+      bridgeFrame.payload,
+      bridgeFrame.payload.byteLength
+    );
+
+    if (transportResult.status !== "complete") {
+      return;
+    }
+
+    const envelope = decodeEnvelopeFromBlePayload(
+      transportResult.payload,
+      transportResult.payload.byteLength
+    );
+
+    if (envelope) {
+      envelopes.push(envelope);
+    }
+  });
+
+  return envelopes;
+}
+
 beforeEach(() => {
   destroyWatchSyncBridge();
   resetZeppRuntime();
@@ -167,7 +218,6 @@ describe("mocked Zepp runtime watch flow", () => {
     const fixture = seedCachedCatalog();
 
     const toolList = getToolList();
-    const selectedToolRecipesBeforeSelection = getRecipeListForSelectedTool();
 
     expect(toolList.find((tool) => tool.toolId === fixture.recipeRecord.toolId)?.recipeCount).toBe(1);
     expect(getHomeScaffoldState()).toMatchObject({
@@ -177,7 +227,6 @@ describe("mocked Zepp runtime watch flow", () => {
     });
     expect(refreshPhoneSnapshot()).toBe(false);
     expect(__zeusRuntime.ble.send).not.toHaveBeenCalled();
-    expect(selectedToolRecipesBeforeSelection).toHaveLength(1);
 
     selectTool(fixture.recipeRecord.toolId);
 
@@ -300,10 +349,20 @@ describe("mocked Zepp runtime watch flow", () => {
     expect(__zeusRuntime.ble.send).not.toHaveBeenCalled();
 
     connectWatchBridge();
-
-    const sendCountBeforeReplay = __zeusRuntime.ble.send.mock.calls.length;
+    clearSentBridgeFrames();
     expect(retryPendingHistorySync()).toBe(true);
-    expect(__zeusRuntime.ble.send.mock.calls.length).toBeGreaterThan(sendCountBeforeReplay);
+    expect(readSentSyncEnvelopes()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          messageType: SYNC_MESSAGE_TYPES.UPSERT_HISTORY_ENTRY,
+          payload: expect.objectContaining({
+            entry: expect.objectContaining({
+              historyId: pendingEntry.historyId
+            })
+          })
+        })
+      ])
+    );
 
     deliverSyncEnvelope(SYNC_MESSAGE_TYPES.ACK_HISTORY_ENTRY, {
       historyId: pendingEntry.historyId,
@@ -317,16 +376,57 @@ describe("mocked Zepp runtime watch flow", () => {
     });
   });
 
-  it("covers missing-session guards and basic route helpers", () => {
+  it("keeps neutral guard behavior when there is no active session or missing recipe snapshot", () => {
+    seedCachedCatalog();
+
     expect(startRecipe({
       recipeId: "missing_recipe",
       toolId: "tool_aeropress"
     })).toBe(false);
+    expect(readActiveSession()).toBeNull();
     expect(resumeActiveSession()).toBe(false);
     expect(discardActiveSessionFromHome()).toBe(false);
     expect(tickActiveSession()).toBeNull();
     expect(advanceOrCompleteActiveSession()).toBeNull();
+    expect(__zeusRuntime.router.push).not.toHaveBeenCalled();
+    expect(__zeusRuntime.router.replace).not.toHaveBeenCalled();
+  });
 
+  it("persists tool selection state and clears stale recipe selection before routing", () => {
+    const fixture = seedCachedCatalog();
+
+    writeSelectedRecipeId("stale_recipe");
+    selectTool(fixture.recipeRecord.toolId);
+
+    expect(readSelectedToolId()).toBe(fixture.recipeRecord.toolId);
+    expect(readSelectedRecipeId()).toBeNull();
+    expect(__zeusRuntime.router.push).toHaveBeenCalledWith({
+      url: PAGE_URLS.recipeList
+    });
+  });
+
+  it("requests bootstrap over the bridge once the watch is connected", () => {
+    seedCachedCatalog();
+
+    connectWatchBridge();
+    clearSentBridgeFrames();
+
+    expect(refreshPhoneSnapshot()).toBe(true);
+    expect(readSentSyncEnvelopes()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          messageType: SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP,
+          payload: expect.objectContaining({
+            knownToolCatalogRevision: 0,
+            knownRecipeCatalogRevision: 0,
+            knownHistoryRevision: 0
+          })
+        })
+      ])
+    );
+  });
+
+  it("keeps the abort and route helpers wired to the expected page transitions", () => {
     abortActiveBrew();
     goHome();
     goToToolList();

@@ -1,0 +1,89 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Verify: vitest",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "test/vitest.config.ts"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify: vitest coverage",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "test/vitest.config.ts",
+        "--coverage"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify: Playwright harness smoke",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/playwright-simulator-coverage.mjs",
+        "--module-harness"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify: Playwright harness coverage",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/playwright-simulator-coverage.mjs",
+        "--module-harness",
+        "--coverage"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify: Zeus build",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "zeus",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify: all tests and coverage",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Verify: vitest",
+        "Verify: vitest coverage",
+        "Verify: Playwright harness smoke",
+        "Verify: Playwright harness coverage",
+        "Verify: Zeus build"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

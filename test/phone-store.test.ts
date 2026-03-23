@@ -1,7 +1,8 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import { createRecipeSnapshot } from "../shared/domain/schema.js";
 import {
+  duplicateRecipeRecord,
   deleteRecipeRecord,
   ensurePhoneStorage,
   readHistoryEntry,
@@ -10,7 +11,8 @@ import {
   readRecipeRecord,
   safeParseJson,
   saveHistoryEntry,
-  saveRecipeRecord
+  saveRecipeRecord,
+  updateHistoryEntryFeedback
 } from "../shared/storage/phone-store.js";
 import { getPhoneRecipeRecordKey } from "../shared/storage/keys.js";
 
@@ -115,6 +117,26 @@ test("saveRecipeRecord persists a user recipe into index plus record storage", (
   expect(syncMeta.recipeCatalogRevision).toBe(2);
 });
 
+test("duplicateRecipeRecord creates a separate user recipe and bumps the recipe revision", () => {
+  const settingsStorage = createMockSettingsStorage();
+  ensurePhoneStorage(settingsStorage);
+  const originalRecipe = readRecipeRecord(settingsStorage, "seed_ap_daily_clean");
+
+  const duplicateResult = duplicateRecipeRecord(settingsStorage, originalRecipe.recipeId);
+
+  expect(duplicateResult.ok).toBe(true);
+  expect(duplicateResult.issues).toHaveLength(0);
+  expect(duplicateResult.recipeRecord.recipeId).not.toBe(originalRecipe.recipeId);
+  expect(duplicateResult.recipeRecord.name).toBe(`${originalRecipe.name} Copy`);
+  expect(duplicateResult.recipeRecord.source).toBe("user");
+  expect(duplicateResult.recipeRecord.steps).toHaveLength(originalRecipe.steps.length);
+  expect(readRecipeRecord(settingsStorage, duplicateResult.recipeRecord.recipeId)).toMatchObject({
+    name: `${originalRecipe.name} Copy`,
+    source: "user"
+  });
+  expect(readPhoneSyncMeta(settingsStorage).recipeCatalogRevision).toBe(2);
+});
+
 test("deleteRecipeRecord keeps history entries intact", () => {
   const settingsStorage = createMockSettingsStorage();
   ensurePhoneStorage(settingsStorage);
@@ -154,13 +176,62 @@ test("deleteRecipeRecord keeps history entries intact", () => {
   expect(readHistoryEntry(settingsStorage, historyEntry.historyId).recipeSnapshot.name).toBe(recipeRecord.name);
 });
 
-test("safeParseJson falls back on invalid JSON", () => {
-  const originalConsoleLog = console.log;
-  console.log = () => {};
+test("updateHistoryEntryFeedback persists notes and rating without losing the recipe snapshot", () => {
+  const settingsStorage = createMockSettingsStorage();
+  ensurePhoneStorage(settingsStorage);
+
+  const recipeRecord = readRecipeRecord(settingsStorage, "seed_ap_daily_clean");
+  const historyEntry = {
+    schemaVersion: 1,
+    historyId: "hist_feedback_1711111111111_ab12",
+    sessionId: "sess_feedback_1711111111111_ab12",
+    recipeId: recipeRecord.recipeId,
+    toolId: recipeRecord.toolId,
+    recipeSnapshot: createRecipeSnapshot(recipeRecord),
+    status: "completed",
+    startedAt: 1711111111111,
+    endedAt: 1711111112222,
+    elapsedMs: 1111,
+    stepRunResults: [],
+    deviationSummary: {
+      totalDeltaMs: 0,
+      worstStepDeltaMs: 0,
+      completedSteps: recipeRecord.steps.length,
+      totalSteps: recipeRecord.steps.length
+    },
+    syncedFrom: "watch",
+    createdAt: 1711111112222,
+    updatedAt: 1711111112222
+  };
+
+  expect(saveHistoryEntry(settingsStorage, historyEntry).ok).toBe(true);
+
+  const updateResult = updateHistoryEntryFeedback(settingsStorage, historyEntry.historyId, {
+    userNote: "Sweet and balanced",
+    userRating: "4"
+  });
+
+  expect(updateResult.ok).toBe(true);
+  expect(readHistoryEntry(settingsStorage, historyEntry.historyId)).toMatchObject({
+    historyId: historyEntry.historyId,
+    userNote: "Sweet and balanced",
+    userRating: 4
+  });
+  expect(readHistoryEntry(settingsStorage, historyEntry.historyId).recipeSnapshot.name).toBe(recipeRecord.name);
+  expect(readPhoneSyncMeta(settingsStorage).historyRevision).toBe(2);
+});
+
+test("safeParseJson logs invalid JSON once but stays quiet for empty values", () => {
+  const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
   try {
     expect(safeParseJson("{broken", ["fallback"])).toEqual(["fallback"]);
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+
+    consoleSpy.mockClear();
+    expect(safeParseJson("", ["fallback"])).toEqual(["fallback"]);
+    expect(consoleSpy).not.toHaveBeenCalled();
   } finally {
-    console.log = originalConsoleLog;
+    consoleSpy.mockRestore();
   }
 });

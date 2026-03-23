@@ -84,11 +84,12 @@ describe("watch runtime helpers", () => {
     const noisyListener = vi.fn(() => {
       throw new Error("listener failure");
     });
-    const originalConsoleLog = console.log;
-    console.log = vi.fn();
+    const lateListener = vi.fn();
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     const unsubscribeGood = subscribeRuntimeEvent(goodListener);
     subscribeRuntimeEvent(noisyListener);
+    const unsubscribeLate = subscribeRuntimeEvent(lateListener);
 
     try {
       emitRuntimeEvent({
@@ -105,7 +106,13 @@ describe("watch runtime helpers", () => {
         }
       });
       expect(noisyListener).toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalled();
+      expect(lateListener).toHaveBeenCalledWith({
+        type: "catalog",
+        value: {
+          recipeCount: 1
+        }
+      });
+      expect(consoleSpy).toHaveBeenCalled();
 
       unsubscribeGood();
       emitRuntimeEvent({
@@ -114,8 +121,10 @@ describe("watch runtime helpers", () => {
       });
 
       expect(goodListener).toHaveBeenCalledTimes(1);
+      expect(lateListener).toHaveBeenCalledTimes(2);
     } finally {
-      console.log = originalConsoleLog;
+      unsubscribeLate();
+      consoleSpy.mockRestore();
     }
   });
 });

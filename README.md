@@ -67,6 +67,8 @@ The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness/`.
+- the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
+- the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in sequence without relying on a wrapper script or CI.
 - `zeus build` remains the required compile gate after larger changes.
 
 Playwright in this repo is intentionally split in two:
@@ -75,6 +77,7 @@ Playwright in this repo is intentionally split in two:
 
 The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `zeus dev` before trusting the simulator test result.
 The repo no longer exposes simulator V8 coverage as a standard npm test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts such as `mobile-main-service.js` instead of reliable PourOverFlow app-code coverage.
+The verification workflow is intentionally local-first and does not assume CI. If CI is added later, it should mirror the same commands as `Verify: all tests and coverage` instead of redefining the stack separately.
 
 ## What is still missing in the repo
 

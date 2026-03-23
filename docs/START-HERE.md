@@ -51,10 +51,14 @@ This project must be run in English.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
+- Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
+- The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
+- If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
 - Run `zeus build` after larger changes to keep the device package healthy.
 
 Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `zeus dev` before treating the simulator result as meaningful.
 Playwright coverage here is intentionally limited to the browser module harness under `coverage/playwright/harness/`. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
+`Verify: all tests and coverage` is the repo-standard local job. If CI is introduced later, it should mirror the same command list rather than reassemble the test stack in a second place.
 
 ## What is still missing
 

@@ -170,7 +170,7 @@ Build bootstrap and data push from phone to watch.
 - done: `catalog_cache_v1`, `last_result_v1`, and `sync_meta_v1` are persisted locally on the watch,
 - done: the watch router reads recipes from the synced phone catalog,
 - done: baseline tests for sync contracts and snapshot normalization,
-- follow-up: placeholder watch pages still do not have full live rerender when a snapshot arrives while the page is already open.
+- follow-up: watch pages now refresh through runtime events, but the UI is still not fully reactive when data changes while a page is already open.
 
 ## Stage 5 - watch browse and recipe engine
 
@@ -215,7 +215,6 @@ Bring up the main `tool -> recipe -> active brew` flow.
 - done: best-effort feedback layer for haptics and system sounds,
 - done: runtime event refresh for list pages and result summary,
 - follow-up: the current watch recipe list UI exposes only the first two recipes for a brewer; add pagination, scrolling, or another browse pattern before treating watch recipe browse as fully scalable,
-- follow-up: aborted sessions currently mark the in-progress step as completed in history metrics; distinguish interrupted steps from completed steps before relying on `completedSteps` and deviation stats,
 - follow-up: real-device validation of feedback and resume remains in Stage 6.
 
 ## Stage 6 - resume, offline, and hard validation
@@ -264,9 +263,11 @@ Make sure v1 behaves sensibly after interruption.
 - done: mocked Zepp runtime tests now cover cached watch browse, full brew completion from `RecipeSnapshot`, incoming catalog sync, and pending-history replay with ACK handling,
 - done: Vitest now runs both the pure logic suite and the mocked Zepp runtime suite, and `npm run test:coverage` emits coverage reports,
 - done: shared helper coverage now includes feedback cues, recipe-engine utilities, display guard behavior, runtime event delivery, and router resume / discard / abort flows,
+- done: the test review pass replaced weak or coverage-padding checks with behavior-focused assertions for recipe duplication, history note updates, invalid JSON fallback logging, runtime-event failure isolation, bootstrap request sending, and queued history replay envelopes,
 - done: `npm run test:playwright:coverage:harness` now gives the same script a no-simulator module-harness mode that imports and executes real browser-safe project modules in a local browser process,
 - done: the same Playwright simulator and module-harness flows now also have no-coverage smoke entrypoints, so they can be run as pass/fail checks before generating coverage reports,
 - done: the simulator-side Playwright commands now verify that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files before they claim to test the simulator build,
+- done: the repo now has a single local verification job as the VS Code compound task `Verify: all tests and coverage`, which runs the full non-simulator verification stack without relying on CI or wrapper scripts,
 - note: the no-coverage simulator smoke path currently polls the simulator DevTools page list instead of using a full Playwright `connectOverCDP()` browser attach, because the simulator may reject that path with `Browser.setDownloadBehavior` context-management errors,
 - done: the repo-standard npm test menu now removes simulator-side V8 coverage because the current simulator DevTools endpoint exposes shell/framework/preload scripts more reliably than PourOverFlow app code,
 - note: a current simulator limitation is now verified: the DevTools target list may expose only the Electron shell page under `Program Files/simulator/resources/app.asar/...`, which blocks real app-code V8 coverage even though the simulator smoke check itself still works,

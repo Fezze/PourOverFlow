@@ -72,11 +72,28 @@ describe("playwright coverage helpers", () => {
     });
   });
 
+  it("rejects invalid CLI argument combinations", () => {
+    expect(() => parsePlaywrightCoverageArgs(["--duration-ms", "0"])).toThrow(
+      "Expected a positive number after --duration-ms."
+    );
+    expect(() => parsePlaywrightCoverageArgs(["--output-dir"])).toThrow(
+      "Expected a path after --output-dir."
+    );
+    expect(() => parsePlaywrightCoverageArgs(["--unknown-flag"])).toThrow(
+      "Unknown Playwright coverage argument: --unknown-flag"
+    );
+  });
+
   it("parses the simulator devtools port file", () => {
     expect(parseDevToolsActivePort("11120\r\n/devtools/browser/example")).toEqual({
       port: 11120,
       browserPath: "/devtools/browser/example"
     });
+  });
+
+  it("rejects empty or invalid devtools port files", () => {
+    expect(() => parseDevToolsActivePort("")).toThrow("DevToolsActivePort is empty.");
+    expect(() => parseDevToolsActivePort("abc")).toThrow("Invalid DevTools port: abc");
   });
 
   it("normalizes coverage file paths from file urls and raw paths", () => {

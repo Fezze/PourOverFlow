@@ -9,7 +9,8 @@ yarn.lock
 package-lock.json
 selenium-debug.log
 .idea
-.vscode
+.vscode/*
+!.vscode/tasks.json
 *.suo
 *.ntvs*
 *.njsproj
