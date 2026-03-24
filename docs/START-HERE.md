@@ -40,7 +40,7 @@ This project must be run in English.
 - a more production-shaped session reducer with timed and confirm step semantics,
 - timestamp-based active session reconciliation on app entry,
 - active-brew display guard handling for wake-up relaunch and page bright time,
-- a Zepp-native watch browse flow with scrollable brewer and recipe lists plus a dedicated recipe detail/start page,
+- a Zepp-native watch browse flow with scrollable brewer and recipe lists, real method icons, and a dedicated recipe detail/start page,
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - a dedicated `validation` page, reachable from `result-summary`, for Stage 6 hardware checks,

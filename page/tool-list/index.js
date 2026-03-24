@@ -24,6 +24,7 @@ function supportsHardwareListFocus() {
 
 function buildToolRows(tools) {
   return tools.map((tool) => ({
+    icon: `${tool.iconStem}.png`,
     title: tool.label,
     meta: tool.recipeCount === 1 ? "1 recipe" : `${tool.recipeCount || 0} recipes`,
     toolId: tool.toolId
@@ -37,11 +38,22 @@ function createToolListConfig() {
       item_bg_color: 0x171d26,
       item_bg_radius: LIST_FRAME.itemRadius,
       item_press_effect: true,
+      image_view: [
+        {
+          x: 18,
+          y: 24,
+          w: 56,
+          h: 56,
+          key: "icon",
+          action: true
+        }
+      ],
+      image_view_count: 1,
       text_view: [
         {
-          x: 20,
+          x: 92,
           y: 18,
-          w: LIST_FRAME.w - 40,
+          w: LIST_FRAME.w - 112,
           h: LIST_FRAME.titleHeight,
           key: "title",
           color: 0xf5f7fa,
@@ -51,9 +63,9 @@ function createToolListConfig() {
           align_v: hmUI.align.CENTER_V
         },
         {
-          x: 20,
+          x: 92,
           y: 58,
-          w: LIST_FRAME.w - 40,
+          w: LIST_FRAME.w - 112,
           h: LIST_FRAME.metaHeight,
           key: "meta",
           color: 0xaab4c2,

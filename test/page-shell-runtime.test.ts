@@ -181,6 +181,11 @@ describe("page shell runtime coverage", () => {
 
     expect(scrollList).toBeTruthy();
     expect(scrollList.item_common_focus).toBe(true);
+    expect(scrollList.item_config[0].image_view_count).toBe(1);
+    expect(scrollList.data_array[0]).toMatchObject({
+      icon: "tool-aeropress.png",
+      title: "AeroPress"
+    });
     expect(textWidgets.some((widget) => String(widget.text).includes("synced tools on watch"))).toBe(false);
     expect(buttons).toHaveLength(0);
 

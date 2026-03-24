@@ -41,7 +41,7 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 - show only tools with `supported: true`,
 - sort by `sortOrder`,
 - render the brewer catalog as a native scrollable list,
-- each row shows the brewer label and the number of available recipes for that `toolId`,
+- each row shows the brewer icon, brewer label, and the number of available recipes for that `toolId`,
 - keep the populated chooser visually quiet: do not show cache state, bridge state, or a redundant `Home` CTA on this screen,
 - support hardware-key list focus when the watch exposes compatible keys,
 - tapping a tool writes the selected `toolId` into watch runtime state and opens `recipe-list`.

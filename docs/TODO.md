@@ -277,6 +277,7 @@ Make sure v1 behaves sensibly after interruption.
 - done: the mocked Zepp runtime harness now also covers page-shell behavior for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `result-summary`, and `validation`, including runtime-event rebuilds, empty-state fallbacks, stale-selection recovery, scroll-list routing, action-list behavior, and device-info fallback behavior without needing the simulator,
 - done: the watch now exposes a dedicated `validation` page from `result-summary`, giving Stage 6 a stable hardware-check surface for haptics, sound, sync responsiveness, and readable runtime state,
 - done: populated watch chooser pages now stay visually quiet, avoiding bridge/cache copy and redundant home buttons while keeping diagnostics on the dedicated `validation` page,
+- done: the brewer chooser now renders real method icons from `ToolDefinition.iconStem` assets instead of placeholder-only text rows,
 - done: validation cues now try direct vibration first and a stronger sound path with buzzer fallback so repeated manual hardware checks are more reliable,
 - note: the no-coverage simulator smoke path currently polls the simulator DevTools page list instead of using a full Playwright `connectOverCDP()` browser attach, because the simulator may reject that path with `Browser.setDownloadBehavior` context-management errors,
 - done: the repo-standard npm test menu now removes simulator-side V8 coverage because the current simulator DevTools endpoint exposes shell/framework/preload scripts more reliably than PourOverFlow app code,
