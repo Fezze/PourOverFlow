@@ -16,10 +16,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@zos/ble": resolve(__dirname, "zeus-runtime/zos-ble.ts"),
+      "@zos/device": resolve(__dirname, "zeus-runtime/zos-device.ts"),
       "@zos/display": resolve(__dirname, "zeus-runtime/zos-display.ts"),
+      "@zos/interaction": resolve(__dirname, "zeus-runtime/zos-interaction.ts"),
       "@zos/router": resolve(__dirname, "zeus-runtime/zos-router.ts"),
       "@zos/sensor": resolve(__dirname, "zeus-runtime/zos-sensor.ts"),
-      "@zos/storage": resolve(__dirname, "zeus-runtime/zos-storage.ts")
+      "@zos/storage": resolve(__dirname, "zeus-runtime/zos-storage.ts"),
+      "@zos/ui": resolve(__dirname, "zeus-runtime/zos-ui.ts")
     }
   }
 });

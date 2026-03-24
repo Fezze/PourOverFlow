@@ -4,7 +4,7 @@ PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a w
 
 ## Current status
 
-The repo already has Stages 3, 4, and 5 completed, and the code-facing part of Stage 6 is now in place. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, baseline logic tests, and mocked Zepp runtime integration tests for cached watch flow and queue replay.
+The repo already has Stages 3, 4, and 5 completed, and the code-facing part of Stage 6 is now in place. It includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`.
 
 ## Project language
 
@@ -67,7 +67,7 @@ The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness/`.
-- current meaningful local coverage baselines are `93.30% / 86.05% / 98.25% / 93.19%` for Vitest and `93.63% / 83.05% / 93.95% / 93.63%` for the Playwright module harness.
+- current meaningful local coverage baselines are `93.40% / 84.68% / 98.20% / 93.29%` for Vitest and `93.63% / 83.05% / 93.95% / 93.63%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in sequence without relying on a wrapper script or CI.
 - `zeus build` remains the required compile gate after larger changes.
@@ -83,7 +83,6 @@ The verification workflow is intentionally local-first and does not assume CI. I
 ## What is still missing in the repo
 
 - hard validation of wake-up relaunch, anti-sleep, haptic, and audio behavior on a real device,
-- fuller page-shell mocked Zepp runtime coverage for widget refresh and page lifecycle,
 - literal 100% local coverage, if the team still wants to keep pushing the current baselines.
 - a concrete project Figma node or page link, if the team wants tighter visual matching than the current Zepp-design-system-based UX pass.
 

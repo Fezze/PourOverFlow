@@ -77,6 +77,14 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 - `setting/` must remain the only place for recipe and history CRUD.
 - `app-side/` must remain the only sync bridge to the watch.
 
+## Commit and verification discipline
+
+- Before every commit, run the repo-standard verification stack or an equivalent full local verify pass and make sure it is green.
+- The preferred verify path is the VS Code compound task `Verify: all tests and coverage`; command-line equivalents are acceptable when they cover the same stack.
+- After finishing a meaningful chunk of work, create a commit instead of leaving completed work uncommitted.
+- If the user explicitly asks not to commit yet, follow that instruction and keep the tree ready instead.
+- Do not commit known-broken code, stale docs, or partially updated contracts.
+
 ## Mandatory backlog and documentation hygiene
 
 Every agent working in this repo must keep the backlog and documentation usable for the next agent.
@@ -117,6 +125,8 @@ Minimum standard:
 - pure-logic tests for the model, session reducer, and sync,
 - simulator validation for layout and flow,
 - real-device validation for haptics, audio, screen sleep, and resume.
+- improve coverage when meaningful tests can be added without turning the suite into coverage padding.
+- prefer behavior-focused tests over superficial assertions written only to move the percentage.
 
 Do not treat the simulator as proof of feedback behavior or screen-off behavior.
 
@@ -153,7 +163,8 @@ The first implementation task from the current repo state is Stage 6:
 - Watch-side bootstrap and queue replay should fail fast when the bridge is disconnected so offline startup stays responsive instead of repeatedly attempting transport.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/`; use it for flow-level watch tests before leaning on the simulator for every regression.
 - `npm test` now runs the unified Vitest suite, and `npm run test:coverage` is the repo-standard JS coverage command.
-- The current meaningful local coverage baselines are `93.30% / 86.05% / 98.25% / 93.19%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`; if a later agent pushes for literal 100%, the remaining hotspots are `sync-bridge`, `watch-store`, `phone-store`, `validators`, `display-guard`, `router`, and the browser-harness copies of `session-reducer` and `recipe-engine`.
+- The current meaningful local coverage baselines are `93.40% / 84.68% / 98.20% / 93.29%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`; if a later agent pushes for literal 100%, the remaining hotspots are mostly defensive Zepp-runtime branches in `sync-bridge`, `phone-store`, `validators`, `tool-list`, `home`, `recipe-list`, and the browser-harness copies of `session-reducer` and `recipe-engine`.
+- The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks `zosLoader:./index.[pf].layout.js`, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
 - The repo includes `npm run test:playwright` and `npm run test:playwright:harness` as no-coverage Playwright smoke runs, so the simulator path and the browser module harness can both be exercised without writing coverage reports.
 - The same script supports `npm run test:playwright:coverage:harness`, which opens a local browser harness page and executes real browser-safe project modules for Playwright/V8 coverage without a simulator; keep treating it as complementary to Vitest, not as proof of Zepp-only runtime behavior.
 - The repo-standard full local verification job is the VS Code compound task `Verify: all tests and coverage` in `.vscode/tasks.json`; it runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in one pass.

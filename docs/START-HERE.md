@@ -44,7 +44,8 @@ This project must be run in English.
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
-- mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay.
+- mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay,
+- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`, including runtime-event refresh and empty or stale-state fallbacks.
 
 ## Test loop
 
@@ -53,11 +54,14 @@ This project must be run in English.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
-- Current meaningful coverage baselines after the latest test expansion are `93.30% / 86.05% / 98.25% / 93.19%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
+- Current meaningful coverage baselines after the latest test expansion are `93.40% / 84.68% / 98.20% / 93.29%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
 - Run `zeus build` after larger changes to keep the device package healthy.
+- Before every commit, run the repo-standard verify stack and make sure it is green.
+- After finishing a meaningful chunk of work, commit it unless the user explicitly asked you not to commit yet.
+- Keep pushing coverage upward when meaningful behavior-focused tests can be added without padding the suite.
 
 Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `zeus dev` before treating the simulator result as meaningful.
 Playwright coverage here is intentionally limited to the browser module harness under `coverage/playwright/harness/`. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
@@ -67,8 +71,7 @@ Playwright coverage here is intentionally limited to the browser module harness 
 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
-- literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `watch-store`, `phone-store`, `validators`, `feedback`, and the browser-harness copies of `session-reducer` and `recipe-engine`,
-- fuller mocked page-shell runtime coverage if widget refresh behavior starts regressing.
+- literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `phone-store`, `validators`, the page shells with defensive empty-state branches, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 
 ## Read first
 
@@ -178,6 +181,7 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - The current sync path is no longer full-bootstrap-only: the phone side now classifies storage changes by slice and answers `REQUEST_BOOTSTRAP` only for stale revisions.
 - Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
+- The mocked Zepp runtime harness now also exercises page shells by aliasing `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocking `zosLoader:` layout modules, and asserting widget creation plus runtime-event refresh behavior from captured `Page(...)` definitions.
 - The repo now uses `scripts/playwright-simulator-coverage.mjs` for two meaningful Playwright roles only: simulator smoke without coverage and module-harness smoke or coverage for browser-safe shared code.
 - Simulator-side V8 coverage was intentionally removed from the repo-standard test menu because the current simulator exposes shell/framework/preload scripts more reliably than PourOverFlow app code.
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.

@@ -21,6 +21,25 @@ const batteryState = {
   level: 75
 };
 
+const defaultDeviceInfo = {
+  width: 480,
+  height: 480,
+  keyNumber: 3,
+  keyType: "sport"
+};
+
+const deviceState = {
+  info: { ...defaultDeviceInfo }
+};
+
+const interactionState = {
+  keyHandler: null as null | ((key: string, action?: number) => boolean)
+};
+
+const uiState = {
+  widgets: [] as Array<Record<string, unknown>>
+};
+
 const localStorageState = new Map();
 const buzzerInstances = new Set();
 const systemSoundInstances = new Set();
@@ -41,6 +60,44 @@ const display = {
   setWakeUpRelaunch: vi.fn(() => true),
   setPageBrightTime: vi.fn(() => true),
   resetPageBrightTime: vi.fn(() => true)
+};
+
+const ui = {
+  widget: {
+    FILL_RECT: "FILL_RECT",
+    TEXT: "TEXT",
+    BUTTON: "BUTTON",
+    SCROLL_LIST: "SCROLL_LIST"
+  },
+  align: {
+    LEFT: "LEFT",
+    RIGHT: "RIGHT",
+    CENTER_V: "CENTER_V",
+    TOP: "TOP"
+  },
+  text_style: {
+    WRAP: "WRAP"
+  },
+  createWidget: vi.fn((type, config = {}) => {
+    const widgetInstance = {
+      type,
+      ...config
+    };
+    uiState.widgets.push(widgetInstance);
+    return widgetInstance;
+  })
+};
+
+const device = {
+  getDeviceInfo: vi.fn(() => ({ ...deviceState.info }))
+};
+
+const interaction = {
+  KEY_SHORTCUT: "KEY_SHORTCUT",
+  onKey: vi.fn(({ callback }: { callback?: (key: string, action?: number) => boolean }) => {
+    interactionState.keyHandler = typeof callback === "function" ? callback : null;
+    return true;
+  })
 };
 
 const ble = {
@@ -136,6 +193,14 @@ export function setBatteryLevel(level) {
   batteryState.level = level;
 }
 
+export function setDeviceInfo(info = {}) {
+  deviceState.info = {
+    ...defaultDeviceInfo,
+    ...deviceState.info,
+    ...info
+  };
+}
+
 export function setBleConnected(connected) {
   bleState.connected = Boolean(connected);
 
@@ -162,6 +227,27 @@ export function setLocalStorageState(entries = {}) {
   });
 }
 
+export function getCreatedWidgets() {
+  return [...uiState.widgets];
+}
+
+export function findCreatedWidgetsByType(type: string) {
+  return uiState.widgets.filter((widget) => widget.type === type);
+}
+
+export function triggerShortcutKey(action = 1) {
+  if (!interactionState.keyHandler) {
+    return false;
+  }
+
+  return interactionState.keyHandler(interaction.KEY_SHORTCUT, action);
+}
+
+export function getLastPageDefinition() {
+  const pageFactory = globalThis.Page as unknown as { mock?: { calls?: Array<[Record<string, unknown>]> } };
+  return pageFactory?.mock?.calls?.at(-1)?.[0] || null;
+}
+
 export function resetZeppRuntime() {
   installGlobals();
   appState.globalData = {};
@@ -173,6 +259,9 @@ export function resetZeppRuntime() {
   bleState.connectionListener = null;
   bleState.sentPayloads = [];
   batteryState.level = 75;
+  deviceState.info = { ...defaultDeviceInfo };
+  interactionState.keyHandler = null;
+  uiState.widgets = [];
   setLocalStorageState();
 
   router.push.mockClear();
@@ -181,6 +270,9 @@ export function resetZeppRuntime() {
   display.setWakeUpRelaunch.mockClear();
   display.setPageBrightTime.mockClear();
   display.resetPageBrightTime.mockClear();
+  ui.createWidget.mockClear();
+  device.getDeviceInfo.mockClear();
+  interaction.onKey.mockClear();
   ble.createConnect.mockClear();
   ble.disConnect.mockClear();
   ble.send.mockClear();
@@ -213,11 +305,17 @@ export const __zeusRuntime = {
   ble,
   bleState,
   buzzerInstances,
+  device,
+  deviceState,
   display,
+  interaction,
+  interactionState,
   localStorageApi,
   router,
   routerState,
-  systemSoundInstances
+  systemSoundInstances,
+  ui,
+  uiState
 };
 
 export {
@@ -226,6 +324,9 @@ export {
   LocalStorage,
   SystemSounds,
   ble,
+  device,
   display,
-  router
+  interaction,
+  router,
+  ui
 };

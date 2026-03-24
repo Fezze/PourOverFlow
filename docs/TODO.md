@@ -6,6 +6,9 @@
 - Do not skip `zeus build`.
 - Do not implement the background engine as something "guaranteed" until it passes a separate spike.
 - Do not add features outside v1 scope just because they "might be useful".
+- Before every commit, run the repo-standard verify stack and keep it green.
+- After finishing a meaningful chunk of work, commit it unless the user explicitly asks to delay the commit.
+- Keep pushing coverage higher when meaningful behavior-focused tests exist; do not add coverage-padding tests just to move the number.
 - This file must be maintained continuously: remove completed items or mark them clearly, and add new tasks immediately.
 - If new problems, debt, constraints, or follow-ups appear during the work, add them here or to the relevant architecture document in the same session.
 - Keep this backlog in English. New tasks, notes, risks, and follow-ups must be written in English.
@@ -269,7 +272,8 @@ Make sure v1 behaves sensibly after interruption.
 - done: the same Playwright simulator and module-harness flows now also have no-coverage smoke entrypoints, so they can be run as pass/fail checks before generating coverage reports,
 - done: the simulator-side Playwright commands now verify that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files before they claim to test the simulator build,
 - done: the repo now has a single local verification job as the VS Code compound task `Verify: all tests and coverage`, which runs the full non-simulator verification stack without relying on CI or wrapper scripts,
-- done: the current meaningful coverage baselines are now much higher, with `npm run test:coverage` at `93.30%` statements / `86.05%` branches / `98.25%` functions / `93.19%` lines and `npm run test:playwright:coverage:harness` at `93.63%` statements / `83.05%` branches / `93.95%` functions / `93.63%` lines,
+- done: the current meaningful coverage baselines are now much higher, with `npm run test:coverage` at `93.40%` statements / `84.68%` branches / `98.20%` functions / `93.29%` lines and `npm run test:playwright:coverage:harness` at `93.63%` statements / `83.05%` branches / `93.95%` functions / `93.63%` lines,
+- done: the mocked Zepp runtime harness now also covers page-shell behavior for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`, including runtime-event rebuilds, empty-state fallbacks, stale-selection recovery, scroll-list routing, and device-info fallback behavior without needing the simulator,
 - note: the no-coverage simulator smoke path currently polls the simulator DevTools page list instead of using a full Playwright `connectOverCDP()` browser attach, because the simulator may reject that path with `Browser.setDownloadBehavior` context-management errors,
 - done: the repo-standard npm test menu now removes simulator-side V8 coverage because the current simulator DevTools endpoint exposes shell/framework/preload scripts more reliably than PourOverFlow app code,
 - note: a current simulator limitation is now verified: the DevTools target list may expose only the Electron shell page under `Program Files/simulator/resources/app.asar/...`, which blocks real app-code V8 coverage even though the simulator smoke check itself still works,
@@ -286,7 +290,6 @@ Make sure v1 behaves sensibly after interruption.
 - remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
 - remaining: if the team still wants literal 100% local coverage, the next hotspots are `shared/watch/sync-bridge.js`, `shared/storage/watch-store.js`, `shared/storage/phone-store.js`, `shared/domain/validators.js`, `shared/watch/router.js`, `shared/watch/display-guard.js`, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`,
 - remaining: decide whether to expand the Playwright module harness to Zepp-dependent modules via browser stubs for `@zos/*`, or keep it focused on browser-safe shared modules only,
-- remaining: add page-shell mocked runtime coverage for runtime-event refresh and widget rebuild behavior if UI regressions appear.
 - remaining: if the team wants stricter visual fidelity than the current Zepp-design-system-based UX pass, store a concrete project Figma page or node link in the repo and map the watch pages to it explicitly.
 
 ## Stage 7 - experimental background reminder spike
