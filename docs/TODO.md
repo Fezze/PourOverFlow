@@ -130,6 +130,7 @@ Bring up the canonical data layer on the phone side.
 - done: seed library and seeding into `settingsStorage`,
 - done: `RecipeRecord`, `RecipeSummary`, `HistoryEntry`, and validators,
 - done: `setting/` with views `library-home`, `recipe-list`, `recipe-editor`, `history-list`, `history-detail`, `about-sync`,
+- done: the phone-side Settings UX now uses active top navigation, contextual shell headers, summary cards, and less redundant per-record actions,
 - done: recipe CRUD and history note editing,
 - done: baseline Node tests for validators and phone storage,
 - note: at this stage `app-side/` seeds data and logs changes, but does not yet push snapshots to the watch runtime.

@@ -246,6 +246,14 @@ This is intentional. V1 should stay simple, readable, and aligned with Zepp docu
 - Fields with a restricted option set should use `Select`, not free text.
 - `toolId`, `colorToken`, `kind`, and `feedbackCue` must not be plain text inputs.
 
+### Layout and hierarchy policy
+
+- Keep a small persistent top navigation for `Library`, `History`, and `Sync`.
+- Use one contextual shell header per view to explain where the user is and what the screen is for.
+- Prefer card-like read-only summary buttons for counts, latest result summaries, recipe cards, and history cards.
+- A card tap may be the primary "open/edit" action. Do not keep a second redundant `Edit` button next to the same card if the card already opens the record.
+- Prefer a few grouped sections with clear subtitles over many short utility rows.
+
 ### Save policy
 
 - Keep form changes in `this.state.draftRecipe` first.
@@ -259,10 +267,10 @@ This is intentional. V1 should stay simple, readable, and aligned with Zepp docu
 Must contain:
 
 - a `Section` with the supported tools and recipe counts,
-- a `Button` to go to history,
-- a `Section` showing sync state.
+- a high-level library summary,
+- every supported `toolId` visible even if it has 0 recipes.
 
-Every supported `toolId` must be visible even if it has 0 recipes.
+History and sync remain reachable from the persistent top navigation, so they do not need extra duplicate buttons on `library-home`.
 
 ### `recipe-list`
 
@@ -271,7 +279,9 @@ Must contain:
 - a title with the tool name,
 - the recipe list for one `selectedToolId`,
 - a `Create` button,
-- `Edit`, `Duplicate`, and `Delete` actions for every recipe.
+- `Duplicate` and `Delete` actions for every recipe.
+
+The recipe card itself may be the `Edit` entrypoint when tapped.
 
 Sorting:
 
@@ -309,7 +319,7 @@ Must contain:
 - the `HistoryIndexEntry` list,
 - status,
 - recipe name,
-- end date/time,
+- end date or date summary,
 - entry to `history-detail`.
 
 Do not add advanced filters as baseline behavior.

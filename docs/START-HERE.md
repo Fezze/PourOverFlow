@@ -33,6 +33,7 @@ This project must be run in English.
 - Zepp app scaffold with passing `zeus build`,
 - seed data in `settingsStorage`,
 - real CRUD for recipes and history notes in `setting/`,
+- a cleaner phone-side Settings UX with active top navigation, contextual shell headers, and card-based recipe and history browse screens,
 - runtime sync with `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
 - watch cache in `LocalStorage` for catalog, latest result, and sync metadata,
 - storage-backed `active_session_v1`,

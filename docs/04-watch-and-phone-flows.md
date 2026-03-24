@@ -266,10 +266,12 @@ Give Stage 6 a stable on-watch surface for manual hardware checks without mixing
 
 ### Contents
 
+- persistent top navigation for `Library`, `History`, and `Sync`,
+- contextual shell header,
+- library summary card,
 - supported tools section,
 - recipe count per tool,
-- entry to `history-list`,
-- sync state section.
+- optional latest-result summary card.
 
 ### Behavior
 
@@ -285,11 +287,15 @@ From `library-home` after tapping a tool.
 ### View
 
 - recipe list for one `toolId`,
-- buttons `Create`, `Edit`, `Delete`, `Duplicate`.
+- tool summary card,
+- button `New recipe`,
+- card-tap entry into editing,
+- secondary actions `Duplicate` and `Delete`.
 
 ### Rules
 
 - `Create` always requires a selected tool from the whitelist,
+- tapping a recipe card may be the primary `Edit` action, so a second redundant `Edit` button is not required,
 - `Duplicate` copies the full record and creates a new `recipeId`,
 - `Delete` removes the recipe record but keeps history.
 
@@ -334,6 +340,7 @@ Each step has its own sub-form:
 ### `history-list`
 
 - `HistoryIndexEntry` list,
+- archived-brews summary card,
 - sorted by `endedAt desc`,
 - optional filtering by `toolId` is an enhancement, not baseline.
 
