@@ -41,8 +41,10 @@ This project must be run in English.
 - timestamp-based active session reconciliation on app entry,
 - active-brew display guard handling for wake-up relaunch and page bright time,
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists plus a dedicated recipe detail/start page,
+- quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - a dedicated `validation` page, reachable from `result-summary`, for Stage 6 hardware checks,
+- Vibrator-first validation cues with stronger sound validation that may fall back to the buzzer when system sound alone is unavailable,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
@@ -74,6 +76,7 @@ Playwright coverage here is intentionally limited to the browser module harness 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
 - real-watch use of the `validation` page to confirm haptics, audio, and offline-safe sync checks,
+- confirmation that the latest round-screen spacing pass fixes clipped chooser-page chrome on real hardware,
 - literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `phone-store`, `validators`, the page shells with defensive empty-state branches, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 
 ## Read first

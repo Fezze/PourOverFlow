@@ -42,6 +42,7 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 - sort by `sortOrder`,
 - render the brewer catalog as a native scrollable list,
 - each row shows the brewer label and the number of available recipes for that `toolId`,
+- keep the populated chooser visually quiet: do not show cache state, bridge state, or a redundant `Home` CTA on this screen,
 - support hardware-key list focus when the watch exposes compatible keys,
 - tapping a tool writes the selected `toolId` into watch runtime state and opens `recipe-list`.
 
@@ -64,6 +65,7 @@ If a tool has no recipes:
 - render `RecipeSummary[]` only for that tool,
 - render recipes as a native scrollable list,
 - each visible recipe row shows name, update recency, and a short summary of key brew parameters,
+- keep the populated chooser focused on list selection instead of extra footer actions,
 - tapping a recipe opens `recipe-detail`,
 - the screen should not start brewing directly from a list tap.
 
@@ -88,6 +90,7 @@ Minimum UI set:
 1. read `selectedRecipeId` from watch runtime state,
 2. show a compact summary of the selected `RecipeSnapshot`,
 3. keep the start CTA separate from the browse list,
+4. in the healthy state, prefer a single prominent `Start brew` CTA and let system back navigation return to `recipe-list`,
 4. allow going back to `recipe-list` without mutating the recipe snapshot.
 
 ## Watch flow 5 - session start
@@ -254,7 +257,8 @@ Give Stage 6 a stable on-watch surface for manual hardware checks without mixing
 ### Behavior
 
 - the page rebuilds on runtime events for `catalog`, `last_result`, `sync_meta`, `connection`, and validation-note updates,
-- haptic and sound actions should write a readable validation note even when the capability is unavailable,
+- haptic actions should try direct vibration first and still write a readable validation note when the capability is unavailable,
+- sound actions should prefer a strong system sound and may fall back to the buzzer before writing the validation note,
 - the sync action should stay fast when the bridge is offline and report that it skipped the request instead of blocking the watch UI,
 - the page is intentionally entered from `result-summary`, so hardware validation stays adjacent to a completed or resumed brew flow instead of crowding `home`.
 

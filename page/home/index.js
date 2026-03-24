@@ -17,7 +17,6 @@ import {
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
-  FOOTER_TEXT,
   SUBTITLE_TEXT,
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
@@ -29,20 +28,14 @@ function buildHomeBody(state) {
     lines.push(state.activeSession.recipeName);
     lines.push(`Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`);
   } else if (state.selectedTool) {
-    lines.push(`${state.selectedTool.label} selected`);
-    lines.push(`${state.recipeCount} cached recipes ready`);
+    lines.push(`Last brewer: ${state.selectedTool.label}`);
+    lines.push("Choose a recipe and start brewing.");
   } else {
-    lines.push("No cached brewer selected yet");
+    lines.push("Choose a brewer to start the next brew.");
   }
 
-  lines.push(
-    state.connected ? "Phone bridge connected" : state.catalogReady ? "Using watch cache" : "Phone sync required"
-  );
-
   if (state.lastResult) {
-    lines.push(`Last: ${state.lastResult.recipeName}`);
-  } else if (state.pendingHistoryCount) {
-    lines.push(`Pending sync: ${state.pendingHistoryCount}`);
+    lines.push(`Last brew: ${state.lastResult.recipeName}`);
   }
 
   return lines.join("\n");
@@ -78,7 +71,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: scaffoldState.activeSession ? "Resume your brew" : "Brew from watch cache"
+      text: scaffoldState.activeSession ? "Resume your brew" : "Choose your brewer"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -98,7 +91,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: scaffoldState.activeSession ? "Discard session" : "Sync now",
+      text: scaffoldState.activeSession ? "Discard session" : "Refresh library",
       click_func: () => {
         if (scaffoldState.activeSession) {
           discardActiveSessionFromHome();
@@ -115,10 +108,6 @@ Page({
       click_func: () => {
         goToResultSummary();
       }
-    });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      text: "Phone edits affect future brews only."
     });
   }
 });

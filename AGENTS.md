@@ -151,6 +151,8 @@ The first implementation task from the current repo state is Stage 6:
 - Watch browse now uses scrollable brewer and recipe lists plus a dedicated `recipe-detail` start page; if a later agent redesigns watch browse, update the flow docs and backlog instead of changing it silently.
 - `brew-active` now binds the Zepp shortcut key as a secondary confirm / next-step action when the device exposes it; keep it additive, not mandatory.
 - The watch now includes a dedicated `validation` page, reachable from `result-summary`, for Stage 6 hardware checks. Keep it focused on haptics, sound, sync responsiveness, and readable runtime state rather than turning it into a general-purpose debug menu.
+- Keep populated watch chooser pages quiet. `tool-list` and `recipe-list` should prioritize selection, not bridge/cache diagnostics or redundant home actions. Transport state belongs on the dedicated `validation` page.
+- The validation page now prefers direct vibration and a stronger sound cue with buzzer fallback. Treat that as best-effort hardware behavior that still needs real-watch confirmation, not simulator proof.
 - The latest UX pass follows official Zepp design-system list patterns. If stricter Figma matching is needed later, the repo should first store a concrete project Figma page or node link instead of relying on a generic "use Figma" instruction.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 - In local simulator workflows, `zeus dev` may push the app more reliably than bridge `install`; if bridge `install` appears to do nothing in the simulator, prefer `zeus dev` for deployment and keep bridge for connection/debug tasks.

@@ -27,48 +27,60 @@ describe("feedback helpers", () => {
     expect(getFeedbackLabel("unknown")).toBe("No cue");
   });
 
-  it("plays a buzzer cue for short vibration feedback", async () => {
+  it("plays a direct vibration cue for short haptic feedback", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
 
     expect(playFeedbackCue("vibrate_short")).toBe(true);
 
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    expect(buzzer.start).toHaveBeenCalledWith(1, 0);
+    const vibrator = getLastItem(runtime.__zeusRuntime.vibratorInstances);
+    expect(vibrator.stop).toHaveBeenCalled();
+    expect(vibrator.start).toHaveBeenCalledWith({
+      mode: 101
+    });
   });
 
-  it("falls back to a system sound when combo feedback cannot vibrate", async () => {
+  it("falls back to the buzzer when combo feedback cannot use the vibration motor", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
 
     playFeedbackCue("vibrate_short");
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    buzzer.isEnabled.mockReturnValue(false);
+    const vibrator = getLastItem(runtime.__zeusRuntime.vibratorInstances);
+    vibrator.start.mockImplementation(() => {
+      throw new Error("vibration unavailable");
+    });
 
     expect(playFeedbackCue("combo_short")).toBe(true);
 
-    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
-    expect(systemSound.start).toHaveBeenCalledWith(12, 0);
+    const fallbackBuzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
+    expect(fallbackBuzzer.start).toHaveBeenCalledWith(2, 0);
   });
 
-  it("plays the long vibration cue and rejects unsupported buzzer source types", async () => {
+  it("plays the long vibration cue and rejects unsupported buzzer fallback source types", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
 
     expect(playFeedbackCue("vibrate_long")).toBe(true);
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    expect(buzzer.start).toHaveBeenCalledWith(2, 0);
+    const vibrator = getLastItem(runtime.__zeusRuntime.vibratorInstances);
+    expect(vibrator.start).toHaveBeenCalledWith({
+      mode: 102
+    });
 
+    vibrator.start.mockImplementation(() => {
+      throw new Error("vibration unavailable");
+    });
+    playFeedbackCue("vibrate_long");
+    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
     buzzer.getSourceType.mockReturnValue({
       OPERATE: 1
     });
     expect(playFeedbackCue("vibrate_long")).toBe(false);
   });
 
-  it("rejects system sound cues when the runtime is missing source types", async () => {
+  it("falls back to the buzzer when system sounds cannot provide the requested cue", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
@@ -78,7 +90,10 @@ describe("feedback helpers", () => {
     systemSound.getSourceType.mockReturnValue({
       REGULAR: 10
     });
-    expect(playFeedbackCue("sound_strong")).toBe(false);
+    expect(playFeedbackCue("sound_strong")).toBe(true);
+
+    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
+    expect(buzzer.start).toHaveBeenCalledWith(2, 0);
   });
 
   it("returns false when the requested cue cannot be played", async () => {
@@ -91,6 +106,9 @@ describe("feedback helpers", () => {
     playFeedbackCue("sound_soft");
     const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
     systemSound.getEnabled.mockReturnValue(false);
+    playFeedbackCue("sound_strong");
+    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
+    buzzer.isEnabled.mockReturnValue(false);
 
     expect(playFeedbackCue("sound_strong")).toBe(false);
   });

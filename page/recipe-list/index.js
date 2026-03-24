@@ -4,8 +4,6 @@ import { replace } from "@zos/router";
 import {
   getRecipeListForSelectedTool,
   getSelectedTool,
-  goHome,
-  goToToolList,
   PAGE_URLS,
   refreshPhoneSnapshot,
   selectRecipe
@@ -13,8 +11,7 @@ import {
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
-  BUTTONS,
-  FOOTER_TEXT,
+  EMPTY_BUTTON,
   LIST_FRAME,
   LIST_PANEL,
   SUBTITLE_TEXT,
@@ -38,10 +35,7 @@ function buildRecipeRows(recipes) {
 
     return {
       title: recipe.name,
-      meta: snapshot
-        ? `${snapshot.coffeeDoseG}g / ${snapshot.totalWaterMl}ml / ${totalSeconds}s`
-        : "Snapshot missing",
-      hint: "View",
+      meta: snapshot ? `${snapshot.coffeeDoseG}g / ${snapshot.totalWaterMl}ml / ${totalSeconds}s` : "Snapshot missing",
       recipeId: recipe.recipeId
     };
   });
@@ -58,7 +52,7 @@ function createRecipeListConfig() {
         {
           x: 20,
           y: 16,
-          w: LIST_FRAME.w - 108,
+          w: LIST_FRAME.w - 40,
           h: LIST_FRAME.titleHeight,
           key: "title",
           color: 0xf5f7fa,
@@ -70,7 +64,7 @@ function createRecipeListConfig() {
         {
           x: 20,
           y: 54,
-          w: LIST_FRAME.w - 118,
+          w: LIST_FRAME.w - 40,
           h: LIST_FRAME.metaHeight,
           key: "meta",
           color: 0xaab4c2,
@@ -78,21 +72,9 @@ function createRecipeListConfig() {
           action: true,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
-        },
-        {
-          x: LIST_FRAME.w - 92,
-          y: 24,
-          w: 72,
-          h: 28,
-          key: "hint",
-          color: 0xd9922e,
-          text_size: 18,
-          action: true,
-          align_h: hmUI.align.RIGHT,
-          align_v: hmUI.align.CENTER_V
         }
       ],
-      text_view_count: 3,
+      text_view_count: 2,
       item_height: LIST_FRAME.itemHeight
     }
   ];
@@ -123,7 +105,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: rows.length ? `${rows.length} recipes ready to brew` : "No recipes cached for this brewer"
+      text: rows.length ? "Choose a recipe" : "No recipes for this brewer yet"
     });
 
     if (rows.length) {
@@ -152,33 +134,15 @@ Page({
           selectRecipe(rows[index].recipeId);
         }
       });
+      return;
     }
 
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[0],
-      text: "Brewers",
+      ...EMPTY_BUTTON,
+      text: "Refresh library",
       click_func: () => {
-        goToToolList();
-      }
-    });
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[1],
-      text: rows.length ? "Home" : "Refresh sync",
-      click_func: () => {
-        if (rows.length) {
-          goHome();
-          return;
-        }
-
         refreshPhoneSnapshot();
       }
-    });
-
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      text: rows.length
-        ? "Open a recipe to review it before brewing."
-        : "Add or sync recipes from the phone companion first."
     });
   }
 });

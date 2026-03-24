@@ -1,11 +1,10 @@
 import * as hmUI from "@zos/ui";
 import { getDeviceInfo } from "@zos/device";
 import { replace } from "@zos/router";
-import { goHome, PAGE_URLS, refreshPhoneSnapshot, selectTool, getToolList } from "../../shared/watch/router";
+import { PAGE_URLS, refreshPhoneSnapshot, selectTool, getToolList } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
-  FOOTER_TEXT,
   LIST_FRAME,
   LIST_PANEL,
   PRIMARY_BUTTON,
@@ -26,8 +25,7 @@ function supportsHardwareListFocus() {
 function buildToolRows(tools) {
   return tools.map((tool) => ({
     title: tool.label,
-    meta: tool.recipeCount === 1 ? "1 recipe ready" : `${tool.recipeCount || 0} recipes ready`,
-    hint: "Open",
+    meta: tool.recipeCount === 1 ? "1 recipe" : `${tool.recipeCount || 0} recipes`,
     toolId: tool.toolId
   }));
 }
@@ -43,7 +41,7 @@ function createToolListConfig() {
         {
           x: 20,
           y: 18,
-          w: LIST_FRAME.w - 110,
+          w: LIST_FRAME.w - 40,
           h: LIST_FRAME.titleHeight,
           key: "title",
           color: 0xf5f7fa,
@@ -55,7 +53,7 @@ function createToolListConfig() {
         {
           x: 20,
           y: 58,
-          w: LIST_FRAME.w - 120,
+          w: LIST_FRAME.w - 40,
           h: LIST_FRAME.metaHeight,
           key: "meta",
           color: 0xaab4c2,
@@ -63,21 +61,9 @@ function createToolListConfig() {
           action: true,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
-        },
-        {
-          x: LIST_FRAME.w - 96,
-          y: 26,
-          w: 76,
-          h: 28,
-          key: "hint",
-          color: 0x2d8c82,
-          text_size: 18,
-          action: true,
-          align_h: hmUI.align.RIGHT,
-          align_v: hmUI.align.CENTER_V
         }
       ],
-      text_view_count: 3,
+      text_view_count: 2,
       item_height: LIST_FRAME.itemHeight
     }
   ];
@@ -107,7 +93,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: rows.length ? `${rows.length} synced tools on watch` : "No synced tools yet"
+      text: rows.length ? "Choose a brewer" : "Add recipes on the phone, then refresh."
     });
 
     if (rows.length) {
@@ -138,24 +124,26 @@ Page({
       });
     }
 
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...PRIMARY_BUTTON,
-      text: rows.length ? "Home" : "Refresh sync",
-      click_func: () => {
-        if (rows.length) {
-          goHome();
-          return;
+    if (!rows.length) {
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        ...PRIMARY_BUTTON,
+        text: "Refresh library",
+        click_func: () => {
+          refreshPhoneSnapshot();
         }
-
-        refreshPhoneSnapshot();
-      }
-    });
-
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      text: rows.length
-        ? "Scroll to browse brewers."
-        : "Sync from the phone companion to populate the watch browse list."
-    });
+      });
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        x: PRIMARY_BUTTON.x,
+        y: PRIMARY_BUTTON.y + PRIMARY_BUTTON.h + 10,
+        w: PRIMARY_BUTTON.w,
+        h: 28,
+        color: 0xaab4c2,
+        text_size: 14,
+        align_h: hmUI.align.CENTER_H,
+        align_v: hmUI.align.CENTER_V,
+        text_style: hmUI.text_style.WRAP,
+        text: "The list fills after the next phone sync."
+      });
+    }
   }
 });

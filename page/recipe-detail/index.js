@@ -4,10 +4,8 @@ import { getToolById } from "../../shared/constants/tool-catalog";
 import { getColorNumber } from "../../shared/constants/color-palette";
 import {
   getSelectedRecipe,
-  goHome,
   goToRecipeList,
   PAGE_URLS,
-  refreshPhoneSnapshot,
   startSelectedRecipe
 } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
@@ -25,7 +23,7 @@ function buildRecipeBody(recipe) {
   const snapshot = recipe.recipeSnapshot;
 
   if (!snapshot) {
-    return "Recipe details are missing from the local snapshot.";
+    return "Recipe details are missing from the local snapshot. Return to the list and refresh after the next phone sync.";
   }
 
   return [
@@ -91,30 +89,12 @@ Page({
         goToRecipeList();
       }
     });
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[1],
-      text: "Recipes",
-      click_func: () => {
-        goToRecipeList();
-      }
-    });
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[2],
-      text: selectedRecipe ? "Home" : "Refresh sync",
-      click_func: () => {
-        if (selectedRecipe) {
-          goHome();
-          return;
-        }
 
-        refreshPhoneSnapshot();
-      }
-    });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      text: selectedRecipe
-        ? "Starts from the saved recipe snapshot."
-        : "The local snapshot is unavailable right now."
-    });
+    if (!selectedRecipe) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...FOOTER_TEXT,
+        text: "The local snapshot is unavailable right now."
+      });
+    }
   }
 });

@@ -10,14 +10,21 @@ import {
 const layout = createScaffoldLayout({ shape: "round" });
 const homeButton = createButtonStyle(layout, 0, "secondary");
 
-homeButton.y = px(386);
+homeButton.y = px(390);
 
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const FOOTER_TEXT = layout.footer;
+TITLE_TEXT.x = px(64);
+TITLE_TEXT.y = px(64);
+TITLE_TEXT.w = px(352);
+TITLE_TEXT.text_size = px(26);
+SUBTITLE_TEXT.x = px(64);
+SUBTITLE_TEXT.y = px(100);
+SUBTITLE_TEXT.w = px(352);
 export const STATUS_PANEL = createPanelStyle(layout, {
-  y: px(116),
+  y: px(128),
   h: px(82)
 });
 export const STATUS_TEXT = {
@@ -32,7 +39,7 @@ export const STATUS_TEXT = {
   text_style: hmUI.text_style.WRAP
 };
 export const LIST_PANEL = createPanelStyle(layout, {
-  y: px(214),
+  y: px(226),
   h: px(154),
   color: SHARED_COLORS.surfaceMuted
 });

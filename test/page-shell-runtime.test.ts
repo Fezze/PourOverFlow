@@ -75,6 +75,7 @@ function createLayoutMock(overrides = {}) {
       titleHeight: 40,
       metaHeight: 24
     },
+    EMPTY_BUTTON: {},
     PRIMARY_BUTTON: {},
     HOME_BUTTON: {},
     BUTTONS: [{}, {}, {}],
@@ -123,9 +124,12 @@ describe("page shell runtime coverage", () => {
     const pageInstance = buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
+    const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
 
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse brewers")).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Latest result")).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Phone bridge connected"))).toBe(false);
+    expect(textWidgets.some((widget) => String(widget.text).includes("cached recipes ready"))).toBe(false);
 
     buttons[0].click_func();
     expect(runtime.router.push).toHaveBeenCalledWith({
@@ -172,9 +176,13 @@ describe("page shell runtime coverage", () => {
 
     const pageInstance = buildPage(pageDefinition);
     const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+    const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
+    const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
     expect(scrollList).toBeTruthy();
     expect(scrollList.item_common_focus).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("synced tools on watch"))).toBe(false);
+    expect(buttons).toHaveLength(0);
 
     scrollList.item_click_func(null, 0);
 
@@ -215,9 +223,11 @@ describe("page shell runtime coverage", () => {
     watchStore.getRuntimeState().selectedToolId = fixture.primaryRecord.toolId;
     const pageInstance = buildPage(pageDefinition);
     const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+    const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
     expect(scrollList).toBeTruthy();
     expect(scrollList.data_count).toBe(2);
+    expect(buttons).toHaveLength(0);
 
     scrollList.item_click_func(null, 0);
 
@@ -225,19 +235,6 @@ describe("page shell runtime coverage", () => {
       url: "page/recipe-detail/index"
     });
     expect(watchStore.readSelectedRecipeId()).toBe(fixture.primarySummary.recipeId);
-
-    const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
-
-    buttons[0].click_func();
-    expect(runtime.router.push).toHaveBeenCalledWith({
-      url: "page/tool-list/index"
-    });
-
-    runtime.router.replace.mockClear();
-    buttons[1].click_func();
-    expect(runtime.router.replace).toHaveBeenCalledWith({
-      url: "page/home/index"
-    });
 
     const runtimeEvents = await import("../shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
@@ -274,6 +271,7 @@ describe("page shell runtime coverage", () => {
     const pageInstance = buildPage(pageDefinition);
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
+    expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Start brew");
     buttons[0].click_func();
 
@@ -282,18 +280,6 @@ describe("page shell runtime coverage", () => {
     });
     expect(watchStore.readActiveSession()).toMatchObject({
       recipeId: fixture.primarySummary.recipeId
-    });
-
-    runtime.router.replace.mockClear();
-    buttons[1].click_func();
-    expect(runtime.router.replace).toHaveBeenCalledWith({
-      url: "page/recipe-list/index"
-    });
-
-    runtime.router.replace.mockClear();
-    buttons[2].click_func();
-    expect(runtime.router.replace).toHaveBeenCalledWith({
-      url: "page/home/index"
     });
 
     const runtimeEvents = await import("../shared/watch/runtime-events.js");
@@ -425,8 +411,9 @@ describe("page shell runtime coverage", () => {
     expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
-    expect(buttons[1].text).toBe("Refresh sync");
-    buttons[1].click_func();
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].text).toBe("Refresh library");
+    buttons[0].click_func();
     expect(runtime.ble.send).not.toHaveBeenCalled();
   });
 
@@ -445,15 +432,12 @@ describe("page shell runtime coverage", () => {
 
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
+    expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Back to recipes");
     buttons[0].click_func();
     expect(runtime.router.replace).toHaveBeenCalledWith({
       url: "page/recipe-list/index"
     });
-
-    runtime.router.replace.mockClear();
-    buttons[2].click_func();
-    expect(runtime.ble.send).not.toHaveBeenCalled();
   });
 
   it("renders the no-result summary state and keeps both exit paths usable", async () => {
@@ -508,7 +492,7 @@ describe("page shell runtime coverage", () => {
     expect(scrollList.data_count).toBe(3);
 
     scrollList.item_click_func(null, 0);
-    expect(runtime.__zeusRuntime.buzzerInstances.size).toBeGreaterThan(0);
+    expect(runtime.__zeusRuntime.vibratorInstances.size).toBeGreaterThan(0);
 
     scrollList.item_click_func(null, 1);
     expect(runtime.__zeusRuntime.systemSoundInstances.size).toBeGreaterThan(0);

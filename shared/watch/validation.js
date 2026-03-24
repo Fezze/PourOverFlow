@@ -55,7 +55,7 @@ export function runValidationAction(actionId) {
     case "haptic": {
       const success = playFeedbackCue("vibrate_short");
       const note = success
-        ? "Requested a short haptic cue on the watch."
+        ? "Requested a short vibration. If nothing happened, check watch vibration settings."
         : "Haptic cue was unavailable on this runtime.";
       writeValidationNote(note);
       return {
@@ -64,10 +64,10 @@ export function runValidationAction(actionId) {
       };
     }
     case "sound": {
-      const success = playFeedbackCue("sound_soft");
+      const success = playFeedbackCue("sound_strong");
       const note = success
-        ? "Requested a soft system sound on the watch."
-        : "System sound was unavailable on this runtime.";
+        ? "Requested a sound cue. If nothing played, check ringtone volume, silent mode, or buzzer support."
+        : "Sound cue was unavailable on this runtime.";
       writeValidationNote(note);
       return {
         success,

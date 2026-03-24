@@ -149,14 +149,14 @@ describe("watch validation helpers", () => {
     expect(runValidationAction("haptic")).toMatchObject({
       success: true
     });
-    expect(__zeusRuntime.buzzerInstances.size).toBeGreaterThan(0);
-    expect(readValidationNote()).toMatch("haptic cue");
+    expect(__zeusRuntime.vibratorInstances.size).toBeGreaterThan(0);
+    expect(readValidationNote()).toMatch("short vibration");
 
     expect(runValidationAction("sound")).toMatchObject({
       success: true
     });
-    expect(__zeusRuntime.systemSoundInstances.size).toBeGreaterThan(0);
-    expect(readValidationNote()).toMatch("system sound");
+    expect(__zeusRuntime.systemSoundInstances.size + __zeusRuntime.buzzerInstances.size).toBeGreaterThan(0);
+    expect(readValidationNote()).toMatch("sound cue");
   });
 
   it("runs the sync validation action through the real bridge path", () => {
@@ -239,12 +239,24 @@ describe("watch validation helpers", () => {
     cueSpy.mockReturnValueOnce(false);
     expect(runValidationAction("sound")).toMatchObject({
       success: false,
-      note: "System sound was unavailable on this runtime."
+      note: "Sound cue was unavailable on this runtime."
     });
 
     expect(runValidationAction("mystery")).toMatchObject({
       success: false,
       note: "Unknown validation action."
+    });
+  });
+
+  it("stores clearer success notes for hardware validation cues", () => {
+    expect(runValidationAction("haptic")).toMatchObject({
+      success: true,
+      note: "Requested a short vibration. If nothing happened, check watch vibration settings."
+    });
+
+    expect(runValidationAction("sound")).toMatchObject({
+      success: true,
+      note: "Requested a sound cue. If nothing played, check ringtone volume, silent mode, or buzzer support."
     });
   });
 });

@@ -17,7 +17,5 @@ export const BODY_TEXT = {
 };
 export const FOOTER_TEXT = layout.footer;
 export const BUTTONS = [
-  createButtonStyle(layout, 0, "primary"),
-  createButtonStyle(layout, 1, "secondary"),
-  createButtonStyle(layout, 2, "neutral")
+  createButtonStyle(layout, 0, "primary")
 ];

@@ -41,6 +41,10 @@ const uiState = {
 };
 
 const localStorageState = new Map();
+const VIBRATOR_SCENE_SHORT_MIDDLE = 101;
+const VIBRATOR_SCENE_DURATION_LONG = 102;
+const VIBRATOR_SCENE_SHORT_STRONG = 103;
+const vibratorInstances = new Set();
 const buzzerInstances = new Set();
 const systemSoundInstances = new Set();
 
@@ -155,6 +159,15 @@ class LocalStorage {
 
 class Battery {
   getCurrent = vi.fn(() => batteryState.level);
+}
+
+class Vibrator {
+  constructor() {
+    this.start = vi.fn(() => true);
+    this.stop = vi.fn(() => true);
+    this.setMode = vi.fn(() => true);
+    vibratorInstances.add(this);
+  }
 }
 
 class Buzzer {
@@ -284,6 +297,12 @@ export function resetZeppRuntime() {
   localStorageApi.removeItem.mockClear();
   localStorageApi.clear.mockClear();
 
+  vibratorInstances.forEach((instance) => {
+    instance.start.mockClear();
+    instance.stop.mockClear();
+    instance.setMode.mockClear();
+  });
+
   buzzerInstances.forEach((instance) => {
     instance.isEnabled.mockClear();
     instance.getSourceType.mockClear();
@@ -314,6 +333,7 @@ export const __zeusRuntime = {
   router,
   routerState,
   systemSoundInstances,
+  vibratorInstances,
   ui,
   uiState
 };
@@ -323,6 +343,10 @@ export {
   Buzzer,
   LocalStorage,
   SystemSounds,
+  Vibrator,
+  VIBRATOR_SCENE_SHORT_MIDDLE,
+  VIBRATOR_SCENE_DURATION_LONG,
+  VIBRATOR_SCENE_SHORT_STRONG,
   ble,
   device,
   display,

@@ -6,10 +6,9 @@ const layout = createScaffoldLayout({ shape: "square" });
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
-export const FOOTER_TEXT = layout.footer;
 export const LIST_PANEL = createPanelStyle(layout, {
   y: px(108),
-  h: px(220)
+  h: px(228)
 });
 export const LIST_FRAME = {
   x: LIST_PANEL.x + px(8),
@@ -22,7 +21,4 @@ export const LIST_FRAME = {
   titleHeight: px(38),
   metaHeight: px(24)
 };
-export const BUTTONS = [
-  createButtonStyle(layout, 0, "secondary"),
-  createButtonStyle(layout, 1, "neutral")
-];
+export const EMPTY_BUTTON = createButtonStyle(layout, 0, "secondary");

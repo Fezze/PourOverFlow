@@ -38,8 +38,8 @@ export const SHARED_COLORS = {
   surfaceMuted: 0x202833,
   text: 0xf5f7fa,
   muted: 0xaab4c2,
-  primary: 0x2d8c82,
-  primaryPress: 0x236b64,
+  primary: 0x0986d4,
+  primaryPress: 0x06649f,
   secondary: 0x2a3340,
   secondaryPress: 0x202733,
   accent: 0xd9922e,
@@ -52,13 +52,13 @@ export const SHARED_COLORS = {
 
 export function createScaffoldLayout(options = {}) {
   const isRound = options.shape === "round";
-  const horizontalPadding = isRound ? 36 : 28;
-  const titleY = isRound ? 42 : 30;
-  const subtitleY = isRound ? 84 : 66;
-  const bodyY = isRound ? 126 : 102;
-  const buttonStartY = isRound ? 252 : 214;
-  const buttonHeight = isRound ? 46 : 44;
-  const buttonGap = isRound ? 10 : 8;
+  const horizontalPadding = isRound ? 52 : 28;
+  const titleY = isRound ? 56 : 30;
+  const subtitleY = isRound ? 94 : 66;
+  const bodyY = isRound ? 134 : 102;
+  const buttonStartY = isRound ? 232 : 214;
+  const buttonHeight = isRound ? 42 : 44;
+  const buttonGap = isRound ? 8 : 8;
 
   return {
     background: {
@@ -72,9 +72,9 @@ export function createScaffoldLayout(options = {}) {
       x: px(horizontalPadding),
       y: px(titleY),
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
-      h: px(34),
+      h: px(isRound ? 38 : 34),
       color: SHARED_COLORS.text,
-      text_size: px(isRound ? 30 : 28),
+      text_size: px(isRound ? 28 : 28),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
@@ -83,7 +83,7 @@ export function createScaffoldLayout(options = {}) {
       x: px(horizontalPadding),
       y: px(subtitleY),
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
-      h: px(30),
+      h: px(isRound ? 34 : 30),
       color: SHARED_COLORS.muted,
       text_size: px(16),
       align_h: hmUI.align.LEFT,
@@ -94,7 +94,7 @@ export function createScaffoldLayout(options = {}) {
       x: px(horizontalPadding),
       y: px(bodyY),
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
-      h: px(isRound ? 88 : 74),
+      h: px(isRound ? 74 : 74),
       color: SHARED_COLORS.text,
       text_size: px(18),
       align_h: hmUI.align.LEFT,
@@ -103,7 +103,7 @@ export function createScaffoldLayout(options = {}) {
     },
     footer: {
       x: px(horizontalPadding),
-      y: DEVICE_HEIGHT - px(isRound ? 66 : 56),
+      y: DEVICE_HEIGHT - px(isRound ? 82 : 56),
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(38),
       color: SHARED_COLORS.muted,
