@@ -54,7 +54,7 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 - The `Tool` catalog is closed and read-only.
 - The phone is the source of truth for recipes and history.
 - The watch stores only cache, active session, last result, and sync metadata.
-- The watch browse flow is always `tool -> recipe -> active brew`.
+- The watch browse flow is `tool-list -> recipe-list -> recipe-detail -> active brew`.
 - The active session runs on `RecipeSnapshot`.
 - Deleting a recipe does not delete history.
 - `PUSH_HISTORY_SNAPSHOT` syncs only the latest result, not the full archive.
@@ -137,7 +137,9 @@ The first implementation task from the current repo state is Stage 6:
 - Stage 6 adds timestamp-based resume reconciliation and active-brew display guard handling, but real-device confirmation is still pending.
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
 - Watch browse and result pages already refresh on runtime events when new snapshots arrive, but this is not yet a fully reactive UI system.
-- Watch browse now pages brewer and recipe lists in two-entry slices on the current three-button scaffold; if a later agent redesigns watch browse, update the flow docs and backlog instead of changing it silently.
+- Watch browse now uses scrollable brewer and recipe lists plus a dedicated `recipe-detail` start page; if a later agent redesigns watch browse, update the flow docs and backlog instead of changing it silently.
+- `brew-active` now binds the Zepp shortcut key as a secondary confirm / next-step action when the device exposes it; keep it additive, not mandatory.
+- The latest UX pass follows official Zepp design-system list patterns. If stricter Figma matching is needed later, the repo should first store a concrete project Figma page or node link instead of relying on a generic "use Figma" instruction.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 - In local simulator workflows, `zeus dev` may push the app more reliably than bridge `install`; if bridge `install` appears to do nothing in the simulator, prefer `zeus dev` for deployment and keep bridge for connection/debug tasks.
 - Zeus Bridge may prompt for explicit target selection when more than one online simulator or device is visible; picking the intended target such as `Balance 2` is expected behavior, not a failure case.
@@ -180,3 +182,4 @@ This also applies to TODO hygiene:
 - close completed items,
 - add newly discovered tasks,
 - do not let `docs/TODO.md` become an archive of stale notes.
+

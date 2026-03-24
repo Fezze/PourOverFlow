@@ -1,12 +1,11 @@
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
-import { getToolList } from "../../shared/watch/router";
 import {
   discardActiveSessionFromHome,
   getHomeScaffoldState,
-  PAGE_URLS,
   goToResultSummary,
   goToToolList,
+  PAGE_URLS,
   refreshPhoneSnapshot,
   reconcileActiveSessionOnEntry,
   retryPendingHistorySync,
@@ -23,6 +22,32 @@ import {
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
+function buildHomeBody(state) {
+  const lines = [];
+
+  if (state.activeSession) {
+    lines.push(state.activeSession.recipeName);
+    lines.push(`Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`);
+  } else if (state.selectedTool) {
+    lines.push(`${state.selectedTool.label} selected`);
+    lines.push(`${state.recipeCount} cached recipes ready`);
+  } else {
+    lines.push("No cached brewer selected yet");
+  }
+
+  lines.push(
+    state.connected ? "Phone bridge connected" : state.catalogReady ? "Using watch cache" : "Phone sync required"
+  );
+
+  if (state.lastResult) {
+    lines.push(`Last: ${state.lastResult.recipeName}`);
+  } else if (state.pendingHistoryCount) {
+    lines.push(`Pending sync: ${state.pendingHistoryCount}`);
+  }
+
+  return lines.join("\n");
+}
+
 Page({
   onDestroy() {
     if (this.unsubscribeRuntime) {
@@ -38,17 +63,7 @@ Page({
       return;
     }
 
-    const {
-      activeSession,
-      catalogReady,
-      connected,
-      lastResult,
-      pendingHistoryCount,
-      recipeCount,
-      selectedTool,
-      syncMeta
-    } = getHomeScaffoldState();
-    const supportedTools = getToolList();
+    const scaffoldState = getHomeScaffoldState();
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "catalog" || event.type === "last_result") {
@@ -63,28 +78,17 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: activeSession ? "Resume gate" : connected ? "Phone bridge connected" : "Waiting for phone bridge"
+      text: scaffoldState.activeSession ? "Resume your brew" : "Brew from watch cache"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      text: [
-        activeSession
-          ? `Resume: ${activeSession.recipeName}`
-          : "No active session yet.",
-        `Tool catalog: ${supportedTools.length} brewers`,
-        selectedTool ? `Current tool: ${selectedTool.label}` : "Current tool: n/a",
-        selectedTool ? `Recipes on watch: ${recipeCount}` : "Recipes on watch: 0",
-        lastResult ? `Last result: ${lastResult.recipeName}` : "Last result: none",
-        `Pending sync: ${pendingHistoryCount}`,
-        `Revisions: T${syncMeta.toolCatalogRevision}/R${syncMeta.recipeCatalogRevision}/H${syncMeta.historyRevision}`,
-        catalogReady ? "Catalog cache ready." : "Catalog cache not ready yet."
-      ].join("\n")
+      text: buildHomeBody(scaffoldState)
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: activeSession ? "Resume brew" : "Browse tools",
+      text: scaffoldState.activeSession ? "Resume brew" : "Browse brewers",
       click_func: () => {
-        if (activeSession) {
+        if (scaffoldState.activeSession) {
           resumeActiveSession();
           return;
         }
@@ -94,9 +98,9 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: activeSession ? "Discard session" : connected ? "Refresh sync" : "Retry sync",
+      text: scaffoldState.activeSession ? "Discard session" : "Sync now",
       click_func: () => {
-        if (activeSession) {
+        if (scaffoldState.activeSession) {
           discardActiveSessionFromHome();
           return;
         }
@@ -107,14 +111,14 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[2],
-      text: "Last result",
+      text: "Latest result",
       click_func: () => {
         goToResultSummary();
       }
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Phone CRUD is live in Settings. This screen now boots from watch cache and requests a phone refresh."
+      text: "Phone edits affect future brews only."
     });
   }
 });

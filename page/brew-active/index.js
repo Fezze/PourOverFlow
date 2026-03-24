@@ -4,7 +4,6 @@ import { getFeedbackLabel } from "../../shared/engine/feedback";
 import {
   formatDurationLabel,
   getCurrentSessionStep,
-  getCurrentStepElapsedMs,
   getCurrentStepRemainingMs,
   getElapsedSessionMs,
   getStepProgressLabel
@@ -23,6 +22,7 @@ import {
   disableActiveSessionDisplayGuard,
   enableActiveSessionDisplayGuard
 } from "../../shared/watch/display-guard";
+import { registerShortcutKey } from "../../shared/watch/shortcut-key";
 import {
   BACKGROUND,
   BODY_TEXT,
@@ -36,25 +36,22 @@ function buildBodyText(activeSession) {
   const currentStep = getCurrentSessionStep(activeSession);
   const sessionElapsedLabel = formatDurationLabel(getElapsedSessionMs(activeSession));
   const stepRemainingMs = getCurrentStepRemainingMs(activeSession);
-  const stepElapsedLabel = formatDurationLabel(getCurrentStepElapsedMs(activeSession));
   const stepTimerLabel =
     stepRemainingMs === null
-      ? `Step timer: manual (${stepElapsedLabel})`
-      : `Step timer: ${formatDurationLabel(stepRemainingMs)} left`;
+      ? "Manual step"
+      : `${formatDurationLabel(stepRemainingMs)} left`;
 
   return [
     `Step ${activeSession.currentStepIndex + 1}/${activeSession.recipeSnapshot.steps.length}`,
     currentStep ? currentStep.title : "Unknown step",
+    currentStep ? currentStep.body : "No step payload",
     currentStep ? getStepProgressLabel(currentStep) : "No step type",
-    stepTimerLabel,
-    `Session: ${sessionElapsedLabel}`,
     currentStep && currentStep.targetTotalWaterMl !== undefined
-      ? `Water: ${currentStep.targetTotalWaterMl} ml target`
+      ? `Water target ${currentStep.targetTotalWaterMl} ml`
       : currentStep && currentStep.waterMl !== undefined
-        ? `Water: ${currentStep.waterMl} ml`
-        : "Water: n/a",
-    currentStep ? getFeedbackLabel(currentStep.feedbackCue) : "No cue",
-    currentStep ? currentStep.body : "No step payload"
+        ? `Pour ${currentStep.waterMl} ml`
+        : stepTimerLabel,
+    `Session ${sessionElapsedLabel}`
   ].join("\n");
 }
 
@@ -66,11 +63,11 @@ function buildFooterText(activeSession) {
   }
 
   if (activeSession.status === "waiting_for_confirm") {
-    return "Timer is done or step is manual. Confirm to continue.";
+    return "Confirm to continue. Shortcut button also triggers the primary action when available.";
   }
 
   if (currentStep.kind === "timed_wait" || currentStep.kind === "timed_action") {
-    return "Timed step is running. It auto-advances when the countdown finishes.";
+    return `Cue: ${getFeedbackLabel(currentStep.feedbackCue)}. Timed steps auto-advance when allowed.`;
   }
 
   return "Manual step. Confirm when you are ready to continue.";
@@ -141,12 +138,15 @@ Page({
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
-        text: "Stage 6 resume hardening is enabled. Real-device wake and feedback validation still remains."
+        text: "Start a recipe from the browse flow first."
       });
       return;
     }
 
     enableActiveSessionDisplayGuard(activeSession);
+    registerShortcutKey(() => {
+      advanceOrCompleteActiveSession();
+    });
 
     const currentStep = getCurrentSessionStep(activeSession);
     const tool = getToolById(activeSession.toolId);

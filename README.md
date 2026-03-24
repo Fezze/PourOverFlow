@@ -16,7 +16,7 @@ This project is to be run in English.
 
 ## What the product should do
 
-- On the watch: `tool -> recipe -> active brew`
+- On the watch: `tool list -> recipe list -> recipe detail -> active brew`, with native scrolling and a hardware shortcut on the active brew screen when the device exposes one
 - During a session: step timer, total session timer, manual `Next` steps, haptic feedback, and optional audio
 - On the phone: full recipe CRUD and history note editing
 - Sync: `setting/ -> app-side/ -> messaging.peerSocket -> Device App`
@@ -85,6 +85,7 @@ The verification workflow is intentionally local-first and does not assume CI. I
 - hard validation of wake-up relaunch, anti-sleep, haptic, and audio behavior on a real device,
 - fuller page-shell mocked Zepp runtime coverage for widget refresh and page lifecycle,
 - literal 100% local coverage, if the team still wants to keep pushing the current baselines.
+- a concrete project Figma node or page link, if the team wants tighter visual matching than the current Zepp-design-system-based UX pass.
 
 ## Important technical limits
 

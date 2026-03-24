@@ -1,22 +1,87 @@
 import * as hmUI from "@zos/ui";
+import { getDeviceInfo } from "@zos/device";
 import { replace } from "@zos/router";
-import {
-  getToolBrowsePage,
-  goHome,
-  goToNextToolBrowsePage,
-  PAGE_URLS,
-  refreshPhoneSnapshot,
-  selectTool
-} from "../../shared/watch/router";
+import { goHome, PAGE_URLS, refreshPhoneSnapshot, selectTool, getToolList } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
-  BODY_TEXT,
-  BUTTONS,
   FOOTER_TEXT,
+  LIST_FRAME,
+  LIST_PANEL,
+  PRIMARY_BUTTON,
   SUBTITLE_TEXT,
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
+
+function supportsHardwareListFocus() {
+  try {
+    const deviceInfo = getDeviceInfo();
+    return Number(deviceInfo?.keyNumber) >= 3 || String(deviceInfo?.keyType || "").includes("sport");
+  } catch (error) {
+    console.log("Hardware list focus fallback", error);
+    return false;
+  }
+}
+
+function buildToolRows(tools) {
+  return tools.map((tool) => ({
+    title: tool.label,
+    meta: tool.recipeCount === 1 ? "1 recipe ready" : `${tool.recipeCount || 0} recipes ready`,
+    hint: "Open",
+    toolId: tool.toolId
+  }));
+}
+
+function createToolListConfig() {
+  return [
+    {
+      type_id: 1,
+      item_bg_color: 0x171d26,
+      item_bg_radius: LIST_FRAME.itemRadius,
+      item_press_effect: true,
+      text_view: [
+        {
+          x: 20,
+          y: 18,
+          w: LIST_FRAME.w - 110,
+          h: LIST_FRAME.titleHeight,
+          key: "title",
+          color: 0xf5f7fa,
+          text_size: 24,
+          action: true,
+          align_h: hmUI.align.LEFT,
+          align_v: hmUI.align.CENTER_V
+        },
+        {
+          x: 20,
+          y: 58,
+          w: LIST_FRAME.w - 120,
+          h: LIST_FRAME.metaHeight,
+          key: "meta",
+          color: 0xaab4c2,
+          text_size: 16,
+          action: true,
+          align_h: hmUI.align.LEFT,
+          align_v: hmUI.align.CENTER_V
+        },
+        {
+          x: LIST_FRAME.w - 96,
+          y: 26,
+          w: 76,
+          h: 28,
+          key: "hint",
+          color: 0x2d8c82,
+          text_size: 18,
+          action: true,
+          align_h: hmUI.align.RIGHT,
+          align_v: hmUI.align.CENTER_V
+        }
+      ],
+      text_view_count: 3,
+      item_height: LIST_FRAME.itemHeight
+    }
+  ];
+}
 
 Page({
   onDestroy() {
@@ -26,8 +91,8 @@ Page({
     }
   },
   build() {
-    const browsePage = getToolBrowsePage();
-    const tools = browsePage.items;
+    const tools = getToolList();
+    const rows = buildToolRows(tools);
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "catalog") {
@@ -38,87 +103,59 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: "Choose brewer"
+      text: "Brewers"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: browsePage.totalItems
-        ? `Closed synced catalog · page ${browsePage.pageIndex + 1}/${browsePage.totalPages}`
-        : "Closed synced catalog"
-    });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      text: browsePage.totalItems
-        ? [
-            "Choose a brewer from the synced watch cache.",
-            ...tools.map((tool, index) => `${index + 1}. ${tool.label} · ${tool.recipeCount || 0} recipes`)
-          ].join("\n")
-        : "No tool catalog on watch yet. Trigger a phone refresh first."
+      text: rows.length ? `${rows.length} synced tools on watch` : "No synced tools yet"
     });
 
-    if (tools[0]) {
-      hmUI.createWidget(hmUI.widget.BUTTON, {
-        ...BUTTONS[0],
-        text: `${tools[0].label} (${tools[0].recipeCount || 0})`,
-        click_func: () => {
-          selectTool(tools[0].toolId);
-        }
-      });
-    } else {
-      hmUI.createWidget(hmUI.widget.BUTTON, {
-        ...BUTTONS[0],
-        text: "Refresh phone sync",
-        click_func: () => {
-          refreshPhoneSnapshot();
-        }
-      });
-    }
-
-    if (tools[1]) {
-      hmUI.createWidget(hmUI.widget.BUTTON, {
-        ...BUTTONS[1],
-        text: `${tools[1].label} (${tools[1].recipeCount || 0})`,
-        click_func: () => {
-          selectTool(tools[1].toolId);
-        }
-      });
-    } else if (browsePage.totalItems) {
-      hmUI.createWidget(hmUI.widget.BUTTON, {
-        ...BUTTONS[1],
-        text: "Back home",
-        click_func: () => {
-          goHome();
+    if (rows.length) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, LIST_PANEL);
+      hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
+        x: LIST_FRAME.x,
+        y: LIST_FRAME.y,
+        w: LIST_FRAME.w,
+        h: LIST_FRAME.h,
+        item_space: LIST_FRAME.itemSpace,
+        item_config: createToolListConfig(),
+        item_config_count: 1,
+        data_array: rows,
+        data_count: rows.length,
+        data_type_config: [
+          {
+            start: 0,
+            end: rows.length - 1,
+            type_id: 1
+          }
+        ],
+        data_type_config_count: 1,
+        enable_scroll_bar: true,
+        item_common_focus: supportsHardwareListFocus(),
+        item_click_func: (_list, index) => {
+          selectTool(rows[index].toolId);
         }
       });
     }
 
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[2],
-      text: !browsePage.totalItems
-        ? "Back home"
-        : browsePage.hasNext
-          ? `Next page ${browsePage.pageIndex + 1}/${browsePage.totalPages}`
-          : "Back home",
+      ...PRIMARY_BUTTON,
+      text: rows.length ? "Home" : "Refresh sync",
       click_func: () => {
-        if (!browsePage.totalItems) {
+        if (rows.length) {
           goHome();
           return;
         }
 
-        if (browsePage.hasNext) {
-          goToNextToolBrowsePage();
-          return;
-        }
-
-        goHome();
+        refreshPhoneSnapshot();
       }
     });
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: browsePage.totalItems
-        ? "Counts reflect the current watch cache from phone sync."
-        : "Sync the phone companion to seed the watch catalog."
+      text: rows.length
+        ? "Scroll to browse brewers."
+        : "Sync from the phone companion to populate the watch browse list."
     });
   }
 });

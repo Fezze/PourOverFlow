@@ -163,8 +163,6 @@ function createDefaultRuntimeState() {
   return {
     selectedToolId: getInitialSelectedToolId(catalogCache),
     selectedRecipeId: null,
-    toolBrowsePageIndex: 0,
-    recipeBrowsePageIndex: 0,
     activeSession,
     lastResult,
     catalogCache,
@@ -200,26 +198,6 @@ export function readSelectedRecipeId() {
 export function writeSelectedRecipeId(recipeId) {
   getRuntimeState().selectedRecipeId = recipeId;
   return recipeId;
-}
-
-export function readToolBrowsePageIndex() {
-  return getRuntimeState().toolBrowsePageIndex || 0;
-}
-
-export function writeToolBrowsePageIndex(pageIndex) {
-  const normalizedPageIndex = Number.isInteger(pageIndex) && pageIndex > 0 ? pageIndex : 0;
-  getRuntimeState().toolBrowsePageIndex = normalizedPageIndex;
-  return normalizedPageIndex;
-}
-
-export function readRecipeBrowsePageIndex() {
-  return getRuntimeState().recipeBrowsePageIndex || 0;
-}
-
-export function writeRecipeBrowsePageIndex(pageIndex) {
-  const normalizedPageIndex = Number.isInteger(pageIndex) && pageIndex > 0 ? pageIndex : 0;
-  getRuntimeState().recipeBrowsePageIndex = normalizedPageIndex;
-  return normalizedPageIndex;
 }
 
 export function readActiveSession() {
@@ -280,7 +258,13 @@ export function writeCatalogCache(catalogCache) {
   if (!nextCatalogCache.tools.find((tool) => tool.toolId === runtimeState.selectedToolId)) {
     runtimeState.selectedToolId = getInitialSelectedToolId(nextCatalogCache);
     runtimeState.selectedRecipeId = null;
-    runtimeState.recipeBrowsePageIndex = 0;
+  }
+
+  if (
+    runtimeState.selectedRecipeId &&
+    !nextCatalogCache.recipeSnapshotsById[runtimeState.selectedRecipeId]
+  ) {
+    runtimeState.selectedRecipeId = null;
   }
 
   emitRuntimeEvent({

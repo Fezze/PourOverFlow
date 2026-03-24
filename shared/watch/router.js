@@ -20,16 +20,13 @@ import {
   isWatchConnected,
   readActiveSession,
   readLastResult,
-  readRecipeBrowsePageIndex,
+  readSelectedRecipeId,
   readSelectedToolId,
-  readToolBrowsePageIndex,
   readWatchSyncMeta,
   writeActiveSession,
   writeLastResult,
-  writeRecipeBrowsePageIndex,
   writeSelectedRecipeId,
-  writeSelectedToolId,
-  writeToolBrowsePageIndex
+  writeSelectedToolId
 } from "../storage/watch-store";
 import { disableActiveSessionDisplayGuard } from "./display-guard";
 import { flushPendingHistoryQueue, requestBootstrap } from "./sync-bridge";
@@ -38,37 +35,10 @@ export const PAGE_URLS = {
   home: "page/home/index",
   toolList: "page/tool-list/index",
   recipeList: "page/recipe-list/index",
+  recipeDetail: "page/recipe-detail/index",
   brewActive: "page/brew-active/index",
   resultSummary: "page/result-summary/index"
 };
-
-export const WATCH_BROWSE_PAGE_SIZE = 2;
-
-function clampBrowsePageIndex(pageIndex, itemCount, pageSize = WATCH_BROWSE_PAGE_SIZE) {
-  if (!itemCount) {
-    return 0;
-  }
-
-  const totalPages = Math.max(1, Math.ceil(itemCount / pageSize));
-  const safePageIndex = Number.isInteger(pageIndex) && pageIndex >= 0 ? pageIndex : 0;
-  return Math.min(safePageIndex, totalPages - 1);
-}
-
-function buildBrowsePage(items, pageIndex, pageSize = WATCH_BROWSE_PAGE_SIZE) {
-  const totalItems = items.length;
-  const totalPages = totalItems ? Math.ceil(totalItems / pageSize) : 0;
-  const safePageIndex = clampBrowsePageIndex(pageIndex, totalItems, pageSize);
-  const sliceStart = safePageIndex * pageSize;
-
-  return {
-    items: items.slice(sliceStart, sliceStart + pageSize),
-    pageIndex: safePageIndex,
-    totalPages,
-    totalItems,
-    hasPrevious: safePageIndex > 0,
-    hasNext: safePageIndex + 1 < totalPages
-  };
-}
 
 function persistCompletedHistoryEntry(historyEntry) {
   writeLastResult(createLastResultSummary(historyEntry));
@@ -108,16 +78,6 @@ export function getToolList() {
   }));
 }
 
-export function getToolBrowsePage(pageSize = WATCH_BROWSE_PAGE_SIZE) {
-  const browsePage = buildBrowsePage(getToolList(), readToolBrowsePageIndex(), pageSize);
-
-  if (browsePage.pageIndex !== readToolBrowsePageIndex()) {
-    writeToolBrowsePageIndex(browsePage.pageIndex);
-  }
-
-  return browsePage;
-}
-
 export function getSelectedTool() {
   const selectedToolId = readSelectedToolId();
   return getToolList().find((tool) => tool.toolId === selectedToolId) || getToolList()[0] || null;
@@ -140,14 +100,14 @@ export function getRecipeListForSelectedTool() {
   });
 }
 
-export function getRecipeBrowsePage(pageSize = WATCH_BROWSE_PAGE_SIZE) {
-  const browsePage = buildBrowsePage(getRecipeListForSelectedTool(), readRecipeBrowsePageIndex(), pageSize);
+export function getSelectedRecipe() {
+  const selectedRecipeId = readSelectedRecipeId();
 
-  if (browsePage.pageIndex !== readRecipeBrowsePageIndex()) {
-    writeRecipeBrowsePageIndex(browsePage.pageIndex);
+  if (!selectedRecipeId) {
+    return null;
   }
 
-  return browsePage;
+  return getRecipeListForSelectedTool().find((recipe) => recipe.recipeId === selectedRecipeId) || null;
 }
 
 export function refreshPhoneSnapshot() {
@@ -163,42 +123,32 @@ export function goHome() {
 }
 
 export function goToToolList() {
-  writeToolBrowsePageIndex(0);
   push({ url: PAGE_URLS.toolList });
-}
-
-export function goToNextToolBrowsePage() {
-  const browsePage = getToolBrowsePage();
-
-  if (!browsePage.hasNext) {
-    return false;
-  }
-
-  writeToolBrowsePageIndex(browsePage.pageIndex + 1);
-  replace({ url: PAGE_URLS.toolList });
-  return true;
 }
 
 export function goToResultSummary() {
   push({ url: PAGE_URLS.resultSummary });
 }
 
+export function goToRecipeList() {
+  replace({ url: PAGE_URLS.recipeList });
+}
+
 export function selectTool(toolId) {
   writeSelectedToolId(toolId);
   writeSelectedRecipeId(null);
-  writeRecipeBrowsePageIndex(0);
   push({ url: PAGE_URLS.recipeList });
 }
 
-export function goToNextRecipeBrowsePage() {
-  const browsePage = getRecipeBrowsePage();
+export function selectRecipe(recipeId) {
+  const selectedRecipe = getRecipeListForSelectedTool().find((recipe) => recipe.recipeId === recipeId);
 
-  if (!browsePage.hasNext) {
+  if (!selectedRecipe || !selectedRecipe.recipeSnapshot) {
     return false;
   }
 
-  writeRecipeBrowsePageIndex(browsePage.pageIndex + 1);
-  replace({ url: PAGE_URLS.recipeList });
+  writeSelectedRecipeId(recipeId);
+  push({ url: PAGE_URLS.recipeDetail });
   return true;
 }
 
@@ -216,6 +166,16 @@ export function startRecipe(recipeSummary) {
   playFeedbackCue(getCurrentSessionStep(activeSession).feedbackCue);
   push({ url: PAGE_URLS.brewActive });
   return true;
+}
+
+export function startSelectedRecipe() {
+  const selectedRecipe = getSelectedRecipe();
+
+  if (!selectedRecipe) {
+    return false;
+  }
+
+  return startRecipe(selectedRecipe);
 }
 
 export function resumeActiveSession() {

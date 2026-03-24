@@ -32,31 +32,33 @@ function readLayoutDeviceSize() {
 
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = readLayoutDeviceSize();
 
-const SHARED_COLORS = {
-  background: 0x101214,
-  text: 0xffffff,
-  muted: 0xb0bac5,
+export const SHARED_COLORS = {
+  background: 0x0e1218,
+  surface: 0x171d26,
+  surfaceMuted: 0x202833,
+  text: 0xf5f7fa,
+  muted: 0xaab4c2,
   primary: 0x2d8c82,
   primaryPress: 0x236b64,
-  secondary: 0x4e5fa8,
-  secondaryPress: 0x3b487d,
+  secondary: 0x2a3340,
+  secondaryPress: 0x202733,
   accent: 0xd9922e,
-  accentPress: 0xa96b1f,
+  accentPress: 0xaf6f19,
   danger: 0xd6675a,
   dangerPress: 0xa14c43,
-  neutral: 0x5e6773,
-  neutralPress: 0x454c55
+  neutral: 0x434f5f,
+  neutralPress: 0x303947
 };
 
 export function createScaffoldLayout(options = {}) {
   const isRound = options.shape === "round";
-  const horizontalPadding = isRound ? 44 : 30;
-  const titleY = isRound ? 40 : 28;
-  const subtitleY = isRound ? 80 : 62;
-  const bodyY = isRound ? 118 : 98;
-  const buttonStartY = isRound ? 206 : 170;
-  const buttonHeight = isRound ? 50 : 46;
-  const buttonGap = isRound ? 12 : 10;
+  const horizontalPadding = isRound ? 36 : 28;
+  const titleY = isRound ? 42 : 30;
+  const subtitleY = isRound ? 84 : 66;
+  const bodyY = isRound ? 126 : 102;
+  const buttonStartY = isRound ? 252 : 214;
+  const buttonHeight = isRound ? 46 : 44;
+  const buttonGap = isRound ? 10 : 8;
 
   return {
     background: {
@@ -73,7 +75,7 @@ export function createScaffoldLayout(options = {}) {
       h: px(34),
       color: SHARED_COLORS.text,
       text_size: px(isRound ? 30 : 28),
-      align_h: hmUI.align.CENTER_H,
+      align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
     },
@@ -83,8 +85,8 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(30),
       color: SHARED_COLORS.muted,
-      text_size: px(18),
-      align_h: hmUI.align.CENTER_H,
+      text_size: px(16),
+      align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
     },
@@ -92,11 +94,11 @@ export function createScaffoldLayout(options = {}) {
       x: px(horizontalPadding),
       y: px(bodyY),
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
-      h: px(isRound ? 78 : 64),
+      h: px(isRound ? 88 : 74),
       color: SHARED_COLORS.text,
       text_size: px(18),
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V,
+      align_h: hmUI.align.LEFT,
+      align_v: hmUI.align.TOP,
       text_style: hmUI.text_style.WRAP
     },
     footer: {
@@ -106,7 +108,7 @@ export function createScaffoldLayout(options = {}) {
       h: px(38),
       color: SHARED_COLORS.muted,
       text_size: px(14),
-      align_h: hmUI.align.CENTER_H,
+      align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
     },
@@ -148,10 +150,21 @@ export function createButtonStyle(layout, index, theme = "primary") {
     y: layout.buttonY + index * (layout.buttonH + layout.buttonGap),
     w: layout.buttonW,
     h: layout.buttonH,
-    radius: px(12),
+    radius: px(18),
     text_size: px(18),
     normal_color: palette.normal,
     press_color: palette.press,
     color: SHARED_COLORS.text
+  };
+}
+
+export function createPanelStyle(layout, options = {}) {
+  return {
+    x: options.x ?? layout.buttonX,
+    y: options.y ?? layout.body.y - px(12),
+    w: options.w ?? layout.buttonW,
+    h: options.h ?? px(104),
+    radius: options.radius ?? px(24),
+    color: options.color ?? SHARED_COLORS.surface
   };
 }

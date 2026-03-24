@@ -67,6 +67,7 @@ Stage 2 implementation should start from this outline:
             "page/home/index",
             "page/tool-list/index",
             "page/recipe-list/index",
+            "page/recipe-detail/index",
             "page/brew-active/index",
             "page/result-summary/index"
           ]
@@ -127,6 +128,9 @@ page/tool-list/index.s.layout.js
 page/recipe-list/index.js
 page/recipe-list/index.r.layout.js
 page/recipe-list/index.s.layout.js
+page/recipe-detail/index.js
+page/recipe-detail/index.r.layout.js
+page/recipe-detail/index.s.layout.js
 page/brew-active/index.js
 page/brew-active/index.r.layout.js
 page/brew-active/index.s.layout.js

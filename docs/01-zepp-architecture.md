@@ -44,6 +44,10 @@ page/
     index.js
     index.r.layout.js
     index.s.layout.js
+  recipe-detail/
+    index.js
+    index.r.layout.js
+    index.s.layout.js
   brew-active/
     index.js
     index.r.layout.js
@@ -107,7 +111,15 @@ shared/
 
 - shows recipes only for one `toolId`,
 - sorts by `updatedAt desc`, then `name asc`,
+- uses a Zepp-native list pattern instead of button-only paging,
+- routes into a dedicated recipe detail/start screen,
 - does not show the full history or an editor.
+
+### `page/recipe-detail/index.js`
+
+- shows the selected recipe snapshot before brewing starts,
+- keeps the start decision separate from list browsing,
+- acts as the lightweight review screen between recipe selection and `brew-active`.
 
 ### `page/brew-active/index.js`
 
@@ -146,8 +158,9 @@ The watch UI flow should stay simple and stable:
 1. `home`
 2. `tool-list`
 3. `recipe-list`
-4. `brew-active`
-5. `result-summary`
+4. `recipe-detail`
+5. `brew-active`
+6. `result-summary`
 
 Do not add separate pages for:
 

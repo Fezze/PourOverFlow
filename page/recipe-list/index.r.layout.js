@@ -1,14 +1,28 @@
-import { createButtonStyle, createScaffoldLayout } from "../../shared/watch/layouts";
+import { px } from "@zos/utils";
+import { createButtonStyle, createPanelStyle, createScaffoldLayout } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
 
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
-export const BODY_TEXT = layout.body;
 export const FOOTER_TEXT = layout.footer;
+export const LIST_PANEL = createPanelStyle(layout, {
+  y: px(118),
+  h: px(246)
+});
+export const LIST_FRAME = {
+  x: LIST_PANEL.x + px(8),
+  y: LIST_PANEL.y + px(8),
+  w: LIST_PANEL.w - px(16),
+  h: LIST_PANEL.h - px(16),
+  itemHeight: px(112),
+  itemSpace: px(8),
+  itemRadius: px(22),
+  titleHeight: px(44),
+  metaHeight: px(26)
+};
 export const BUTTONS = [
-  createButtonStyle(layout, 0, "primary"),
-  createButtonStyle(layout, 1, "secondary"),
-  createButtonStyle(layout, 2, "neutral")
+  createButtonStyle(layout, 0, "secondary"),
+  createButtonStyle(layout, 1, "neutral")
 ];

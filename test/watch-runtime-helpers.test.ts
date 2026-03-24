@@ -21,12 +21,8 @@ import {
   readWatchSyncMeta,
   setConnectionStatus,
   applyHistorySnapshot,
-  readRecipeBrowsePageIndex,
   writeCatalogCache,
   writeActiveSession,
-  readToolBrowsePageIndex,
-  writeRecipeBrowsePageIndex,
-  writeToolBrowsePageIndex
 } from "../shared/storage/watch-store.js";
 import {
   disableActiveSessionDisplayGuard,
@@ -287,21 +283,6 @@ describe("watch runtime helpers", () => {
     expect(isWatchConnected()).toBe(true);
   });
 
-  it("normalizes watch browse page indices in runtime state", () => {
-    expect(readToolBrowsePageIndex()).toBe(0);
-    expect(readRecipeBrowsePageIndex()).toBe(0);
-
-    expect(writeToolBrowsePageIndex(2)).toBe(2);
-    expect(writeRecipeBrowsePageIndex(3)).toBe(3);
-    expect(readToolBrowsePageIndex()).toBe(2);
-    expect(readRecipeBrowsePageIndex()).toBe(3);
-
-    expect(writeToolBrowsePageIndex(-1)).toBe(0);
-    expect(writeRecipeBrowsePageIndex(Number.NaN)).toBe(0);
-    expect(readToolBrowsePageIndex()).toBe(0);
-    expect(readRecipeBrowsePageIndex()).toBe(0);
-  });
-
   it("applies history snapshots that clear the latest result", () => {
     writeActiveSession(null);
     expect(
@@ -316,5 +297,30 @@ describe("watch runtime helpers", () => {
     expect(readWatchSyncMeta()).toMatchObject({
       historyRevision: 11
     });
+  });
+
+  it("clears a stale selected recipe when the catalog snapshot drops it", () => {
+    const runtimeState = getRuntimeState();
+    runtimeState.selectedToolId = "tool_aeropress";
+    runtimeState.selectedRecipeId = "stale_recipe";
+
+    writeCatalogCache({
+      schemaVersion: 1,
+      toolCatalogRevision: 12,
+      recipeCatalogRevision: 13,
+      tools: getToolCatalog(),
+      recipesByTool: {
+        tool_aeropress: [],
+        tool_v60: [],
+        tool_kalita_wave: [],
+        tool_chemex: [],
+        tool_clever_dripper: [],
+        tool_french_press: []
+      },
+      recipeSnapshotsById: {},
+      cachedAt: 6_000
+    });
+
+    expect(readSelectedRecipeId()).toBeNull();
   });
 });

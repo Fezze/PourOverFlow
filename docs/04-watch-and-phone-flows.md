@@ -40,10 +40,10 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 
 - show only tools with `supported: true`,
 - sort by `sortOrder`,
-- render the watch browse as paged slices of up to 2 brewers per screen,
-- each visible brewer entry shows label and the number of available recipes for that `toolId`,
-- the third button advances to the next browse page when more brewers exist and returns home on the final page,
-- tapping a tool opens `recipe-list` with router param `toolId`.
+- render the brewer catalog as a native scrollable list,
+- each row shows the brewer label and the number of available recipes for that `toolId`,
+- support hardware-key list focus when the watch exposes compatible keys,
+- tapping a tool writes the selected `toolId` into watch runtime state and opens `recipe-list`.
 
 ### Empty state
 
@@ -60,12 +60,12 @@ If a tool has no recipes:
 
 ### Behavior
 
-- read `toolId` from router params,
+- read the selected `toolId` from watch runtime state,
 - render `RecipeSummary[]` only for that tool,
-- show recipes in paged slices of up to 2 entries per screen,
-- each visible recipe entry shows name, color, update recency, and a short summary of key brew parameters,
-- the third button advances to the next recipe page when more recipes exist and returns home on the final page,
-- tapping a recipe opens a start confirmation screen or goes directly to `brew-active`.
+- render recipes as a native scrollable list,
+- each visible recipe row shows name, update recency, and a short summary of key brew parameters,
+- tapping a recipe opens `recipe-detail`,
+- the screen should not start brewing directly from a list tap.
 
 ### Recipe row data
 
@@ -77,7 +77,20 @@ Minimum UI set:
 - `totalWaterMl`,
 - `estimatedTotalDurationMs`.
 
-## Watch flow 4 - session start
+## Watch flow 4 - recipe detail and start
+
+### Screen
+
+`recipe-detail`
+
+### Behavior
+
+1. read `selectedRecipeId` from watch runtime state,
+2. show a compact summary of the selected `RecipeSnapshot`,
+3. keep the start CTA separate from the browse list,
+4. allow going back to `recipe-list` without mutating the recipe snapshot.
+
+## Watch flow 5 - session start
 
 ### Scenario
 
@@ -93,7 +106,7 @@ Minimum UI set:
 
 After session start, do not read `RecipeRecord` from cache again in order to "pull in" changes. The session always runs on the startup snapshot.
 
-## Watch flow 5 - active brew
+## Watch flow 6 - active brew
 
 ### Screen
 
@@ -109,6 +122,8 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - CTA:
   - `Next`
   - `Abort`
+- physical shortcut:
+  - trigger the primary action when the watch exposes Zepp's shortcut key
 
 ### Behavior by step type
 
@@ -154,7 +169,7 @@ Implementation state after Stage 6 code implementation:
 - timestamp-based resume reconciliation is implemented on app entry,
 - real-device wake and anti-sleep validation still remains in Stage 6.
 
-## Watch flow 6 - resume after sleep or app return
+## Watch flow 7 - resume after sleep or app return
 
 ### Goal
 
@@ -178,7 +193,7 @@ Restore a sensible state without pretending a full background engine exists.
 - do not depend on `AppService`,
 - do not block resume on a new bootstrap.
 
-## Watch flow 7 - session completion
+## Watch flow 8 - session completion
 
 ### Completed
 
@@ -193,7 +208,7 @@ Restore a sensible state without pretending a full background engine exists.
 
 Abort creates a `HistoryEntry` with status `aborted` only if the session was actually started. Do not save empty aborted entries if the user never moved past the recipe start screen.
 
-## Watch flow 8 - result screen
+## Watch flow 9 - result screen
 
 ### Screen
 
@@ -344,7 +359,7 @@ Phone copy may be slightly more descriptive, but still without unnecessary verbo
 ## Frozen decisions
 
 - `home` owns the resume gate.
-- Watch browse is always two-step: `tool -> recipe`.
+- Watch browse is `tool -> recipe -> recipe detail -> active brew`.
 - The phone owns full recipe and history CRUD.
 - The watch has no recipe editor.
 - The watch has no full history browser.

@@ -40,22 +40,22 @@ import {
 import {
   abortActiveBrew,
   discardActiveSessionFromHome,
-  getRecipeBrowsePage,
+  getSelectedRecipe,
   PAGE_URLS,
   advanceOrCompleteActiveSession,
   goHome,
-  goToNextRecipeBrowsePage,
-  goToNextToolBrowsePage,
+  goToRecipeList,
   goToResultSummary,
   goToToolList,
   getHomeScaffoldState,
   getRecipeListForSelectedTool,
-  getToolBrowsePage,
   getToolList,
   refreshPhoneSnapshot,
   resumeActiveSession,
   retryPendingHistorySync,
+  selectRecipe,
   selectTool,
+  startSelectedRecipe,
   startRecipe,
   tickActiveSession
 } from "../../shared/watch/router.js";
@@ -154,7 +154,7 @@ function seedCachedCatalog(options = {}) {
   return fixture;
 }
 
-function seedPagedBrowseCatalog() {
+function seedRichBrowseCatalog() {
   const fixture = buildFlowFixture();
   const secondRecipeRecord = {
     ...fixture.recipeRecord,
@@ -483,46 +483,49 @@ describe("mocked Zepp runtime watch flow", () => {
     );
   });
 
-  it("paginates tool and recipe browse state without touching sync or session state", () => {
-    const fixture = seedPagedBrowseCatalog();
-
-    expect(getToolBrowsePage()).toMatchObject({
-      pageIndex: 0,
-      totalPages: 3
-    });
-    expect(getToolBrowsePage().items.map((tool) => tool.toolId)).toEqual([
-      "tool_aeropress",
-      "tool_v60"
-    ]);
-
-    expect(goToNextToolBrowsePage()).toBe(true);
-    expect(getToolBrowsePage().items.map((tool) => tool.toolId)).toEqual([
-      "tool_kalita_wave",
-      "tool_chemex"
-    ]);
-
-    goToToolList();
-    expect(getToolBrowsePage().pageIndex).toBe(0);
+  it("routes from recipe list into a dedicated recipe detail selection step", () => {
+    const fixture = seedRichBrowseCatalog();
 
     selectTool(fixture.recipeRecord.toolId);
-    expect(getRecipeBrowsePage()).toMatchObject({
-      pageIndex: 0,
-      totalPages: 2
-    });
-    expect(getRecipeBrowsePage().items.map((recipe) => recipe.recipeId)).toEqual([
-      fixture.recipeSummary.recipeId,
-      fixture.secondRecipeSummary.recipeId
-    ]);
 
-    expect(goToNextRecipeBrowsePage()).toBe(true);
-    expect(getRecipeBrowsePage().items.map((recipe) => recipe.recipeId)).toEqual([
+    expect(getRecipeListForSelectedTool().map((recipe) => recipe.recipeId)).toEqual([
+      fixture.recipeSummary.recipeId,
+      fixture.secondRecipeSummary.recipeId,
       fixture.thirdRecipeSummary.recipeId
     ]);
 
-    selectTool(fixture.recipeRecord.toolId);
-    expect(getRecipeBrowsePage().pageIndex).toBe(0);
-    expect(getPendingHistoryQueue()).toEqual([]);
+    expect(selectRecipe(fixture.secondRecipeSummary.recipeId)).toBe(true);
+    expect(readSelectedRecipeId()).toBe(fixture.secondRecipeSummary.recipeId);
+    expect(getSelectedRecipe()).toMatchObject({
+      recipeId: fixture.secondRecipeSummary.recipeId
+    });
     expect(readActiveSession()).toBeNull();
+    expect(__zeusRuntime.router.push).toHaveBeenCalledWith({
+      url: PAGE_URLS.recipeDetail
+    });
+
+    expect(startSelectedRecipe()).toBe(true);
+    expect(readActiveSession()).toMatchObject({
+      recipeId: fixture.secondRecipeSummary.recipeId
+    });
+    expect(__zeusRuntime.router.push).toHaveBeenLastCalledWith({
+      url: PAGE_URLS.brewActive
+    });
+    expect(getPendingHistoryQueue()).toEqual([]);
+  });
+
+  it("keeps recipe-detail helpers safe when the selected snapshot is missing", () => {
+    seedCachedCatalog();
+    selectTool("tool_aeropress");
+
+    expect(selectRecipe("missing_recipe")).toBe(false);
+    expect(getSelectedRecipe()).toBeNull();
+    expect(startSelectedRecipe()).toBe(false);
+
+    goToRecipeList();
+    expect(__zeusRuntime.router.replace).toHaveBeenCalledWith({
+      url: PAGE_URLS.recipeList
+    });
   });
 
   it("keeps router state unchanged when ticking a still-running timed step", () => {

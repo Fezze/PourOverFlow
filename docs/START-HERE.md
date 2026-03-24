@@ -39,7 +39,8 @@ This project must be run in English.
 - a more production-shaped session reducer with timed and confirm step semantics,
 - timestamp-based active session reconciliation on app entry,
 - active-brew display guard handling for wake-up relaunch and page bright time,
-- paged watch browse for both brewers and recipes on the current three-button scaffold,
+- a Zepp-native watch browse flow with scrollable brewer and recipe lists plus a dedicated recipe detail/start page,
+- a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
@@ -186,3 +187,4 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - `shared/watch/layouts.js` now uses `getDeviceInfo()` together with `data:os.device.info`, and it also keeps a fallback layout size so a permission problem does not immediately crash first paint.
 - The latest simulator run confirmed that `page/home/index.js` reached full widget render successfully; a later console `ui pause` entry was not, by itself, proof of a home-page build crash.
 - Current WIP state: automatic startup bootstrap is restored for real hardware, but `shared/watch/sync-bridge.js` skips it in simulator heuristic mode (`Battery().getCurrent() === 0`) while the simulator-side `@zos/ble.send` path is still being debugged.
+- The current watch UX pass follows Zepp design-system list patterns rather than a project-specific Figma node, because no concrete Figma file or node link is stored in the repo yet.

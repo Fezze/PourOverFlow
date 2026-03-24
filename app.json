@@ -31,6 +31,7 @@
             "page/home/index",
             "page/tool-list/index",
             "page/recipe-list/index",
+            "page/recipe-detail/index",
             "page/brew-active/index",
             "page/result-summary/index"
           ]

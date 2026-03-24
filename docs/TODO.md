@@ -176,7 +176,7 @@ Build bootstrap and data push from phone to watch.
 
 ### Goal
 
-Bring up the main `tool -> recipe -> active brew` flow.
+Bring up the main `tool -> recipe -> recipe detail -> active brew` flow.
 
 ### Tasks
 
@@ -213,8 +213,9 @@ Bring up the main `tool -> recipe -> active brew` flow.
 - done: timed steps, confirm steps, and finish steps have more production-shaped reducer handling,
 - done: `brew-active` shows step timer and session timer,
 - done: best-effort feedback layer for haptics and system sounds,
+- done: `brew-active` now also binds the Zepp shortcut key as a secondary confirm / next-step action when the watch exposes it,
 - done: runtime event refresh for list pages and result summary,
-- done: watch browse now pages brewer and recipe lists in two-entry slices so additional synced tools or recipes remain reachable on the current three-button scaffold,
+- done: watch browse now uses scrollable brewer and recipe lists plus a dedicated recipe detail/start page, which keeps the shell pages less dense and avoids direct list-to-brew jumps,
 - follow-up: real-device validation of feedback and resume remains in Stage 6.
 
 ## Stage 6 - resume, offline, and hard validation
@@ -286,6 +287,7 @@ Make sure v1 behaves sensibly after interruption.
 - remaining: if the team still wants literal 100% local coverage, the next hotspots are `shared/watch/sync-bridge.js`, `shared/storage/watch-store.js`, `shared/storage/phone-store.js`, `shared/domain/validators.js`, `shared/watch/router.js`, `shared/watch/display-guard.js`, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`,
 - remaining: decide whether to expand the Playwright module harness to Zepp-dependent modules via browser stubs for `@zos/*`, or keep it focused on browser-safe shared modules only,
 - remaining: add page-shell mocked runtime coverage for runtime-event refresh and widget rebuild behavior if UI regressions appear.
+- remaining: if the team wants stricter visual fidelity than the current Zepp-design-system-based UX pass, store a concrete project Figma page or node link in the repo and map the watch pages to it explicitly.
 
 ## Stage 7 - experimental background reminder spike
 

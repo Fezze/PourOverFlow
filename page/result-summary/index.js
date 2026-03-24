@@ -2,7 +2,7 @@ import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import { getToolById } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
-import { PAGE_URLS, goHome, goToToolList } from "../../shared/watch/router";
+import { goHome, goToToolList, PAGE_URLS } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
@@ -12,6 +12,19 @@ import {
   SUBTITLE_TEXT,
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
+
+function buildResultBody(lastResult) {
+  if (!lastResult) {
+    return "No completed brew summary is stored on the watch yet.";
+  }
+
+  return [
+    lastResult.recipeName,
+    `Status: ${lastResult.status}`,
+    `Time: ${Math.round(lastResult.elapsedMs / 1000)}s`,
+    `Delta: ${lastResult.totalDeltaMs} ms`
+  ].join("\n");
+}
 
 Page({
   onDestroy() {
@@ -23,6 +36,7 @@ Page({
   build() {
     const lastResult = readLastResult();
     const tool = lastResult ? getToolById(lastResult.toolId) : null;
+
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "last_result") {
         replace({ url: PAGE_URLS.resultSummary });
@@ -32,27 +46,19 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: lastResult ? "Session summary" : "No result yet"
+      text: lastResult ? "Latest brew" : "No result yet"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "No synced result"
+      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "Brew once to fill this screen"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      text: lastResult
-        ? [
-            lastResult.recipeName,
-            `Status: ${lastResult.status}`,
-            `Elapsed: ${Math.round(lastResult.elapsedMs / 1000)}s`,
-            `Delta: ${lastResult.totalDeltaMs} ms`,
-            lastResult.summary || "Latest result is stored on watch and mirrored back to phone history via sync."
-          ].join("\n")
-        : "Run a brew or wait for a phone bootstrap to populate the latest result."
+      text: buildResultBody(lastResult)
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: "Browse tools",
+      text: "Browse brewers",
       click_func: () => {
         goToToolList();
       }
@@ -66,7 +72,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Watch now keeps the latest result summary and reconciles it with phone history snapshots."
+      text: "Full history stays on the phone."
     });
   }
 });
