@@ -9,5 +9,6 @@ export const BODY_TEXT = layout.body;
 export const FOOTER_TEXT = layout.footer;
 export const BUTTONS = [
   createButtonStyle(layout, 0, "secondary"),
-  createButtonStyle(layout, 1, "neutral")
+  createButtonStyle(layout, 1, "neutral"),
+  createButtonStyle(layout, 2, "secondary")
 ];

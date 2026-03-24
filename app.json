@@ -33,7 +33,8 @@
             "page/recipe-list/index",
             "page/recipe-detail/index",
             "page/brew-active/index",
-            "page/result-summary/index"
+            "page/result-summary/index",
+            "page/validation/index"
           ]
         },
         "app-side": {

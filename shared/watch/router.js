@@ -37,7 +37,8 @@ export const PAGE_URLS = {
   recipeList: "page/recipe-list/index",
   recipeDetail: "page/recipe-detail/index",
   brewActive: "page/brew-active/index",
-  resultSummary: "page/result-summary/index"
+  resultSummary: "page/result-summary/index",
+  validation: "page/validation/index"
 };
 
 function persistCompletedHistoryEntry(historyEntry) {
@@ -128,6 +129,10 @@ export function goToToolList() {
 
 export function goToResultSummary() {
   push({ url: PAGE_URLS.resultSummary });
+}
+
+export function goToValidation() {
+  push({ url: PAGE_URLS.validation });
 }
 
 export function goToRecipeList() {

@@ -2,7 +2,7 @@ import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import { getToolById } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
-import { goHome, goToToolList, PAGE_URLS } from "../../shared/watch/router";
+import { goHome, goToToolList, goToValidation, PAGE_URLS } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
@@ -65,6 +65,13 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
+      text: "Validation",
+      click_func: () => {
+        goToValidation();
+      }
+    });
+    hmUI.createWidget(hmUI.widget.BUTTON, {
+      ...BUTTONS[2],
       text: "Home",
       click_func: () => {
         goHome();
@@ -72,7 +79,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Full history stays on the phone."
+      text: "Full history stays on the phone. Validation helps with Stage 6 hardware checks."
     });
   }
 });

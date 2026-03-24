@@ -165,6 +165,7 @@ function createDefaultRuntimeState() {
     selectedRecipeId: null,
     activeSession,
     lastResult,
+    validationNote: null,
     catalogCache,
     syncMeta,
     catalogReady: Number.isFinite(catalogCache.cachedAt) && catalogCache.cachedAt > 0,
@@ -283,6 +284,10 @@ export function writeWatchSyncMeta(syncMeta) {
   const nextSyncMeta = normalizeWatchSyncMeta(syncMeta);
   getRuntimeState().syncMeta = nextSyncMeta;
   writeWatchJson(WATCH_STORAGE_KEYS.syncMeta, nextSyncMeta);
+  emitRuntimeEvent({
+    type: "sync_meta",
+    value: nextSyncMeta
+  });
   return nextSyncMeta;
 }
 
@@ -394,9 +399,28 @@ export function isCatalogReady() {
 }
 
 export function setConnectionStatus(connected) {
-  getRuntimeState().connected = Boolean(connected);
+  const nextConnected = Boolean(connected);
+  getRuntimeState().connected = nextConnected;
+  emitRuntimeEvent({
+    type: "connection",
+    value: nextConnected
+  });
 }
 
 export function isWatchConnected() {
   return Boolean(getRuntimeState().connected);
+}
+
+export function readValidationNote() {
+  return getRuntimeState().validationNote || null;
+}
+
+export function writeValidationNote(note) {
+  const nextNote = typeof note === "string" && note ? note : null;
+  getRuntimeState().validationNote = nextNote;
+  emitRuntimeEvent({
+    type: "validation_note",
+    value: nextNote
+  });
+  return nextNote;
 }

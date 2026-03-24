@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+beforeEach(() => {
+  vi.resetModules();
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -112,7 +116,7 @@ describe("dependency-gated edge branches", () => {
     }));
 
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const feedback = await import("../shared/engine/feedback.js");
+    const feedback = await import("../shared/engine/feedback.js?system-sounds-fallback");
 
     expect(feedback.playFeedbackCue("sound_soft")).toBe(false);
     expect(consoleSpy).toHaveBeenCalled();

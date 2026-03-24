@@ -65,7 +65,7 @@ Set up the minimum repo scaffold that matches the documents.
 - configure `configVersion: "v3"` and `runtime.apiVersion.target: "4.0"`,
 - register target `common` for `round` and `square`,
 - follow the contract from `docs/06-manifest-and-ui-contract.md`,
-- add pages `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`,
+- add pages `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`, `validation`,
 - add `setting/index.jsx`,
 - add `app-side/index.js`,
 - add `shared/*`,
@@ -87,7 +87,7 @@ Set up the minimum repo scaffold that matches the documents.
 ### Status
 
 - done: scaffold exists and `zeus build` passes,
-- done: pages `home`, `tool-list`, `recipe-list`, `brew-active`, and `result-summary` exist,
+- done: pages `home`, `tool-list`, `recipe-list`, `brew-active`, `result-summary`, and `validation` exist,
 - done: `setting/`, `app-side/`, `shared/`, and placeholder assets exist,
 - note: the watch runtime is still only a scaffold at this stage, not the final `LocalStorage` / sync implementation.
 
@@ -272,8 +272,9 @@ Make sure v1 behaves sensibly after interruption.
 - done: the same Playwright simulator and module-harness flows now also have no-coverage smoke entrypoints, so they can be run as pass/fail checks before generating coverage reports,
 - done: the simulator-side Playwright commands now verify that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files before they claim to test the simulator build,
 - done: the repo now has a single local verification job as the VS Code compound task `Verify: all tests and coverage`, which runs the full non-simulator verification stack without relying on CI or wrapper scripts,
-- done: the current meaningful coverage baselines are now much higher, with `npm run test:coverage` at `93.40%` statements / `84.68%` branches / `98.20%` functions / `93.29%` lines and `npm run test:playwright:coverage:harness` at `93.63%` statements / `83.05%` branches / `93.95%` functions / `93.63%` lines,
-- done: the mocked Zepp runtime harness now also covers page-shell behavior for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`, including runtime-event rebuilds, empty-state fallbacks, stale-selection recovery, scroll-list routing, and device-info fallback behavior without needing the simulator,
+- done: the current meaningful coverage baselines are now much higher, with `npm run test:coverage` at `93.67%` statements / `84.86%` branches / `98.28%` functions / `93.57%` lines and `npm run test:playwright:coverage:harness` at `93.63%` statements / `83.05%` branches / `93.95%` functions / `93.63%` lines,
+- done: the mocked Zepp runtime harness now also covers page-shell behavior for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `result-summary`, and `validation`, including runtime-event rebuilds, empty-state fallbacks, stale-selection recovery, scroll-list routing, action-list behavior, and device-info fallback behavior without needing the simulator,
+- done: the watch now exposes a dedicated `validation` page from `result-summary`, giving Stage 6 a stable hardware-check surface for haptics, sound, sync responsiveness, and readable runtime state,
 - note: the no-coverage simulator smoke path currently polls the simulator DevTools page list instead of using a full Playwright `connectOverCDP()` browser attach, because the simulator may reject that path with `Browser.setDownloadBehavior` context-management errors,
 - done: the repo-standard npm test menu now removes simulator-side V8 coverage because the current simulator DevTools endpoint exposes shell/framework/preload scripts more reliably than PourOverFlow app code,
 - note: a current simulator limitation is now verified: the DevTools target list may expose only the Electron shell page under `Program Files/simulator/resources/app.asar/...`, which blocks real app-code V8 coverage even though the simulator smoke check itself still works,

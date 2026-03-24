@@ -62,6 +62,8 @@ function createLayoutMock(overrides = {}) {
     FOOTER_TEXT: {},
     LIST_PANEL: {},
     DETAIL_PANEL: {},
+    STATUS_PANEL: {},
+    STATUS_TEXT: {},
     LIST_FRAME: {
       x: 0,
       y: 0,
@@ -74,6 +76,7 @@ function createLayoutMock(overrides = {}) {
       metaHeight: 24
     },
     PRIMARY_BUTTON: {},
+    HOME_BUTTON: {},
     BUTTONS: [{}, {}, {}],
     ...overrides
   };
@@ -324,9 +327,16 @@ describe("page shell runtime coverage", () => {
 
     const pageInstance = buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();
+    const buttons = widgets.filter((widget) => widget.type === "BUTTON");
 
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "Latest brew")).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse brewers")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Validation")).toBe(true);
+
+    buttons[1].click_func();
+    expect(runtime.router.push).toHaveBeenCalledWith({
+      url: "page/validation/index"
+    });
 
     const runtimeEvents = await import("../shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
@@ -461,8 +471,76 @@ describe("page shell runtime coverage", () => {
     });
 
     buttons[1].click_func();
+    expect(runtime.router.push).toHaveBeenCalledWith({
+      url: "page/validation/index"
+    });
+
+    runtime.router.replace.mockClear();
+    buttons[2].click_func();
     expect(runtime.router.replace).toHaveBeenCalledWith({
       url: "page/home/index"
     });
+  });
+
+  it("renders the validation page, runs validation actions, and refreshes on runtime updates", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/validation/index.js", createLayoutMock());
+    const watchStore = await import("../shared/storage/watch-store.js");
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache),
+      [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify(fixture.lastResult)
+    });
+
+    watchStore.setConnectionStatus(false);
+    watchStore.enqueuePendingHistoryEntry({
+      historyId: "hist_pending",
+      recipeName: fixture.primaryRecord.name
+    });
+
+    const pageInstance = buildPage(pageDefinition);
+    const widgets = runtime.getCreatedWidgets();
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+    const buttons = widgets.filter((widget) => widget.type === "BUTTON");
+
+    expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "Validation")).toBe(true);
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.data_count).toBe(3);
+
+    scrollList.item_click_func(null, 0);
+    expect(runtime.__zeusRuntime.buzzerInstances.size).toBeGreaterThan(0);
+
+    scrollList.item_click_func(null, 1);
+    expect(runtime.__zeusRuntime.systemSoundInstances.size).toBeGreaterThan(0);
+
+    runtime.ble.send.mockClear();
+    scrollList.item_click_func(null, 2);
+    expect(runtime.ble.send).not.toHaveBeenCalled();
+    expect(watchStore.readValidationNote()).toMatch("offline");
+
+    buttons[0].click_func();
+    expect(runtime.router.replace).toHaveBeenCalledWith({
+      url: "page/home/index"
+    });
+
+    const runtimeEvents = await import("../shared/watch/runtime-events.js");
+    runtime.router.replace.mockClear();
+    runtimeEvents.emitRuntimeEvent({
+      type: "validation_note",
+      value: watchStore.readValidationNote()
+    });
+
+    expect(runtime.router.replace).toHaveBeenCalledWith({
+      url: "page/validation/index"
+    });
+
+    runtime.router.replace.mockClear();
+    (pageDefinition.onDestroy as () => void).call(pageInstance);
+    runtimeEvents.emitRuntimeEvent({
+      type: "sync_meta",
+      value: watchStore.readWatchSyncMeta()
+    });
+
+    expect(runtime.router.replace).not.toHaveBeenCalled();
   });
 });

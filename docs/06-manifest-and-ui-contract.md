@@ -69,7 +69,8 @@ Stage 2 implementation should start from this outline:
             "page/recipe-list/index",
             "page/recipe-detail/index",
             "page/brew-active/index",
-            "page/result-summary/index"
+            "page/result-summary/index",
+            "page/validation/index"
           ]
         },
         "app-side": {
@@ -137,6 +138,9 @@ page/brew-active/index.s.layout.js
 page/result-summary/index.js
 page/result-summary/index.r.layout.js
 page/result-summary/index.s.layout.js
+page/validation/index.js
+page/validation/index.r.layout.js
+page/validation/index.s.layout.js
 setting/index.jsx
 app-side/index.js
 ```

@@ -41,11 +41,12 @@ This project must be run in English.
 - active-brew display guard handling for wake-up relaunch and page bright time,
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists plus a dedicated recipe detail/start page,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
+- a dedicated `validation` page, reachable from `result-summary`, for Stage 6 hardware checks,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
 - mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay,
-- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`, including runtime-event refresh and empty or stale-state fallbacks.
+- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `result-summary`, and `validation`, including runtime-event refresh and empty or stale-state fallbacks.
 
 ## Test loop
 
@@ -54,7 +55,7 @@ This project must be run in English.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
-- Current meaningful coverage baselines after the latest test expansion are `93.40% / 84.68% / 98.20% / 93.29%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
+- Current meaningful coverage baselines after the latest test expansion are `93.67% / 84.86% / 98.28% / 93.57%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
@@ -71,6 +72,7 @@ Playwright coverage here is intentionally limited to the browser module harness 
 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
+- real-watch use of the `validation` page to confirm haptics, audio, and offline-safe sync checks,
 - literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `phone-store`, `validators`, the page shells with defensive empty-state branches, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 
 ## Read first
@@ -182,6 +184,7 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
 - The mocked Zepp runtime harness now also exercises page shells by aliasing `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocking `zosLoader:` layout modules, and asserting widget creation plus runtime-event refresh behavior from captured `Page(...)` definitions.
+- The watch now has a dedicated `validation` page for Stage 6 hardware checks. It intentionally focuses on readable bridge and queue status plus explicit haptic, sound, and sync actions instead of becoming a generic debug surface.
 - The repo now uses `scripts/playwright-simulator-coverage.mjs` for two meaningful Playwright roles only: simulator smoke without coverage and module-harness smoke or coverage for browser-safe shared code.
 - Simulator-side V8 coverage was intentionally removed from the repo-standard test menu because the current simulator exposes shell/framework/preload scripts more reliably than PourOverFlow app code.
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.
