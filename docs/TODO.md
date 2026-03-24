@@ -214,7 +214,7 @@ Bring up the main `tool -> recipe -> active brew` flow.
 - done: `brew-active` shows step timer and session timer,
 - done: best-effort feedback layer for haptics and system sounds,
 - done: runtime event refresh for list pages and result summary,
-- follow-up: the current watch recipe list UI exposes only the first two recipes for a brewer; add pagination, scrolling, or another browse pattern before treating watch recipe browse as fully scalable,
+- done: watch browse now pages brewer and recipe lists in two-entry slices so additional synced tools or recipes remain reachable on the current three-button scaffold,
 - follow-up: real-device validation of feedback and resume remains in Stage 6.
 
 ## Stage 6 - resume, offline, and hard validation

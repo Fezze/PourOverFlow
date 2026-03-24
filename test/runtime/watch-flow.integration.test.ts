@@ -40,13 +40,17 @@ import {
 import {
   abortActiveBrew,
   discardActiveSessionFromHome,
+  getRecipeBrowsePage,
   PAGE_URLS,
   advanceOrCompleteActiveSession,
   goHome,
+  goToNextRecipeBrowsePage,
+  goToNextToolBrowsePage,
   goToResultSummary,
   goToToolList,
   getHomeScaffoldState,
   getRecipeListForSelectedTool,
+  getToolBrowsePage,
   getToolList,
   refreshPhoneSnapshot,
   resumeActiveSession,
@@ -148,6 +152,52 @@ function seedCachedCatalog(options = {}) {
   __zeusRuntime.appState.globalData = {};
 
   return fixture;
+}
+
+function seedPagedBrowseCatalog() {
+  const fixture = buildFlowFixture();
+  const secondRecipeRecord = {
+    ...fixture.recipeRecord,
+    recipeId: "runtime_flow_recipe_2",
+    name: "Runtime Flow Second",
+    updatedAt: 1_100
+  };
+  const thirdRecipeRecord = {
+    ...fixture.recipeRecord,
+    recipeId: "runtime_flow_recipe_3",
+    name: "Runtime Flow Third",
+    updatedAt: 1_200
+  };
+  const secondRecipeSummary = createRecipeSummary(secondRecipeRecord);
+  const thirdRecipeSummary = createRecipeSummary(thirdRecipeRecord);
+  const secondRecipeSnapshot = createRecipeSnapshot(secondRecipeRecord);
+  const thirdRecipeSnapshot = createRecipeSnapshot(thirdRecipeRecord);
+
+  setLocalStorageState({
+    [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify({
+      ...fixture.catalogCache,
+      recipesByTool: {
+        ...fixture.catalogCache.recipesByTool,
+        [fixture.recipeRecord.toolId]: [
+          fixture.recipeSummary,
+          secondRecipeSummary,
+          thirdRecipeSummary
+        ]
+      },
+      recipeSnapshotsById: {
+        ...fixture.catalogCache.recipeSnapshotsById,
+        [secondRecipeSnapshot.recipeId]: secondRecipeSnapshot,
+        [thirdRecipeSnapshot.recipeId]: thirdRecipeSnapshot
+      }
+    })
+  });
+  __zeusRuntime.appState.globalData = {};
+
+  return {
+    ...fixture,
+    secondRecipeSummary,
+    thirdRecipeSummary
+  };
 }
 
 function connectWatchBridge() {
@@ -431,6 +481,48 @@ describe("mocked Zepp runtime watch flow", () => {
         })
       ])
     );
+  });
+
+  it("paginates tool and recipe browse state without touching sync or session state", () => {
+    const fixture = seedPagedBrowseCatalog();
+
+    expect(getToolBrowsePage()).toMatchObject({
+      pageIndex: 0,
+      totalPages: 3
+    });
+    expect(getToolBrowsePage().items.map((tool) => tool.toolId)).toEqual([
+      "tool_aeropress",
+      "tool_v60"
+    ]);
+
+    expect(goToNextToolBrowsePage()).toBe(true);
+    expect(getToolBrowsePage().items.map((tool) => tool.toolId)).toEqual([
+      "tool_kalita_wave",
+      "tool_chemex"
+    ]);
+
+    goToToolList();
+    expect(getToolBrowsePage().pageIndex).toBe(0);
+
+    selectTool(fixture.recipeRecord.toolId);
+    expect(getRecipeBrowsePage()).toMatchObject({
+      pageIndex: 0,
+      totalPages: 2
+    });
+    expect(getRecipeBrowsePage().items.map((recipe) => recipe.recipeId)).toEqual([
+      fixture.recipeSummary.recipeId,
+      fixture.secondRecipeSummary.recipeId
+    ]);
+
+    expect(goToNextRecipeBrowsePage()).toBe(true);
+    expect(getRecipeBrowsePage().items.map((recipe) => recipe.recipeId)).toEqual([
+      fixture.thirdRecipeSummary.recipeId
+    ]);
+
+    selectTool(fixture.recipeRecord.toolId);
+    expect(getRecipeBrowsePage().pageIndex).toBe(0);
+    expect(getPendingHistoryQueue()).toEqual([]);
+    expect(readActiveSession()).toBeNull();
   });
 
   it("keeps router state unchanged when ticking a still-running timed step", () => {

@@ -39,6 +39,7 @@ This project must be run in English.
 - a more production-shaped session reducer with timed and confirm step semantics,
 - timestamp-based active session reconciliation on app entry,
 - active-brew display guard handling for wake-up relaunch and page bright time,
+- paged watch browse for both brewers and recipes on the current three-button scaffold,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,

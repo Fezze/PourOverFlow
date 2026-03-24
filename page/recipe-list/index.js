@@ -1,8 +1,9 @@
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import {
-  getRecipeListForSelectedTool,
+  getRecipeBrowsePage,
   getSelectedTool,
+  goToNextRecipeBrowsePage,
   PAGE_URLS,
   goHome,
   refreshPhoneSnapshot,
@@ -27,7 +28,8 @@ Page({
   },
   build() {
     const selectedTool = getSelectedTool();
-    const recipes = getRecipeListForSelectedTool();
+    const browsePage = getRecipeBrowsePage();
+    const recipes = browsePage.items;
     const highlightedRecipe = recipes[0] || null;
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "catalog") {
@@ -42,11 +44,13 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Phone-synced recipes"
+      text: browsePage.totalItems
+        ? `Phone-synced recipes · page ${browsePage.pageIndex + 1}/${browsePage.totalPages}`
+        : "Phone-synced recipes"
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      text: recipes.length
+      text: browsePage.totalItems
         ? [
             "Pick a recipe from the synced catalog.",
             highlightedRecipe && highlightedRecipe.recipeSnapshot
@@ -56,39 +60,55 @@ Page({
         : "No recipes are cached yet for this brewer. Refresh the phone bridge or add recipes in Settings."
     });
 
-    BUTTONS.forEach((buttonStyle, index) => {
-      if (index < 2 && recipes[index]) {
-        hmUI.createWidget(hmUI.widget.BUTTON, {
-          ...buttonStyle,
-          text: recipes[index].recipeSnapshot
-            ? `${recipes[index].name} ${recipes[index].recipeSnapshot.coffeeDoseG}g`
-            : recipes[index].name,
-          click_func: () => {
-            startRecipe(recipes[index]);
-          }
-        });
-        return;
-      }
+    recipes.slice(0, 2).forEach((recipe, index) => {
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        ...BUTTONS[index],
+        text: recipe.recipeSnapshot
+          ? `${recipe.name} ${recipe.recipeSnapshot.coffeeDoseG}g`
+          : recipe.name,
+        click_func: () => {
+          startRecipe(recipe);
+        }
+      });
+    });
 
-      if (index === 2) {
-        hmUI.createWidget(hmUI.widget.BUTTON, {
-          ...buttonStyle,
-          text: recipes.length ? "Back home" : "Refresh sync",
-          click_func: () => {
-            if (recipes.length) {
-              goHome();
-              return;
-            }
+    if (!recipes[1] && browsePage.totalItems) {
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        ...BUTTONS[1],
+        text: "Back home",
+        click_func: () => {
+          goHome();
+        }
+      });
+    }
 
-            refreshPhoneSnapshot();
-          }
-        });
+    hmUI.createWidget(hmUI.widget.BUTTON, {
+      ...BUTTONS[2],
+      text: !browsePage.totalItems
+        ? "Refresh sync"
+        : browsePage.hasNext
+          ? `Next page ${browsePage.pageIndex + 1}/${browsePage.totalPages}`
+          : "Back home",
+      click_func: () => {
+        if (!browsePage.totalItems) {
+          refreshPhoneSnapshot();
+          return;
+        }
+
+        if (browsePage.hasNext) {
+          goToNextRecipeBrowsePage();
+          return;
+        }
+
+        goHome();
       }
     });
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: selectedTool ? `toolId: ${selectedTool.toolId} | recipes: ${recipes.length}` : "toolId unavailable"
+      text: selectedTool
+        ? `toolId: ${selectedTool.toolId} | recipes: ${browsePage.totalItems}`
+        : "toolId unavailable"
     });
   }
 });

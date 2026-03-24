@@ -40,7 +40,9 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 
 - show only tools with `supported: true`,
 - sort by `sortOrder`,
-- each row shows icon, label, and the number of available recipes for that `toolId`,
+- render the watch browse as paged slices of up to 2 brewers per screen,
+- each visible brewer entry shows label and the number of available recipes for that `toolId`,
+- the third button advances to the next browse page when more brewers exist and returns home on the final page,
 - tapping a tool opens `recipe-list` with router param `toolId`.
 
 ### Empty state
@@ -60,7 +62,9 @@ If a tool has no recipes:
 
 - read `toolId` from router params,
 - render `RecipeSummary[]` only for that tool,
-- each row shows name, color, update recency, and a short summary of key brew parameters,
+- show recipes in paged slices of up to 2 entries per screen,
+- each visible recipe entry shows name, color, update recency, and a short summary of key brew parameters,
+- the third button advances to the next recipe page when more recipes exist and returns home on the final page,
 - tapping a recipe opens a start confirmation screen or goes directly to `brew-active`.
 
 ### Recipe row data

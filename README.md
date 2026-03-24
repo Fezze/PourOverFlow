@@ -84,7 +84,7 @@ The verification workflow is intentionally local-first and does not assume CI. I
 
 - hard validation of wake-up relaunch, anti-sleep, haptic, and audio behavior on a real device,
 - fuller page-shell mocked Zepp runtime coverage for widget refresh and page lifecycle,
-- a scalable watch recipe browse pattern for more than two recipes per brewer.
+- literal 100% local coverage, if the team still wants to keep pushing the current baselines.
 
 ## Important technical limits
 

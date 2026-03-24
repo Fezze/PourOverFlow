@@ -21,8 +21,12 @@ import {
   readWatchSyncMeta,
   setConnectionStatus,
   applyHistorySnapshot,
+  readRecipeBrowsePageIndex,
   writeCatalogCache,
-  writeActiveSession
+  writeActiveSession,
+  readToolBrowsePageIndex,
+  writeRecipeBrowsePageIndex,
+  writeToolBrowsePageIndex
 } from "../shared/storage/watch-store.js";
 import {
   disableActiveSessionDisplayGuard,
@@ -281,6 +285,21 @@ describe("watch runtime helpers", () => {
     expect(isWatchConnected()).toBe(false);
     setConnectionStatus(true);
     expect(isWatchConnected()).toBe(true);
+  });
+
+  it("normalizes watch browse page indices in runtime state", () => {
+    expect(readToolBrowsePageIndex()).toBe(0);
+    expect(readRecipeBrowsePageIndex()).toBe(0);
+
+    expect(writeToolBrowsePageIndex(2)).toBe(2);
+    expect(writeRecipeBrowsePageIndex(3)).toBe(3);
+    expect(readToolBrowsePageIndex()).toBe(2);
+    expect(readRecipeBrowsePageIndex()).toBe(3);
+
+    expect(writeToolBrowsePageIndex(-1)).toBe(0);
+    expect(writeRecipeBrowsePageIndex(Number.NaN)).toBe(0);
+    expect(readToolBrowsePageIndex()).toBe(0);
+    expect(readRecipeBrowsePageIndex()).toBe(0);
   });
 
   it("applies history snapshots that clear the latest result", () => {

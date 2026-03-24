@@ -137,6 +137,7 @@ The first implementation task from the current repo state is Stage 6:
 - Stage 6 adds timestamp-based resume reconciliation and active-brew display guard handling, but real-device confirmation is still pending.
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
 - Watch browse and result pages already refresh on runtime events when new snapshots arrive, but this is not yet a fully reactive UI system.
+- Watch browse now pages brewer and recipe lists in two-entry slices on the current three-button scaffold; if a later agent redesigns watch browse, update the flow docs and backlog instead of changing it silently.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 - In local simulator workflows, `zeus dev` may push the app more reliably than bridge `install`; if bridge `install` appears to do nothing in the simulator, prefer `zeus dev` for deployment and keep bridge for connection/debug tasks.
 - Zeus Bridge may prompt for explicit target selection when more than one online simulator or device is visible; picking the intended target such as `Balance 2` is expected behavior, not a failure case.
