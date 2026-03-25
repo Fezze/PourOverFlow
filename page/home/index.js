@@ -17,28 +17,34 @@ import {
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
+  FOOTER_TEXT,
   SUBTITLE_TEXT,
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
-function buildHomeBody(state) {
-  const lines = [];
+const PANEL_COLOR = 0x171d26;
+const MUTED_TEXT = 0xaab4c2;
 
+function buildHomeBody(state) {
   if (state.activeSession) {
-    lines.push(state.activeSession.recipeName);
-    lines.push(`Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`);
-  } else if (state.selectedTool) {
-    lines.push(`Last brewer: ${state.selectedTool.label}`);
-    lines.push("Choose a recipe and start brewing.");
-  } else {
-    lines.push("Choose a brewer to start the next brew.");
+    return [
+      state.activeSession.recipeName,
+      `Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`,
+      "Pick up where you left off."
+    ].join("\n");
   }
 
   if (state.lastResult) {
-    lines.push(`Last brew: ${state.lastResult.recipeName}`);
+    return [
+      state.selectedTool ? state.selectedTool.label : "Choose a brewer",
+      `Last brew: ${state.lastResult.recipeName}`,
+      "Pick a brewer and start the next cup."
+    ].join("\n");
   }
 
-  return lines.join("\n");
+  return state.selectedTool
+    ? [state.selectedTool.label, `${state.recipeCount} recipes ready`, "Choose a recipe and start."].join("\n")
+    : ["Choose a brewer", "Browse the library", "Start the next brew."].join("\n");
 }
 
 Page({
@@ -73,8 +79,18 @@ Page({
       ...SUBTITLE_TEXT,
       text: scaffoldState.activeSession ? "Resume your brew" : "Choose your brewer"
     });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, {
+      x: BUTTONS[0].x,
+      y: BODY_TEXT.y - 8,
+      w: BUTTONS[0].w,
+      h: 110,
+      radius: 26,
+      color: PANEL_COLOR
+    });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      y: BODY_TEXT.y + 10,
+      h: BODY_TEXT.h + 24,
       text: buildHomeBody(scaffoldState)
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -91,7 +107,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: scaffoldState.activeSession ? "Discard session" : "Refresh library",
+      text: scaffoldState.activeSession ? "X" : "Refresh",
       click_func: () => {
         if (scaffoldState.activeSession) {
           discardActiveSessionFromHome();
@@ -104,10 +120,19 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[2],
-      text: "Latest result",
+      text: "Latest",
       click_func: () => {
         goToResultSummary();
       }
+    });
+    hmUI.createWidget(hmUI.widget.TEXT, {
+      ...FOOTER_TEXT,
+      y: BUTTONS[1].y - 44,
+      h: 30,
+      color: MUTED_TEXT,
+      text: scaffoldState.activeSession
+        ? "Main action stays pinned below."
+        : "Refresh the phone snapshot or open the latest brew."
     });
   }
 });

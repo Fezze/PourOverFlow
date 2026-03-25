@@ -13,6 +13,9 @@ import {
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
+const PANEL_COLOR = 0x171d26;
+const MUTED_TEXT = 0xaab4c2;
+
 function buildResultBody(lastResult) {
   if (!lastResult) {
     return "No completed brew summary is stored on the watch yet.";
@@ -20,8 +23,7 @@ function buildResultBody(lastResult) {
 
   return [
     lastResult.recipeName,
-    `Status: ${lastResult.status}`,
-    `Time: ${Math.round(lastResult.elapsedMs / 1000)}s`,
+    `${Math.round(lastResult.elapsedMs / 1000)}s total`,
     `Delta: ${lastResult.totalDeltaMs} ms`
   ].join("\n");
 }
@@ -52,8 +54,18 @@ Page({
       ...SUBTITLE_TEXT,
       text: lastResult ? (tool ? tool.label : lastResult.toolId) : "Brew once to fill this screen"
     });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, {
+      x: BUTTONS[0].x,
+      y: BODY_TEXT.y - 8,
+      w: BUTTONS[0].w,
+      h: 110,
+      radius: 26,
+      color: PANEL_COLOR
+    });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      y: BODY_TEXT.y + 10,
+      h: BODY_TEXT.h + 24,
       text: buildResultBody(lastResult)
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -79,7 +91,12 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: "Full history stays on the phone. Validation helps with Stage 6 hardware checks."
+      y: BUTTONS[1].y - 44,
+      h: 30,
+      color: MUTED_TEXT,
+      text: lastResult
+        ? "Review hardware checks or jump back into the brewer list."
+        : "Full history stays on the phone."
     });
   }
 });

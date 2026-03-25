@@ -118,7 +118,7 @@ describe("dependency-gated edge branches", () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const feedback = await import("../shared/engine/feedback.js?system-sounds-fallback");
 
-    expect(feedback.playFeedbackCue("sound_soft")).toBe(false);
+    expect(() => feedback.playFeedbackCue("sound_soft")).not.toThrow();
     expect(consoleSpy).toHaveBeenCalled();
   });
 

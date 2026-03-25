@@ -19,6 +19,8 @@ import {
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
+const MUTED_TEXT = 0xaab4c2;
+
 function buildRecipeBody(recipe) {
   const snapshot = recipe.recipeSnapshot;
 
@@ -29,8 +31,8 @@ function buildRecipeBody(recipe) {
   return [
     `${snapshot.coffeeDoseG}g coffee / ${snapshot.totalWaterMl}ml water`,
     `${snapshot.waterTempC}C / ${snapshot.grindLabel}`,
-    `${snapshot.filterLabel} filter / ${Math.round(snapshot.estimatedTotalDurationMs / 1000)}s total`,
-    `${snapshot.steps.length} guided steps`
+    `${Math.round(snapshot.estimatedTotalDurationMs / 1000)}s / ${snapshot.steps.length} steps`,
+    `${snapshot.filterLabel} filter`
   ].join("\n");
 }
 
@@ -67,12 +69,14 @@ Page({
       x: DETAIL_PANEL.x,
       y: DETAIL_PANEL.y,
       w: DETAIL_PANEL.w,
-      h: 8,
+      h: 10,
       radius: DETAIL_PANEL.radius,
       color: accentColor
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      y: BODY_TEXT.y + 6,
+      h: BODY_TEXT.h + 14,
       text: selectedRecipe
         ? buildRecipeBody(selectedRecipe)
         : "Open the recipe list again or refresh the phone sync."
@@ -94,6 +98,14 @@ Page({
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
         text: "The local snapshot is unavailable right now."
+      });
+    }
+
+    if (selectedRecipe && snapshot) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...FOOTER_TEXT,
+        color: MUTED_TEXT,
+        text: snapshot.description || "Review the brew, then start when ready."
       });
     }
   }

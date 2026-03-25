@@ -127,7 +127,7 @@ describe("page shell runtime coverage", () => {
     const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
 
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse brewers")).toBe(true);
-    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Latest result")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Latest")).toBe(true);
     expect(textWidgets.some((widget) => String(widget.text).includes("Phone bridge connected"))).toBe(false);
     expect(textWidgets.some((widget) => String(widget.text).includes("cached recipes ready"))).toBe(false);
 

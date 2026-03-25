@@ -1,6 +1,5 @@
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
-import { getFeedbackLabel } from "../../shared/engine/feedback";
 import {
   formatDurationLabel,
   getCurrentSessionStep,
@@ -23,7 +22,10 @@ import {
   enableActiveSessionDisplayGuard
 } from "../../shared/watch/display-guard";
 import { registerShortcutKey } from "../../shared/watch/shortcut-key";
+import { SHARED_COLORS, createPanelStyle } from "../../shared/watch/layouts";
 import {
+  ACTION_DIVIDER,
+  ACTION_DOCK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
@@ -32,27 +34,40 @@ import {
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
-function buildBodyText(activeSession) {
+function buildRecipeSubtitle(activeSession) {
+  const tool = getToolById(activeSession.toolId);
+  return tool ? tool.label : activeSession.toolId;
+}
+
+function buildProgressText(activeSession) {
+  return `Step ${activeSession.currentStepIndex + 1}/${activeSession.recipeSnapshot.steps.length}`;
+}
+
+function buildDescriptionText(activeSession) {
+  const currentStep = getCurrentSessionStep(activeSession);
+
+  return currentStep ? currentStep.body : "No step payload";
+}
+
+function buildStepMetaText(activeSession) {
   const currentStep = getCurrentSessionStep(activeSession);
   const sessionElapsedLabel = formatDurationLabel(getElapsedSessionMs(activeSession));
   const stepRemainingMs = getCurrentStepRemainingMs(activeSession);
-  const stepTimerLabel =
-    stepRemainingMs === null
-      ? "Manual step"
-      : `${formatDurationLabel(stepRemainingMs)} left`;
+  const parts = [currentStep ? getStepProgressLabel(currentStep) : "No step type"];
 
-  return [
-    `Step ${activeSession.currentStepIndex + 1}/${activeSession.recipeSnapshot.steps.length}`,
-    currentStep ? currentStep.title : "Unknown step",
-    currentStep ? currentStep.body : "No step payload",
-    currentStep ? getStepProgressLabel(currentStep) : "No step type",
-    currentStep && currentStep.targetTotalWaterMl !== undefined
-      ? `Water target ${currentStep.targetTotalWaterMl} ml`
-      : currentStep && currentStep.waterMl !== undefined
-        ? `Pour ${currentStep.waterMl} ml`
-        : stepTimerLabel,
-    `Session ${sessionElapsedLabel}`
-  ].join("\n");
+  if (currentStep && currentStep.targetTotalWaterMl !== undefined) {
+    parts.push(`Target ${currentStep.targetTotalWaterMl} ml`);
+  } else if (currentStep && currentStep.waterMl !== undefined) {
+    parts.push(`Pour ${currentStep.waterMl} ml`);
+  }
+
+  if (stepRemainingMs !== null) {
+    parts.push(`${formatDurationLabel(stepRemainingMs)} left`);
+  } else {
+    parts.push(`Session ${sessionElapsedLabel}`);
+  }
+
+  return parts.join("  •  ");
 }
 
 function buildFooterText(activeSession) {
@@ -63,14 +78,14 @@ function buildFooterText(activeSession) {
   }
 
   if (activeSession.status === "waiting_for_confirm") {
-    return "Confirm to continue. Shortcut button also triggers the primary action when available.";
+    return "Ready to continue. Shortcut button also works when available.";
   }
 
   if (currentStep.kind === "timed_wait" || currentStep.kind === "timed_action") {
-    return `Cue: ${getFeedbackLabel(currentStep.feedbackCue)}. Timed steps auto-advance when allowed.`;
+    return "Timed steps auto-advance when allowed.";
   }
 
-  return "Manual step. Confirm when you are ready to continue.";
+  return "Manual step. Continue when you are ready.";
 }
 
 Page({
@@ -83,26 +98,25 @@ Page({
   refreshWidgets() {
     const activeSession = readActiveSession();
 
-    if (!activeSession || !this.bodyWidget || !this.subtitleWidget || !this.footerWidget) {
+    if (
+      !activeSession ||
+      !this.descriptionWidget ||
+      !this.recipeSubtitleWidget ||
+      !this.progressWidget ||
+      !this.stepTitleWidget ||
+      !this.metaWidget ||
+      !this.footerWidget
+    ) {
       return;
     }
 
+    this.recipeSubtitleWidget.text = buildRecipeSubtitle(activeSession);
+    this.progressWidget.text = buildProgressText(activeSession);
     const currentStep = getCurrentSessionStep(activeSession);
-    const tool = getToolById(activeSession.toolId);
-    this.subtitleWidget.text = tool
-      ? `${tool.label} | ${activeSession.status}`
-      : `Status: ${activeSession.status}`;
-    this.bodyWidget.text = buildBodyText(activeSession);
+    this.stepTitleWidget.text = currentStep ? currentStep.title : "Unknown step";
+    this.descriptionWidget.text = buildDescriptionText(activeSession);
+    this.metaWidget.text = buildStepMetaText(activeSession);
     this.footerWidget.text = buildFooterText(activeSession);
-
-    if (this.primaryButton && currentStep) {
-      this.primaryButton.text =
-        currentStep.kind === "finish"
-          ? "Finish brew"
-          : activeSession.status === "waiting_for_confirm"
-            ? "Confirm step"
-            : "Next step";
-    }
   },
   build() {
     const reconcileResult = reconcileActiveSessionOnEntry();
@@ -149,43 +163,79 @@ Page({
     });
 
     const currentStep = getCurrentSessionStep(activeSession);
-    const tool = getToolById(activeSession.toolId);
-    const primaryLabel =
-      currentStep && currentStep.kind === "finish"
-        ? "Finish brew"
-        : activeSession.status === "waiting_for_confirm"
-          ? "Confirm step"
-          : "Next step";
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
+      text_size: TITLE_TEXT.text_size - 2,
+      h: TITLE_TEXT.h + 8,
       text: activeSession.recipeName
     });
-    this.subtitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+    this.recipeSubtitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: tool ? `${tool.label} | ${activeSession.status}` : `Status: ${activeSession.status}`
+      text: buildRecipeSubtitle(activeSession)
     });
-    this.bodyWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+    this.progressWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+      ...SUBTITLE_TEXT,
+      y: SUBTITLE_TEXT.y + 28,
+      h: SUBTITLE_TEXT.h - 2,
+      color: SHARED_COLORS.muted,
+      text_size: SUBTITLE_TEXT.text_size + 2,
+      text: buildProgressText(activeSession)
+    });
+    this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      h: BODY_TEXT.h + 44,
-      text: buildBodyText(activeSession)
+      y: BODY_TEXT.y + 18,
+      h: 34,
+      text_size: BODY_TEXT.text_size + 8,
+      color: SHARED_COLORS.text,
+      text: currentStep ? currentStep.title : "Unknown step"
     });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, createPanelStyle({
+      buttonX: BODY_TEXT.x,
+      buttonW: BODY_TEXT.w
+    }, {
+      x: BODY_TEXT.x,
+      y: BODY_TEXT.y + 66,
+      w: BODY_TEXT.w,
+      h: 116,
+      radius: 28,
+      color: SHARED_COLORS.surface
+    }));
+    this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+      ...BODY_TEXT,
+      y: BODY_TEXT.y + 92,
+      h: 48,
+      text_size: BODY_TEXT.text_size + 2,
+      text: buildDescriptionText(activeSession)
+    });
+    this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+      ...BODY_TEXT,
+      y: BODY_TEXT.y + 146,
+      h: 24,
+      color: SHARED_COLORS.muted,
+      text_size: BODY_TEXT.text_size - 2,
+      text: buildStepMetaText(activeSession)
+    });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DIVIDER);
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: primaryLabel,
+      text: "✓",
       click_func: () => {
         advanceOrCompleteActiveSession();
       }
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: "Abort session",
+      text: "✕",
       click_func: () => {
         abortActiveBrew();
       }
     });
     this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
+      y: BUTTONS[0].y - 64,
+      h: 44,
       text: buildFooterText(activeSession)
     });
 

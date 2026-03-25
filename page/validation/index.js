@@ -18,9 +18,9 @@ import {
 function buildStatusText(state) {
   return [
     `Bridge: ${state.connected ? "connected" : "offline"}`,
-    `Cache: ${state.catalogReady ? "ready" : "missing"} / Pending: ${state.pendingHistoryCount}`,
-    `Revisions T${state.toolCatalogRevision} R${state.recipeCatalogRevision} H${state.historyRevision}`,
-    `Session: ${state.activeSessionName || "none"} / Last: ${state.lastResultName || "none"}`
+    `Cache: ${state.catalogReady ? "ready" : "missing"}  •  Pending: ${state.pendingHistoryCount}`,
+    `Session: ${state.activeSessionName || "none"}`,
+    `Last brew: ${state.lastResultName || "none"}`
   ].join("\n");
 }
 
@@ -115,7 +115,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: "Use on hardware for Stage 6 checks"
+      text: "Hardware checks for Stage 6"
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, STATUS_PANEL);
     hmUI.createWidget(hmUI.widget.TEXT, {
@@ -149,14 +149,16 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...HOME_BUTTON,
-      text: "Home",
+      text: "Done",
       click_func: () => {
         goHome();
       }
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      text: state.note || "Use Home to leave this screen after the cue plays."
+      y: HOME_BUTTON.y - 44,
+      h: 30,
+      text: state.note || "Run a cue, check the watch, then go Home."
     });
   }
 });

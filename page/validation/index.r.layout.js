@@ -11,6 +11,8 @@ const layout = createScaffoldLayout({ shape: "round" });
 const homeButton = createButtonStyle(layout, 0, "secondary");
 
 homeButton.y = px(390);
+homeButton.h = px(42);
+homeButton.radius = px(21);
 
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
@@ -40,7 +42,7 @@ export const STATUS_TEXT = {
 };
 export const LIST_PANEL = createPanelStyle(layout, {
   y: px(226),
-  h: px(154),
+  h: px(146),
   color: SHARED_COLORS.surfaceMuted
 });
 export const LIST_FRAME = {
