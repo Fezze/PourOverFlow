@@ -34,6 +34,58 @@ This project is to be run in English.
 - the phone is the source of truth for recipes and history
 - the watch stores only cache, active session, last result, and sync metadata
 
+## Development environment
+
+Recommended local baseline for this repo:
+
+- Node.js `20.x`
+- npm `10.x`
+- global Zeus CLI from `@zeppos/zeus-cli`
+- a Chromium-family browser for the Playwright module harness
+
+The repo includes [`.nvmrc`](/home/deck/Projects/PourOverFlow/.nvmrc) and `package.json` engines to make that baseline explicit.
+
+Linux-first setup:
+
+```bash
+# install nvm from the official nvm installer
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# restart the shell, then install and use the repo baseline
+nvm install 20
+nvm use 20
+
+# confirm the toolchain
+node -v
+npm -v
+
+# install the Zepp CLI globally
+npm i -g @zeppos/zeus-cli
+zeus -v
+
+# install repo dependencies
+npm install
+```
+
+For the Playwright module harness on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` to a Chromium-family browser executable before running the harness commands. Example values are `/usr/bin/chromium`, `/snap/bin/chromium`, `/usr/bin/google-chrome`, or `/usr/bin/microsoft-edge`.
+
+```bash
+export PLAYWRIGHT_COVERAGE_BROWSER=/usr/bin/chromium
+```
+
+If VS Code itself is running as a Flatpak on Steam Deck or another Linux desktop, the sandbox may not expose the host Chromium launcher directly to Node. In that case use the checked-in wrapper [scripts/playwright-flatpak-host-browser.sh](/home/deck/Projects/PourOverFlow/scripts/playwright-flatpak-host-browser.sh), which launches host Chromium through `flatpak-spawn` and forwards the file descriptors Playwright needs for `--remote-debugging-pipe`.
+
+```bash
+export PLAYWRIGHT_COVERAGE_BROWSER=/home/deck/Projects/PourOverFlow/scripts/playwright-flatpak-host-browser.sh
+```
+
+Current platform note:
+
+- `npm test`, `npm run test:coverage`, and `zeus build` should work once Node and Zeus CLI are installed.
+- `npm run test:playwright:harness` and `npm run test:playwright:coverage:harness` need the browser path above on Linux.
+- when VS Code runs as a Flatpak, prefer the repo wrapper `scripts/playwright-flatpak-host-browser.sh` so Playwright can launch host Chromium with forwarded pipe FDs.
+- `npm run test:playwright` is still Windows-centric today because the simulator smoke script reads Zepp simulator metadata from `APPDATA`; treat Linux simulator smoke as unverified until that path is generalized.
+
 ## Most important documents
 
 - [Start Here](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md)
@@ -72,6 +124,8 @@ The next practical step is to finish Stage 6 from [TODO](c:\Users\krzys\Projects
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in sequence without relying on a wrapper script or CI.
 - `zeus build` remains the required compile gate after larger changes.
+- on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
+- the simulator smoke path currently assumes a Windows Zepp simulator installation because it reads simulator metadata from `APPDATA`.
 
 Playwright in this repo is intentionally split in two:
 - simulator smoke only, through `npm run test:playwright`

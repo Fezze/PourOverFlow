@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "description": "PourOverFlow Zepp OS scaffold",
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10 <11"
+  },
   "scripts": {
     "build": "zeus build",
     "test": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts",

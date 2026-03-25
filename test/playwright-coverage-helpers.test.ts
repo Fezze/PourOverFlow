@@ -108,27 +108,31 @@ describe("playwright coverage helpers", () => {
   });
 
   it("builds coverage roots from repo and simulator app paths", () => {
+    const cwd = "C:/Users/krzys/Projects/PourOverFlow";
+    const simAppPath = "C:/Users/krzys/AppData/Roaming/simulator/apps/PourOverFlow20001";
     const roots = buildCoverageRoots({
-      cwd: "C:/Users/krzys/Projects/PourOverFlow",
+      cwd,
       lastAppInfo: {
-        user_app_path: "C:/Users/krzys/Projects/PourOverFlow",
-        sim_app_path: "C:/Users/krzys/AppData/Roaming/simulator/apps/PourOverFlow20001"
+        user_app_path: cwd,
+        sim_app_path: simAppPath
       }
     });
 
-    expect(roots).toContain("c:/users/krzys/projects/pouroverflow");
-    expect(roots).toContain("c:/users/krzys/projects/pouroverflow/dist");
-    expect(roots).toContain("c:/users/krzys/appdata/roaming/simulator/apps/pouroverflow20001");
+    expect(roots).toContain(normalizePathForExpect(path.resolve(cwd)));
+    expect(roots).toContain(normalizePathForExpect(path.resolve(cwd, "dist")));
+    expect(roots).toContain(normalizePathForExpect(path.resolve(simAppPath)));
   });
 
   it("adds extra roots for module-harness coverage", () => {
+    const cwd = "C:/Users/krzys/Projects/PourOverFlow";
+    const additionalRoot = "C:/Users/krzys/Projects/PourOverFlow/test/fixtures/playwright-coverage";
     const roots = buildCoverageRootsWithAdditionalRoots({
-      cwd: "C:/Users/krzys/Projects/PourOverFlow",
+      cwd,
       lastAppInfo: null,
-      additionalRoots: ["C:/Users/krzys/Projects/PourOverFlow/test/fixtures/playwright-coverage"]
+      additionalRoots: [additionalRoot]
     });
 
-    expect(roots).toContain("c:/users/krzys/projects/pouroverflow/test/fixtures/playwright-coverage");
+    expect(roots).toContain(normalizePathForExpect(path.resolve(additionalRoot)));
   });
 
   it("lists the app-facing source paths used for simulator deployment freshness", () => {
@@ -165,48 +169,47 @@ describe("playwright coverage helpers", () => {
   });
 
   it("filters relevant coverage paths against project roots", () => {
+    const cwd = "C:/Users/krzys/Projects/PourOverFlow";
+    const simAppPath = "C:/Users/krzys/AppData/Roaming/simulator/apps/PourOverFlow20001";
     const roots = buildCoverageRoots({
-      cwd: "C:/Users/krzys/Projects/PourOverFlow",
+      cwd,
       lastAppInfo: {
-        user_app_path: "C:/Users/krzys/Projects/PourOverFlow",
-        sim_app_path: "C:/Users/krzys/AppData/Roaming/simulator/apps/PourOverFlow20001"
+        user_app_path: cwd,
+        sim_app_path: simAppPath
       }
     });
+    const relevantFileUrl = new URL(`file://${toFileUrlPath(path.resolve(simAppPath, "page/home/index.js"))}`);
 
-    expect(
-      isRelevantCoveragePath(
-        "file:///C:/Users/krzys/AppData/Roaming/simulator/apps/PourOverFlow20001/page/home/index.js",
-        roots
-      )
-    ).toBe(true);
+    expect(isRelevantCoveragePath(relevantFileUrl.toString(), roots)).toBe(true);
     expect(isRelevantCoveragePath("https://example.com/index.js", roots)).toBe(false);
   });
 
   it("maps local harness http urls back to repo files", () => {
+    const localRoot = "C:/Users/krzys/Projects/PourOverFlow";
     const mappedPath = normalizeCoverageFilePathWithOptions(
       "http://127.0.0.1:42000/shared/engine/recipe-engine.js",
       {
         httpUrlRoots: [
           {
             baseUrl: "http://127.0.0.1:42000",
-            localRoot: "C:/Users/krzys/Projects/PourOverFlow"
+            localRoot
           }
         ]
       }
     );
 
     expect(normalizePathForExpect(mappedPath ?? "")).toContain(
-      "c:/users/krzys/projects/pouroverflow/shared/engine/recipe-engine.js"
+      normalizePathForExpect(path.resolve(localRoot, "shared/engine/recipe-engine.js"))
     );
     expect(
       isRelevantCoveragePathWithOptions(
         "http://127.0.0.1:42000/shared/engine/recipe-engine.js",
-        ["c:/users/krzys/projects/pouroverflow"],
+        [normalizePathForExpect(path.resolve(localRoot))],
         {
           httpUrlRoots: [
             {
               baseUrl: "http://127.0.0.1:42000",
-              localRoot: "C:/Users/krzys/Projects/PourOverFlow"
+              localRoot
             }
           ]
         }
@@ -250,4 +253,10 @@ describe("playwright coverage helpers", () => {
 
 function normalizePathForExpect(value: string) {
   return value.replace(/\\/g, "/").toLowerCase();
+}
+
+
+function toFileUrlPath(value: string) {
+  const normalized = value.replace(/\\/g, "/");
+  return normalized.startsWith("/") ? normalized : `/${normalized}`;
 }

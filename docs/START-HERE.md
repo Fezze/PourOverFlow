@@ -20,6 +20,41 @@ This project must be run in English.
 - Backlog updates must stay in English.
 - Persistent handoff notes and repo-facing agent instructions must stay in English.
 
+## Environment baseline
+
+Recommended local toolchain baseline for this repo:
+
+- Node.js `20.x`
+- npm `10.x`
+- global Zeus CLI from `@zeppos/zeus-cli`
+- a Chromium-family browser for the Playwright module harness
+
+The repo now pins the Node baseline through [`.nvmrc`](/home/deck/Projects/PourOverFlow/.nvmrc) and `package.json` engines.
+
+Linux setup path:
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+nvm install 20
+nvm use 20
+node -v
+npm -v
+npm i -g @zeppos/zeus-cli
+zeus -v
+npm install
+```
+
+For the browser-module harness on Linux, export `PLAYWRIGHT_COVERAGE_BROWSER` to a Chromium-family browser path before running the Playwright harness commands. Common examples are `/usr/bin/chromium`, `/snap/bin/chromium`, `/usr/bin/google-chrome`, or `/usr/bin/microsoft-edge`.
+
+If VS Code or Codex is itself running inside a Flatpak sandbox, use [scripts/playwright-flatpak-host-browser.sh](/home/deck/Projects/PourOverFlow/scripts/playwright-flatpak-host-browser.sh) instead of a raw host path. The wrapper calls `flatpak-spawn --host` and forwards the file descriptors Playwright needs for `--remote-debugging-pipe`.
+
+Current verified platform note:
+
+- the Vitest commands and `zeus build` are expected to work once Node and Zeus CLI are installed,
+- the Playwright harness commands on Linux require `PLAYWRIGHT_COVERAGE_BROWSER`,
+- Flatpak-hosted VS Code sessions should prefer `scripts/playwright-flatpak-host-browser.sh` for Playwright harness runs,
+- the simulator smoke command is still Windows-centric because the current script reads simulator metadata from `APPDATA`.
+
 ## What is already done
 
 - product documentation,
@@ -58,6 +93,7 @@ This project must be run in English.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
+- On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
 - Current meaningful coverage baselines after the latest test expansion are `93.67% / 84.86% / 98.28% / 93.57%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
@@ -70,6 +106,7 @@ This project must be run in English.
 Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `zeus dev` before treating the simulator result as meaningful.
 Playwright coverage here is intentionally limited to the browser module harness under `coverage/playwright/harness/`. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
 `Verify: all tests and coverage` is the repo-standard local job. If CI is introduced later, it should mirror the same command list rather than reassemble the test stack in a second place.
+The current simulator smoke implementation remains Windows-centric because it looks up Zepp simulator metadata under `APPDATA`; Linux simulator parity should be treated as a follow-up, not an assumed baseline.
 
 ## What is still missing
 
