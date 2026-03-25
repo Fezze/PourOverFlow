@@ -2,25 +2,28 @@ import * as hmUI from "@zos/ui";
 import { px } from "@zos/utils";
 import {
   SHARED_COLORS,
-  createButtonStyle,
+  createFloatingButtonStyle,
+  createFloatingDockStyle,
   createPanelStyle,
   createScaffoldLayout
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "square" });
-const homeButton = createButtonStyle(layout, 0, "secondary");
-
-homeButton.y = px(342);
-homeButton.h = px(44);
-homeButton.radius = px(20);
+const homeButton = createFloatingButtonStyle(layout, {
+  theme: "secondary",
+  y: px(288),
+  h: px(56),
+  radius: px(28),
+  text_size: px(20)
+});
 
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const FOOTER_TEXT = layout.footer;
 export const STATUS_PANEL = createPanelStyle(layout, {
-  y: px(102),
-  h: px(76)
+  y: px(94),
+  h: px(72)
 });
 export const STATUS_TEXT = {
   x: STATUS_PANEL.x + px(16),
@@ -34,8 +37,8 @@ export const STATUS_TEXT = {
   text_style: hmUI.text_style.WRAP
 };
 export const LIST_PANEL = createPanelStyle(layout, {
-  y: px(188),
-  h: px(130),
+  y: px(174),
+  h: px(126),
   color: SHARED_COLORS.surfaceMuted
 });
 export const LIST_FRAME = {
@@ -49,4 +52,11 @@ export const LIST_FRAME = {
   titleHeight: px(28),
   metaHeight: px(18)
 };
+export const ACTION_DOCK = createFloatingDockStyle({
+  x: homeButton.x,
+  y: homeButton.y,
+  w: homeButton.w,
+  h: homeButton.h,
+  radius: homeButton.radius
+});
 export const HOME_BUTTON = homeButton;

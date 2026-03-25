@@ -4,6 +4,7 @@ import { goHome, PAGE_URLS } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import { getValidationScaffoldState, runValidationAction } from "../../shared/watch/validation";
 import {
+  ACTION_DOCK,
   BACKGROUND,
   FOOTER_TEXT,
   HOME_BUTTON,
@@ -19,8 +20,7 @@ function buildStatusText(state) {
   return [
     `Bridge: ${state.connected ? "connected" : "offline"}`,
     `Cache: ${state.catalogReady ? "ready" : "missing"}  •  Pending: ${state.pendingHistoryCount}`,
-    `Session: ${state.activeSessionName || "none"}`,
-    `Last brew: ${state.lastResultName || "none"}`
+    `Session: ${state.activeSessionName ? "active" : "none"}`
   ].join("\n");
 }
 
@@ -111,11 +111,7 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: "Validation"
-    });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      text: "Hardware checks for Stage 6"
+      text: "Checks"
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, STATUS_PANEL);
     hmUI.createWidget(hmUI.widget.TEXT, {
@@ -147,6 +143,9 @@ Page({
         runValidationAction(rows[index].actionId);
       }
     });
+    if (ACTION_DOCK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    }
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...HOME_BUTTON,
       text: "Done",
@@ -156,9 +155,9 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      y: HOME_BUTTON.y - 44,
-      h: 30,
-      text: state.note || "Run a cue, check the watch, then go Home."
+      y: HOME_BUTTON.y - 34,
+      h: 24,
+      text: state.note || "Run a cue, check the watch, then go home."
     });
   }
 });

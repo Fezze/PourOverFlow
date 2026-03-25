@@ -1,15 +1,26 @@
 import { px } from "@zos/utils";
-import { createButtonStyle, createPanelStyle, createScaffoldLayout } from "../../shared/watch/layouts";
+import {
+  createFloatingDockStyle,
+  createFloatingButtonStyle,
+  createPanelStyle,
+  createScaffoldLayout
+} from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "square" });
-const primaryButton = createButtonStyle(layout, 0, "primary");
+const primaryButton = createFloatingButtonStyle(layout, {
+  theme: "primary",
+  y: px(286),
+  h: px(60),
+  radius: px(30),
+  text_size: px(20)
+});
 
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const DETAIL_PANEL = createPanelStyle(layout, {
-  y: px(108),
-  h: px(126)
+  y: px(100),
+  h: px(122)
 });
 export const BODY_TEXT = {
   ...layout.body,
@@ -19,10 +30,13 @@ export const BODY_TEXT = {
 export const FOOTER_TEXT = {
   ...layout.footer,
   y: px(248),
-  h: px(36)
+  h: px(28)
 };
-primaryButton.y = px(292);
-primaryButton.h = px(68);
-primaryButton.y = px(326);
-primaryButton.radius = px(34);
+export const ACTION_DOCK = createFloatingDockStyle({
+  x: primaryButton.x,
+  y: primaryButton.y,
+  w: primaryButton.w,
+  h: primaryButton.h,
+  radius: primaryButton.radius
+});
 export const BUTTONS = [primaryButton];

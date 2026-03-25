@@ -280,6 +280,7 @@ Make sure v1 behaves sensibly after interruption.
 - done: the brewer chooser now renders real method icons from `ToolDefinition.iconStem` assets instead of placeholder-only text rows,
 - done: validation cues now try direct vibration first and a stronger sound path with buzzer fallback so repeated manual hardware checks are more reliable,
 - done: the latest watch UX pass now keeps single-action and dual-action screens anchored to a fixed lower action dock, and destructive secondary actions on-device should prefer shorter icon-first treatment over another full-width text button,
+- done: the watch action surfaces now use a more Zepp-style floating-button treatment on `home`, `recipe-detail`, `brew-active`, `result-summary`, and `validation`, while keeping the existing page routes and runtime behavior intact,
 - note: the no-coverage simulator smoke path currently polls the simulator DevTools page list instead of using a full Playwright `connectOverCDP()` browser attach, because the simulator may reject that path with `Browser.setDownloadBehavior` context-management errors,
 - done: the repo-standard npm test menu now removes simulator-side V8 coverage because the current simulator DevTools endpoint exposes shell/framework/preload scripts more reliably than PourOverFlow app code,
 - note: a current simulator limitation is now verified: the DevTools target list may expose only the Electron shell page under `Program Files/simulator/resources/app.asar/...`, which blocks real app-code V8 coverage even though the simulator smoke check itself still works,
@@ -297,12 +298,13 @@ Make sure v1 behaves sensibly after interruption.
 - follow-up: the current simulator smoke script is still Windows-centric because it reads Zepp simulator metadata from `APPDATA`; generalize that path before treating Linux simulator smoke as a supported verification path,
 - follow-up: simulator console previously showed `Failed to send watch sync envelope TypeError: not a function` during watch bootstrap from `shared/watch/sync-bridge.js`; verify the actual `@zos/ble` send API shape for the `API 4.0` target and replace the simulator-only heuristic with a more authoritative transport check if possible,
 - remaining: validate on a real watch that partial slice pushes keep recipe edits responsive and no-phone startup no longer feels blocked,
-- remaining: validate on a real watch that the latest chooser-page spacing pass fixes clipped round-screen headers and footer buttons,
-- remaining: validate on a real watch that the fixed lower action dock still clears round-screen edges comfortably on `home`, `recipe-detail`, `brew-active`, `result-summary`, and `validation`,
+- done: a simulator screenshot review pass trimmed redundant watch copy, removed the repeated app name from page chrome, and raised floating action surfaces so primary CTA shapes no longer sit in the most aggressive round-screen clip zone,
+- remaining: validate on a real watch that the latest chooser-page spacing pass and raised floating action surfaces still clear round-screen edges comfortably on `home`, `recipe-detail`, `brew-active`, `result-summary`, and `validation`,
 - remaining: validate wake-up relaunch, anti-sleep behavior, and feedback behavior on a real device,
 - remaining: if the team still wants literal 100% local coverage, the next hotspots are `shared/watch/sync-bridge.js`, `shared/storage/watch-store.js`, `shared/storage/phone-store.js`, `shared/domain/validators.js`, `shared/watch/router.js`, `shared/watch/display-guard.js`, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`,
 - remaining: decide whether to expand the Playwright module harness to Zepp-dependent modules via browser stubs for `@zos/*`, or keep it focused on browser-safe shared modules only,
 - remaining: if the team wants stricter visual fidelity than the current Zepp-design-system-based UX pass, store a concrete project Figma page or node link in the repo and map the watch pages to it explicitly.
+- note: the latest floating-button pass was implemented with Zepp design-system guidance and the provided public Figma link as intent only; live Figma MCP was not available in this Codex session, so exact node-context fetch and screenshot capture still remain available for a later connected session.
 
 ## Stage 7 - experimental background reminder spike
 

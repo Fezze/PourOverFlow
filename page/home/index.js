@@ -14,6 +14,7 @@ import {
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import { primeWatchSyncBridge } from "../../shared/watch/sync-bridge";
 import {
+  ACTION_DOCK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
@@ -25,25 +26,41 @@ import {
 const PANEL_COLOR = 0x171d26;
 const MUTED_TEXT = 0xaab4c2;
 
-function buildHomeBody(state) {
+function buildHomeTitle(state) {
   if (state.activeSession) {
-    return [
-      state.activeSession.recipeName,
-      `Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`,
-      "Pick up where you left off."
-    ].join("\n");
+    return state.activeSession.recipeName;
+  }
+
+  if (state.selectedTool) {
+    return state.selectedTool.label;
+  }
+
+  return "Brewers";
+}
+
+function buildHomeSubtitle(state) {
+  if (state.activeSession) {
+    return "Resume";
   }
 
   if (state.lastResult) {
-    return [
-      state.selectedTool ? state.selectedTool.label : "Choose a brewer",
-      `Last brew: ${state.lastResult.recipeName}`,
-      "Pick a brewer and start the next cup."
-    ].join("\n");
+    return "Next cup";
+  }
+
+  return "Choose a brewer";
+}
+
+function buildHomeBody(state) {
+  if (state.activeSession) {
+    return [`Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`, "Pick up where you left off."].join("\n");
+  }
+
+  if (state.lastResult) {
+    return ["Last brew", state.lastResult.recipeName].join("\n");
   }
 
   return state.selectedTool
-    ? [state.selectedTool.label, `${state.recipeCount} recipes ready`, "Choose a recipe and start."].join("\n")
+    ? [`${state.recipeCount} recipes ready`, "Choose a recipe to start."].join("\n")
     : ["Choose a brewer", "Browse the library", "Start the next brew."].join("\n");
 }
 
@@ -73,11 +90,11 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: "PourOverFlow"
+      text: buildHomeTitle(scaffoldState)
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: scaffoldState.activeSession ? "Resume your brew" : "Choose your brewer"
+      text: buildHomeSubtitle(scaffoldState)
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: BUTTONS[0].x,
@@ -93,9 +110,12 @@ Page({
       h: BODY_TEXT.h + 24,
       text: buildHomeBody(scaffoldState)
     });
+    if (ACTION_DOCK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    }
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: scaffoldState.activeSession ? "Resume brew" : "Browse brewers",
+      text: scaffoldState.activeSession ? "Resume" : "Browse",
       click_func: () => {
         if (scaffoldState.activeSession) {
           resumeActiveSession();
@@ -107,7 +127,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: scaffoldState.activeSession ? "X" : "Refresh",
+      text: scaffoldState.activeSession ? "X" : "Sync",
       click_func: () => {
         if (scaffoldState.activeSession) {
           discardActiveSessionFromHome();
@@ -120,19 +140,20 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[2],
-      text: "Latest",
+      text: "Last",
       click_func: () => {
         goToResultSummary();
       }
     });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      y: BUTTONS[1].y - 44,
-      h: 30,
-      color: MUTED_TEXT,
-      text: scaffoldState.activeSession
-        ? "Main action stays pinned below."
-        : "Refresh the phone snapshot or open the latest brew."
-    });
+
+    if (scaffoldState.activeSession) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...FOOTER_TEXT,
+        y: BUTTONS[1].y - 34,
+        h: 24,
+        color: MUTED_TEXT,
+        text: "Shortcut button also resumes when available."
+      });
+    }
   }
 });

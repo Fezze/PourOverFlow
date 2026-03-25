@@ -1,6 +1,5 @@
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
-import { getToolById } from "../../shared/constants/tool-catalog";
 import { getColorNumber } from "../../shared/constants/color-palette";
 import {
   getSelectedRecipe,
@@ -10,12 +9,12 @@ import {
 } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
+  ACTION_DOCK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
   DETAIL_PANEL,
   FOOTER_TEXT,
-  SUBTITLE_TEXT,
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
@@ -46,7 +45,6 @@ Page({
   build() {
     const selectedRecipe = getSelectedRecipe();
     const snapshot = selectedRecipe ? selectedRecipe.recipeSnapshot : null;
-    const tool = snapshot ? getToolById(snapshot.toolId) : null;
     const accentColor = snapshot ? getColorNumber(snapshot.colorToken) : 0x2d8c82;
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
@@ -58,18 +56,16 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
+      text_size: TITLE_TEXT.text_size - 2,
+      h: TITLE_TEXT.h + 4,
       text: selectedRecipe ? selectedRecipe.name : "Recipe unavailable"
-    });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      text: tool ? tool.label : "Sync the recipe and try again"
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, DETAIL_PANEL);
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: DETAIL_PANEL.x,
       y: DETAIL_PANEL.y,
       w: DETAIL_PANEL.w,
-      h: 10,
+      h: 6,
       radius: DETAIL_PANEL.radius,
       color: accentColor
     });
@@ -81,6 +77,9 @@ Page({
         ? buildRecipeBody(selectedRecipe)
         : "Open the recipe list again or refresh the phone sync."
     });
+    if (ACTION_DOCK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    }
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
       text: selectedRecipe ? "Start brew" : "Back to recipes",
@@ -105,7 +104,7 @@ Page({
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
         color: MUTED_TEXT,
-        text: snapshot.description || "Review the brew, then start when ready."
+        text: snapshot.description || "Start when ready."
       });
     }
   }

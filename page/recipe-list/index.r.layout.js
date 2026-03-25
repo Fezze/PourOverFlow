@@ -14,8 +14,8 @@ SUBTITLE_TEXT.x = px(64);
 SUBTITLE_TEXT.y = px(100);
 SUBTITLE_TEXT.w = px(352);
 export const LIST_PANEL = createPanelStyle(layout, {
-  y: px(124),
-  h: px(260)
+  y: px(114),
+  h: px(270)
 });
 export const LIST_FRAME = {
   x: LIST_PANEL.x + px(8),

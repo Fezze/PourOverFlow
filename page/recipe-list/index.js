@@ -103,10 +103,12 @@ Page({
       ...TITLE_TEXT,
       text: selectedTool ? selectedTool.label : "Recipes"
     });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      text: rows.length ? "Choose a recipe" : "No recipes for this brewer yet"
-    });
+    if (!rows.length) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...SUBTITLE_TEXT,
+        text: "No recipes for this brewer yet"
+      });
+    }
 
     if (rows.length) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, LIST_PANEL);

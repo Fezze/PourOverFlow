@@ -103,10 +103,12 @@ Page({
       ...TITLE_TEXT,
       text: "Brewers"
     });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      text: rows.length ? "Choose a brewer" : "Add recipes on the phone, then refresh."
-    });
+    if (!rows.length) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...SUBTITLE_TEXT,
+        text: "Add recipes on the phone, then refresh."
+      });
+    }
 
     if (rows.length) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, LIST_PANEL);

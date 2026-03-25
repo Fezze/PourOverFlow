@@ -60,6 +60,7 @@ function createLayoutMock(overrides = {}) {
     SUBTITLE_TEXT: {},
     BODY_TEXT: {},
     FOOTER_TEXT: {},
+    ACTION_DOCK: {},
     LIST_PANEL: {},
     DETAIL_PANEL: {},
     STATUS_PANEL: {},
@@ -126,8 +127,8 @@ describe("page shell runtime coverage", () => {
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
     const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
 
-    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse brewers")).toBe(true);
-    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Latest")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Last")).toBe(true);
     expect(textWidgets.some((widget) => String(widget.text).includes("Phone bridge connected"))).toBe(false);
     expect(textWidgets.some((widget) => String(widget.text).includes("cached recipes ready"))).toBe(false);
 
@@ -320,9 +321,9 @@ describe("page shell runtime coverage", () => {
     const widgets = runtime.getCreatedWidgets();
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
 
-    expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "Latest brew")).toBe(true);
-    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse brewers")).toBe(true);
-    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Validation")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === fixture.lastResult.recipeName)).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Check")).toBe(true);
 
     buttons[1].click_func();
     expect(runtime.router.push).toHaveBeenCalledWith({
@@ -365,7 +366,7 @@ describe("page shell runtime coverage", () => {
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
     const [primaryButton, secondaryButton, tertiaryButton] = buttons;
 
-    expect(primaryButton.text).toBe("Resume brew");
+    expect(primaryButton.text).toBe("Resume");
     primaryButton.click_func();
     expect(runtime.router.replace).toHaveBeenCalledWith({
       url: "page/brew-active/index"
@@ -492,7 +493,7 @@ describe("page shell runtime coverage", () => {
     const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
 
-    expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "Validation")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "Checks")).toBe(true);
     expect(scrollList).toBeTruthy();
     expect(scrollList.data_count).toBe(3);
 

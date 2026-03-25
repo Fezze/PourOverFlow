@@ -5,6 +5,7 @@ import { readLastResult } from "../../shared/storage/watch-store";
 import { goHome, goToToolList, goToValidation, PAGE_URLS } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
+  ACTION_DOCK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
@@ -22,7 +23,6 @@ function buildResultBody(lastResult) {
   }
 
   return [
-    lastResult.recipeName,
     `${Math.round(lastResult.elapsedMs / 1000)}s total`,
     `Delta: ${lastResult.totalDeltaMs} ms`
   ].join("\n");
@@ -48,12 +48,14 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: lastResult ? "Latest brew" : "No result yet"
+      text: lastResult ? lastResult.recipeName : "No result yet"
     });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      text: lastResult ? (tool ? tool.label : lastResult.toolId) : "Brew once to fill this screen"
-    });
+    if (lastResult) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...SUBTITLE_TEXT,
+        text: tool ? tool.label : lastResult.toolId
+      });
+    }
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: BUTTONS[0].x,
       y: BODY_TEXT.y - 8,
@@ -68,16 +70,19 @@ Page({
       h: BODY_TEXT.h + 24,
       text: buildResultBody(lastResult)
     });
+    if (ACTION_DOCK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    }
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: "Browse brewers",
+      text: "Browse",
       click_func: () => {
         goToToolList();
       }
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: "Validation",
+      text: "Check",
       click_func: () => {
         goToValidation();
       }
@@ -91,11 +96,11 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      y: BUTTONS[1].y - 44,
-      h: 30,
+      y: BUTTONS[1].y - 34,
+      h: 24,
       color: MUTED_TEXT,
       text: lastResult
-        ? "Review hardware checks or jump back into the brewer list."
+        ? "Open checks or start another brew."
         : "Full history stays on the phone."
     });
   }

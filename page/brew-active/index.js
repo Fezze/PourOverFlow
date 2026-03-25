@@ -7,7 +7,6 @@ import {
   getElapsedSessionMs,
   getStepProgressLabel
 } from "../../shared/engine/recipe-engine";
-import { getToolById } from "../../shared/constants/tool-catalog";
 import { readActiveSession } from "../../shared/storage/watch-store";
 import {
   PAGE_URLS,
@@ -30,14 +29,8 @@ import {
   BODY_TEXT,
   BUTTONS,
   FOOTER_TEXT,
-  SUBTITLE_TEXT,
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
-
-function buildRecipeSubtitle(activeSession) {
-  const tool = getToolById(activeSession.toolId);
-  return tool ? tool.label : activeSession.toolId;
-}
 
 function buildProgressText(activeSession) {
   return `Step ${activeSession.currentStepIndex + 1}/${activeSession.recipeSnapshot.steps.length}`;
@@ -53,7 +46,7 @@ function buildStepMetaText(activeSession) {
   const currentStep = getCurrentSessionStep(activeSession);
   const sessionElapsedLabel = formatDurationLabel(getElapsedSessionMs(activeSession));
   const stepRemainingMs = getCurrentStepRemainingMs(activeSession);
-  const parts = [currentStep ? getStepProgressLabel(currentStep) : "No step type"];
+  const parts = [];
 
   if (currentStep && currentStep.targetTotalWaterMl !== undefined) {
     parts.push(`Target ${currentStep.targetTotalWaterMl} ml`);
@@ -78,14 +71,14 @@ function buildFooterText(activeSession) {
   }
 
   if (activeSession.status === "waiting_for_confirm") {
-    return "Ready to continue. Shortcut button also works when available.";
+    return "Shortcut button also works when available.";
   }
 
   if (currentStep.kind === "timed_wait" || currentStep.kind === "timed_action") {
-    return "Timed steps auto-advance when allowed.";
+    return "Timed step.";
   }
 
-  return "Manual step. Continue when you are ready.";
+  return "Tap check to continue.";
 }
 
 Page({
@@ -101,7 +94,6 @@ Page({
     if (
       !activeSession ||
       !this.descriptionWidget ||
-      !this.recipeSubtitleWidget ||
       !this.progressWidget ||
       !this.stepTitleWidget ||
       !this.metaWidget ||
@@ -110,7 +102,6 @@ Page({
       return;
     }
 
-    this.recipeSubtitleWidget.text = buildRecipeSubtitle(activeSession);
     this.progressWidget.text = buildProgressText(activeSession);
     const currentStep = getCurrentSessionStep(activeSession);
     this.stepTitleWidget.text = currentStep ? currentStep.title : "Unknown step";
@@ -134,10 +125,6 @@ Page({
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...TITLE_TEXT,
         text: "No active brew"
-      });
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        ...SUBTITLE_TEXT,
-        text: "Resume later"
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
@@ -166,26 +153,22 @@ Page({
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text_size: TITLE_TEXT.text_size - 2,
-      h: TITLE_TEXT.h + 8,
+      text_size: TITLE_TEXT.text_size - 4,
+      h: TITLE_TEXT.h + 4,
       text: activeSession.recipeName
     });
-    this.recipeSubtitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      text: buildRecipeSubtitle(activeSession)
-    });
     this.progressWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
-      y: SUBTITLE_TEXT.y + 28,
-      h: SUBTITLE_TEXT.h - 2,
+      ...BODY_TEXT,
+      y: BODY_TEXT.y - 2,
+      h: 24,
       color: SHARED_COLORS.muted,
-      text_size: SUBTITLE_TEXT.text_size + 2,
+      text_size: BODY_TEXT.text_size,
       text: buildProgressText(activeSession)
     });
     this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: BODY_TEXT.y + 18,
-      h: 34,
+      y: BODY_TEXT.y + 24,
+      h: 36,
       text_size: BODY_TEXT.text_size + 8,
       color: SHARED_COLORS.text,
       text: currentStep ? currentStep.title : "Unknown step"
@@ -195,29 +178,33 @@ Page({
       buttonW: BODY_TEXT.w
     }, {
       x: BODY_TEXT.x,
-      y: BODY_TEXT.y + 66,
+      y: BODY_TEXT.y + 74,
       w: BODY_TEXT.w,
-      h: 116,
+      h: 102,
       radius: 28,
       color: SHARED_COLORS.surface
     }));
     this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: BODY_TEXT.y + 92,
-      h: 48,
+      y: BODY_TEXT.y + 96,
+      h: 38,
       text_size: BODY_TEXT.text_size + 2,
       text: buildDescriptionText(activeSession)
     });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: BODY_TEXT.y + 146,
+      y: BODY_TEXT.y + 138,
       h: 24,
       color: SHARED_COLORS.muted,
       text_size: BODY_TEXT.text_size - 2,
       text: buildStepMetaText(activeSession)
     });
-    hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
-    hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DIVIDER);
+    if (ACTION_DOCK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    }
+    if (ACTION_DIVIDER) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DIVIDER);
+    }
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
       text: "✓",
@@ -234,8 +221,8 @@ Page({
     });
     this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      y: BUTTONS[0].y - 64,
-      h: 44,
+      y: BUTTONS[0].y - 34,
+      h: 30,
       text: buildFooterText(activeSession)
     });
 

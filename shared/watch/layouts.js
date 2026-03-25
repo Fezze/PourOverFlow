@@ -52,8 +52,8 @@ export const SHARED_COLORS = {
 
 export function createScaffoldLayout(options = {}) {
   const isRound = options.shape === "round";
-  const horizontalPadding = isRound ? 52 : 28;
-  const titleY = isRound ? 56 : 30;
+  const horizontalPadding = isRound ? 64 : 28;
+  const titleY = isRound ? 60 : 30;
   const subtitleY = isRound ? 94 : 66;
   const bodyY = isRound ? 134 : 102;
   const buttonStartY = isRound ? 232 : 214;
@@ -74,7 +74,7 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(isRound ? 38 : 34),
       color: SHARED_COLORS.text,
-      text_size: px(isRound ? 28 : 28),
+      text_size: px(isRound ? 26 : 28),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
@@ -85,7 +85,7 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(isRound ? 34 : 30),
       color: SHARED_COLORS.muted,
-      text_size: px(16),
+      text_size: px(isRound ? 15 : 16),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
@@ -96,7 +96,7 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(isRound ? 74 : 74),
       color: SHARED_COLORS.text,
-      text_size: px(18),
+      text_size: px(isRound ? 17 : 18),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.TOP,
       text_style: hmUI.text_style.WRAP
@@ -155,6 +155,31 @@ export function createButtonStyle(layout, index, theme = "primary") {
     normal_color: palette.normal,
     press_color: palette.press,
     color: SHARED_COLORS.text
+  };
+}
+
+export function createFloatingButtonStyle(layout, options = {}) {
+  const style = createButtonStyle(layout, 0, options.theme || "primary");
+  const defaultHeight = options.h ?? options.height ?? (layout.buttonH >= px(44) ? px(64) : px(68));
+
+  style.x = options.x ?? style.x;
+  style.y = options.y ?? style.y;
+  style.w = options.w ?? style.w;
+  style.h = defaultHeight;
+  style.radius = options.radius ?? Math.floor(defaultHeight / 2);
+  style.text_size = options.text_size ?? px(defaultHeight >= px(68) ? 22 : 20);
+
+  return style;
+}
+
+export function createFloatingDockStyle(options = {}) {
+  return {
+    x: options.x ?? 0,
+    y: options.y ?? 0,
+    w: options.w ?? 0,
+    h: options.h ?? 0,
+    radius: options.radius ?? Math.floor((options.h ?? 0) / 2),
+    color: options.color ?? SHARED_COLORS.surfaceMuted
   };
 }
 
