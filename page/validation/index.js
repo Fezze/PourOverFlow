@@ -32,8 +32,8 @@ function buildValidationRows(state) {
       actionId: "haptic"
     },
     {
-      title: "Soft sound cue",
-      meta: "Check audio and silent-mode behavior.",
+      title: "Sound cue",
+      meta: "Check audio, silent mode, and buzzer fallback.",
       actionId: "sound"
     },
     {

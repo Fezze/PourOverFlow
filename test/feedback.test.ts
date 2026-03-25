@@ -87,9 +87,38 @@ describe("feedback helpers", () => {
 
     playFeedbackCue("sound_soft");
     const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
+    systemSound.getSourceType.mockReturnValue({});
+    expect(playFeedbackCue("sound_strong")).toBe(true);
+
+    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
+    expect(buzzer.start).toHaveBeenCalledWith(2, 0);
+  });
+
+  it("tries alternate strong sound source types before falling back to the buzzer", async () => {
+    const runtime = await loadRuntimeModule();
+    runtime.resetZeppRuntime();
+    const { playFeedbackCue } = await loadFeedbackModule();
+
+    playFeedbackCue("sound_soft");
+    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
     systemSound.getSourceType.mockReturnValue({
-      REGULAR: 10
+      REGULAR: 10,
+      MESSAGE: 11
     });
+
+    expect(playFeedbackCue("sound_strong")).toBe(true);
+    expect(systemSound.start).toHaveBeenLastCalledWith(11, 0);
+  });
+
+  it("treats explicit start failures as a real failure and falls back to the buzzer", async () => {
+    const runtime = await loadRuntimeModule();
+    runtime.resetZeppRuntime();
+    const { playFeedbackCue } = await loadFeedbackModule();
+
+    playFeedbackCue("sound_soft");
+    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
+    systemSound.start.mockReturnValue(false);
+
     expect(playFeedbackCue("sound_strong")).toBe(true);
 
     const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);

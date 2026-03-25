@@ -79,7 +79,7 @@ Current verified platform note:
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - a dedicated `validation` page, reachable from `result-summary`, for on-watch hardware checks,
-- Vibrator-first validation cues with stronger sound validation that may fall back to the buzzer when system sound alone is unavailable,
+- Vibrator-first validation cues with stronger sound validation that now tries multiple system-sound source types before falling back to the buzzer,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,

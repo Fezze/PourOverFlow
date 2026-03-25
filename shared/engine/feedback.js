@@ -20,6 +20,10 @@ let buzzerInstance = null;
 let systemSoundsInstance = null;
 let vibratorInstance = null;
 
+function didStart(result) {
+  return result !== false;
+}
+
 function getVibrator() {
   if (vibratorInstance) {
     return vibratorInstance;
@@ -87,8 +91,12 @@ function playBuzzer(typeName, repeatCount = 0) {
     console.log("Buzzer stop failed", error);
   }
 
-  buzzer.start(sourceType, repeatCount);
-  return true;
+  try {
+    return didStart(buzzer.start(sourceType, repeatCount));
+  } catch (error) {
+    console.log("Buzzer start failed", error);
+    return false;
+  }
 }
 
 function playVibration(mode) {
@@ -104,12 +112,10 @@ function playVibration(mode) {
     }
 
     if (Number.isFinite(mode)) {
-      vibrator.start({ mode });
-      return true;
+      return didStart(vibrator.start({ mode }));
     }
 
-    vibrator.start();
-    return true;
+    return didStart(vibrator.start());
   } catch (error) {
     console.log("Vibrator start failed", error);
     return false;
@@ -138,8 +144,32 @@ function playSystemSound(typeName, repeatCount = 0) {
     console.log("SystemSounds stop failed", error);
   }
 
-  systemSounds.start(sourceType, repeatCount);
-  return true;
+  try {
+    return didStart(systemSounds.start(sourceType, repeatCount));
+  } catch (error) {
+    console.log("SystemSounds start failed", error);
+    return false;
+  }
+}
+
+function playFirstSystemSound(typeNames, repeatCount = 0) {
+  for (const typeName of typeNames) {
+    if (playSystemSound(typeName, repeatCount)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function playFirstBuzzer(typeNames, repeatCount = 0) {
+  for (const typeName of typeNames) {
+    if (playBuzzer(typeName, repeatCount)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export function getFeedbackLabel(feedbackCue) {
@@ -153,9 +183,12 @@ export function playFeedbackCue(feedbackCue) {
     case "vibrate_long":
       return playVibration(VIBRATOR_SCENE_DURATION_LONG) || playBuzzer("SUCCESS");
     case "sound_soft":
-      return playSystemSound("REGULAR") || playBuzzer("OPERATE");
+      return playFirstSystemSound(["REGULAR", "MESSAGE"]) || playFirstBuzzer(["OPERATE", "SUCCESS"]);
     case "sound_strong":
-      return playSystemSound("MESSAGE") || playBuzzer("SUCCESS");
+      return (
+        playFirstSystemSound(["ACHIEVE", "MESSAGE", "REGULAR"]) ||
+        playFirstBuzzer(["SUCCESS", "OPERATE"])
+      );
     case "combo_short":
       return (
         playVibration(VIBRATOR_SCENE_SHORT_STRONG) ||

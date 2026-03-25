@@ -266,7 +266,7 @@ Give the product a stable on-watch surface for manual hardware checks without mi
 
 - the page rebuilds on runtime events for `catalog`, `last_result`, `sync_meta`, `connection`, and validation-note updates,
 - haptic actions should try direct vibration first and still write a readable validation note when the capability is unavailable,
-- sound actions should prefer a strong system sound and may fall back to the buzzer before writing the validation note,
+- sound actions should try a stronger system-sound set first and then fall back to the buzzer before writing the validation note,
 - the sync action should stay fast when the bridge is offline and report that it skipped the request instead of blocking the watch UI,
 - the page is intentionally entered from `result-summary`, so hardware validation stays adjacent to a completed or resumed brew flow instead of crowding `home`.
 
