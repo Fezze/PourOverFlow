@@ -219,6 +219,28 @@ const STEP_BADGE_STYLE = {
   padding: "8px 12px"
 };
 
+const MINI_STAT_STYLE = {
+  fontSize: "12px",
+  lineHeight: "16px",
+  borderRadius: "16px",
+  background: "#FFFFFF",
+  color: "#1F2D3A",
+  textAlign: "left",
+  padding: "10px 12px"
+};
+
+const STEP_JUMP_STYLE = {
+  fontSize: "12px",
+  fontWeight: "700",
+  lineHeight: "16px",
+  borderRadius: "16px",
+  background: "#E7EEF4",
+  color: "#234050",
+  textAlign: "center",
+  padding: "8px 10px",
+  minWidth: "48px"
+};
+
 const TOOL_OPTIONS = TOOL_CATALOG.map((tool) => ({
   name: tool.label,
   value: tool.toolId
@@ -323,6 +345,20 @@ function createButtonRow(buttons) {
       }
     },
     buttons
+  );
+}
+
+function createWrapRow(children, gap = "8px") {
+  return View(
+    {
+      style: {
+        display: "flex",
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap
+      }
+    },
+    children
   );
 }
 
@@ -473,8 +509,30 @@ function buildDraftOverview(draftRecipe) {
   } steps - ${formatDurationLabel(draftRecipe.estimatedTotalDurationMs)}`;
 }
 
+function buildRecipeStatCards(draftRecipe) {
+  return [
+    `Dose\n${draftRecipe.coffeeDoseG || "-"} g`,
+    `Water\n${draftRecipe.totalWaterMl || "-"} ml`,
+    `Temp\n${draftRecipe.waterTempC || "-"} C`,
+    `Time\n${formatDurationLabel(draftRecipe.estimatedTotalDurationMs)}`,
+    `Steps\n${draftRecipe.steps.length}`,
+    `Color\n${draftRecipe.colorToken || "-"}`
+  ];
+}
+
+function humanizeStepKind(stepKind) {
+  switch (stepKind) {
+    case "timed_action":
+      return "Timed action";
+    case "timed_wait":
+      return "Timed wait";
+    default:
+      return stepKind ? `${stepKind.charAt(0).toUpperCase()}${stepKind.slice(1)}` : "Step";
+  }
+}
+
 function buildStepSummaryLabel(step, index, totalSteps) {
-  const detailParts = [step.kind];
+  const detailParts = [humanizeStepKind(step.kind)];
 
   if (step.durationMs) {
     detailParts.push(formatDurationLabel(step.durationMs));
@@ -489,6 +547,16 @@ function buildStepSummaryLabel(step, index, totalSteps) {
   }
 
   return `Step ${index + 1}/${totalSteps}: ${step.title || step.kind}\n${detailParts.join(" - ")}`;
+}
+
+function chunkItems(items, size) {
+  const rows = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    rows.push(items.slice(index, index + size));
+  }
+
+  return rows;
 }
 
 function buildHistoryCardLabel(historyEntry) {
@@ -983,6 +1051,14 @@ AppSettingsPage({
       `Step ${index + 1} of ${totalSteps}`,
       buildStepSummaryLabel(step, index, totalSteps).split("\n")[1] || "Guided watch instruction",
       [
+        createStaticCard(
+          `${humanizeStepKind(step.kind)}\n${step.title || "Untitled step"}`,
+          {
+            ...CARD_BUTTON_STYLE,
+            background: "#F4F8FB",
+            color: "#183546"
+          }
+        ),
         Select({
           label: "Kind",
           options: STEP_KIND_OPTIONS,
@@ -1079,17 +1155,43 @@ AppSettingsPage({
 
     const currentStepIndex = clampStepPageIndex(this.state.ui.stepPageIndex, draftRecipe.steps.length);
     const currentStep = draftRecipe.steps[currentStepIndex];
+    const stepJumpButtons = chunkItems(
+      (draftRecipe.steps || []).map((step, index) =>
+        Button({
+          label: `${index + 1}`,
+          style:
+            index === currentStepIndex
+              ? {
+                  ...STEP_JUMP_STYLE,
+                  background: "#0E7B83",
+                  color: "#FFFFFF"
+                }
+              : STEP_JUMP_STYLE,
+          onClick: () => {
+            this.setStepPage(props, index);
+          }
+        })
+      ),
+      5
+    );
 
     return View({ style: CARD_STACK_STYLE }, [
       createPanel(
         "slate",
         draftRecipe.name || "Untitled recipe",
         draftRecipe.recipeId ? "Editing an existing recipe." : "Creating a new recipe.",
-        [createStaticCard(buildDraftOverview(draftRecipe), {
-          ...CARD_BUTTON_STYLE,
-          background: "#314352",
-          color: "#F4FAFC"
-        })]
+        [
+          createStaticCard(buildDraftOverview(draftRecipe), {
+            ...CARD_BUTTON_STYLE,
+            background: "#314352",
+            color: "#F4FAFC"
+          }),
+          createWrapRow(
+            buildRecipeStatCards(draftRecipe).map((label) =>
+              createStaticCard(label, MINI_STAT_STYLE)
+            )
+          )
+        ]
       ),
       createPanel(
         "mint",
@@ -1211,6 +1313,7 @@ AppSettingsPage({
             style: STEP_BADGE_STYLE,
             onClick: NOOP
           }),
+          ...stepJumpButtons.map((buttonRow) => createWrapRow(buttonRow)),
           Button({
             label: "Add step",
             style: PRIMARY_BUTTON_STYLE,
