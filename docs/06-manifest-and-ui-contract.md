@@ -2,7 +2,7 @@
 
 ## Purpose of this document
 
-This document freezes two areas that need to be decision-complete before Stage 2:
+This document freezes two areas that need to be decision-complete before implementation:
 
 - the `app.json` outline for the Zepp OS v4 baseline,
 - the implementation contract for `setting/index.jsx`.
@@ -30,7 +30,7 @@ Sources:
 
 ### Target shape
 
-Stage 2 implementation should start from this outline:
+Implementation should start from this outline:
 
 ```json
 {
@@ -145,6 +145,19 @@ setting/index.jsx
 app-side/index.js
 ```
 
+## Watch UI contract
+
+The watch UI now follows these repo-level rules:
+
+- populated chooser pages stay quiet and selection-focused,
+- `tool-list` and `recipe-list` rely on native scrolling instead of piling extra footer actions onto list screens,
+- brewing starts from `recipe-detail`, not directly from a list tap,
+- `validation` is the dedicated watch surface for runtime and hardware checks,
+- round-screen layouts should use a conservative content width instead of treating the full black circle as a safe text area,
+- card content should keep visible inner padding from the panel edges,
+- destructive or secondary watch actions should prefer short icon-first treatment over another full-width text button,
+- active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern.
+
 ## Asset contract for icons
 
 ### Root app icon
@@ -177,7 +190,7 @@ Tool icons should be stored as round/square asset pairs:
 
 ## `setting/index.jsx` contract
 
-### Stage 2 implementation note
+### Implementation note
 
 If the Zeus toolchain does not detect `setting/index.jsx` directly as the `setting.path` entrypoint, it is allowed to add a thin `setting/index.js` shim that only imports the target `.jsx` file. The source of Settings App logic should still live in `.jsx`.
 
@@ -185,7 +198,7 @@ If the Zeus toolchain does not detect `setting/index.jsx` directly as the `setti
 
 `setting/index.jsx` should be built on top of `AppSettingsPage({ state, build(props), ...helpers })`.
 
-The current Stage 3 implementation keeps main logic in `setting/app-settings.jsx`, while `setting/index.js` remains the thin Zeus entry shim.
+The current implementation keeps main logic in `setting/app-settings.jsx`, while `setting/index.js` remains the thin Zeus entry shim.
 
 Recommended structure:
 
@@ -389,12 +402,12 @@ If validation fails:
 - stay in `recipe-editor`,
 - show a simple error message in the view.
 
-## Implementation conclusions for Stages 2 and 3
+## Implementation conclusions
 
-- Stage 2 should create the `app.json` skeleton according to this document.
-- Stage 3 should implement `setting/` according to this contract, without inventing a new form architecture.
-- Stage 3 should seed the recipe library according to [05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
-- Stage 4 should keep the view and form contract, but replace the watch runtime data source from local preview data to snapshots synced from the phone.
+- Keep the `app.json` skeleton aligned with this document.
+- Keep `setting/` aligned with this contract instead of inventing a new form architecture.
+- Seed the recipe library according to [05-seed-library.md](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md).
+- Keep the existing Settings form and view contract even as synced phone snapshots continue to evolve.
 
 ## Things intentionally deferred
 

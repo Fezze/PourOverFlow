@@ -55,14 +55,14 @@ Current verified platform note:
 - Flatpak-hosted VS Code sessions should prefer `scripts/playwright-flatpak-host-browser.sh` for Playwright harness runs,
 - the simulator smoke command is still Windows-centric because the current script reads simulator metadata from `APPDATA`.
 
-## What is already done
+## What is already in place
 
 - product documentation,
 - Zepp architecture,
 - domain model,
 - storage and sync contracts,
 - watch/phone flows,
-- staged implementation plan,
+- implementation backlog and verify guidance,
 - seed library,
 - manifest and Settings UI contract,
 - Zepp app scaffold with passing `zeus build`,
@@ -78,13 +78,14 @@ Current verified platform note:
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists, real method icons, and a dedicated recipe detail/start page,
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
-- a dedicated `validation` page, reachable from `result-summary`, for Stage 6 hardware checks,
+- a dedicated `validation` page, reachable from `result-summary`, for on-watch hardware checks,
 - Vibrator-first validation cues with stronger sound validation that may fall back to the buzzer when system sound alone is unavailable,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
 - mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay,
-- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `result-summary`, and `validation`, including runtime-event refresh and empty or stale-state fallbacks.
+- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `result-summary`, and `validation`, including runtime-event refresh and empty or stale-state fallbacks,
+- a round-screen watch UI pass that removes repeated app-name chrome, keeps populated chooser screens quieter, adds a dedicated recipe detail/start page, and uses custom lower action docks on the main action screens.
 
 ## Test loop
 
@@ -113,7 +114,7 @@ The current simulator smoke implementation remains Windows-centric because it lo
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
 - real-watch use of the `validation` page to confirm haptics, audio, and offline-safe sync checks,
-- confirmation that the latest round-screen spacing pass fixes clipped chooser-page chrome on real hardware,
+- confirmation that the latest round-screen spacing pass and custom action docks still clear the mask comfortably on real hardware,
 - literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `phone-store`, `validators`, the page shells with defensive empty-state branches, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 
 ## Read first
@@ -193,7 +194,7 @@ Helper phone key, non-canonical for sync:
 
 ## Nearest goal
 
-Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), which now mostly means real-device validation of resume, anti-sleep, feedback behavior, and queue replay under real watch usage.
+Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live source of open work. Right now that mainly means real-device validation of resume, anti-sleep, feedback behavior, queue replay, and final watch-screen comfort.
 
 ## TODO and document maintenance
 
@@ -201,7 +202,7 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - When work finishes, the agent must remove or update completed items.
 - `TODO.md` should stay a living backlog, not a storage place for stale notes.
 
-## Definition of done for Stage 5
+## Current watch-flow baseline
 
 - `home` shows a resume gate,
 - `tool-list` and `recipe-list` use the synced catalog and recipe data,
@@ -212,20 +213,20 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - baseline session reducer tests exist,
 - `npm test` and `zeus build` pass.
 
-## Important discoveries from Stages 2, 3, 4, and 5
+## Important repo discoveries
 
 - The Zeus v4 scaffold builds target-based icons correctly from `assets/common.r/icon.png` and `assets/common.s/icon.png`.
 - `setting/index.js` is a practical toolchain entrypoint even when the main Settings App code lives in `.jsx`.
 - The current watch flow is no longer a local seed preview, and `active_session_v1` is already storage-backed; the remaining follow-up is resume hardening, not session persistence itself.
-- The session reducer is already much closer to the target model, but real resume and screen-sleep behavior still need confirmation in Stage 6.
+- The session reducer is already much closer to the target model, but real resume and screen-sleep behavior still need hardware confirmation.
 - `setting/` uses the helper key `pof_settings_ui_state_v1` to persist view state and drafts. That key must be ignored by `app-side` and future runtime sync.
 - With the current watch UI, lists and summary screens already refresh on runtime events, but this is not yet a fully reactive rendering system.
-- Stage 6 now reconciles active sessions from stored timestamps on app entry and coalesces phone-side storage change pushes, but hardware validation still remains.
+- Active sessions are reconciled from stored timestamps on app entry, and phone-side storage change pushes are coalesced by slice.
 - The current sync path is no longer full-bootstrap-only: the phone side now classifies storage changes by slice and answers `REQUEST_BOOTSTRAP` only for stale revisions.
 - Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
 - The mocked Zepp runtime harness now also exercises page shells by aliasing `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocking `zosLoader:` layout modules, and asserting widget creation plus runtime-event refresh behavior from captured `Page(...)` definitions.
-- The watch now has a dedicated `validation` page for Stage 6 hardware checks. It intentionally focuses on readable bridge and queue status plus explicit haptic, sound, and sync actions instead of becoming a generic debug surface.
+- The watch now has a dedicated `validation` page for hardware checks. It intentionally focuses on readable bridge and queue status plus explicit haptic, sound, and sync actions instead of becoming a generic debug surface.
 - The repo now uses `scripts/playwright-simulator-coverage.mjs` for two meaningful Playwright roles only: simulator smoke without coverage and module-harness smoke or coverage for browser-safe shared code.
 - Simulator-side V8 coverage was intentionally removed from the repo-standard test menu because the current simulator exposes shell/framework/preload scripts more reliably than PourOverFlow app code.
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.
@@ -234,5 +235,5 @@ Finish Stage 6 from [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
 - Simulator deployment can be verified from files and logs even when CLI output is quiet: `last_app_info.json`, the deployed app folder under `AppData\Roaming\simulator\apps\PourOverFlow20001`, and recent `side-service` `status:opened` lines in `renderer.log`.
 - `shared/watch/layouts.js` now uses `getDeviceInfo()` together with `data:os.device.info`, and it also keeps a fallback layout size so a permission problem does not immediately crash first paint.
 - The latest simulator run confirmed that `page/home/index.js` reached full widget render successfully; a later console `ui pause` entry was not, by itself, proof of a home-page build crash.
-- Current WIP state: automatic startup bootstrap is restored for real hardware, but `shared/watch/sync-bridge.js` skips it in simulator heuristic mode (`Battery().getCurrent() === 0`) while the simulator-side `@zos/ble.send` path is still being debugged.
+- Automatic startup bootstrap is restored for real hardware, but `shared/watch/sync-bridge.js` still skips it in simulator heuristic mode (`Battery().getCurrent() === 0`) while the simulator-side `@zos/ble.send` path is still being debugged.
 - The current watch UX pass follows Zepp design-system list patterns rather than a project-specific Figma node, because no concrete Figma file or node link is stored in the repo yet.

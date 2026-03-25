@@ -25,8 +25,9 @@ Start quickly even when the phone is unavailable.
 
 The resume gate is not a separate page. It is a simple `home` state with two buttons:
 
-- `Resume brew`
-- `Discard session`
+- primary action to resume the active brew,
+- a short secondary discard action,
+- an optional shortcut into the latest result.
 
 `Discard session` reads the snapshot only to build a `HistoryEntry` with status `aborted`, and then clears `active_session_v1`.
 
@@ -43,6 +44,7 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 - render the brewer catalog as a native scrollable list,
 - each row shows the brewer icon, brewer label, and the number of available recipes for that `toolId`,
 - keep the populated chooser visually quiet: do not show cache state, bridge state, or a redundant `Home` CTA on this screen,
+- keep list content inside a conservative round-screen safe width instead of relying on the full black circle,
 - support hardware-key list focus when the watch exposes compatible keys,
 - tapping a tool writes the selected `toolId` into watch runtime state and opens `recipe-list`.
 
@@ -66,6 +68,7 @@ If a tool has no recipes:
 - render recipes as a native scrollable list,
 - each visible recipe row shows name, update recency, and a short summary of key brew parameters,
 - keep the populated chooser focused on list selection instead of extra footer actions,
+- keep recipe rows roomy enough that long names and metadata do not crowd the card edges on round screens,
 - tapping a recipe opens `recipe-detail`,
 - the screen should not start brewing directly from a list tap.
 
@@ -91,7 +94,8 @@ Minimum UI set:
 2. show a compact summary of the selected `RecipeSnapshot`,
 3. keep the start CTA separate from the browse list,
 4. in the healthy state, prefer a single prominent `Start brew` CTA and let system back navigation return to `recipe-list`,
-4. allow going back to `recipe-list` without mutating the recipe snapshot.
+5. allow going back to `recipe-list` without mutating the recipe snapshot,
+6. keep detail text inset from the card edges instead of stretching all the way to the inner background bounds.
 
 ## Watch flow 5 - session start
 
@@ -117,16 +121,22 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 
 ### Screen sections
 
-- header: recipe name and tool name,
+- header: recipe name,
 - current step: title and description,
 - primary timer: step timer when the step is timed,
 - secondary timer: total session timer,
 - brew metadata: `waterMl` and `targetTotalWaterMl` when present,
 - CTA:
-  - `Next`
-  - `Abort`
+  - a bottom side-by-side action dock,
+  - icon-first cancel and confirm actions instead of two full-width text buttons,
 - physical shortcut:
   - trigger the primary action when the watch exposes Zepp's shortcut key
+
+### Layout notes
+
+- round-screen pages should keep the main copy within a stricter safe width than the full circular background,
+- important CTA surfaces should sit above the most aggressive lower-edge clip zone,
+- panel text should keep visible inner padding from its own background rather than hugging the card edges.
 
 ### Behavior by step type
 
@@ -166,11 +176,11 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - on `Abort`,
 - on `Complete`.
 
-Implementation state after Stage 6 code implementation:
+Implementation state:
 
 - storage-backed `active_session_v1` is already implemented,
 - timestamp-based resume reconciliation is implemented on app entry,
-- real-device wake and anti-sleep validation still remains in Stage 6.
+- real-device wake and anti-sleep validation still remains open.
 
 ## Watch flow 7 - resume after sleep or app return
 
@@ -187,7 +197,7 @@ Restore a sensible state without pretending a full background engine exists.
 
 ### Implementation state
 
-- Stage 6 reconciles persisted sessions on app entry before rendering the resume gate or active brew page,
+- the current runtime reconciles persisted sessions on app entry before rendering the resume gate or active brew page,
 - if the session auto-completes during reconciliation, the watch writes the result locally, queues sync, clears `active_session_v1`, and routes to `result-summary`.
 
 ### What not to do
@@ -223,9 +233,9 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 - status,
 - total time,
 - basic time delta,
-- CTA `Browse brewers`,
-- CTA `Validation`,
-- CTA `Home`.
+- CTA to browse again,
+- CTA to open validation checks,
+- CTA to return home.
 
 ### What we do not do here
 
@@ -241,18 +251,16 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 
 ### Goal
 
-Give Stage 6 a stable on-watch surface for manual hardware checks without mixing that logic into the main brew pages.
+Give the product a stable on-watch surface for manual hardware checks without mixing that logic into the main brew pages.
 
 ### Contents
 
 - current bridge status,
 - current cache and queue status,
-- current catalog revisions,
-- current active-session and latest-result names,
 - action row for a short haptic cue,
 - action row for a soft system sound,
 - action row for a bootstrap plus pending-queue sync check,
-- CTA `Home`.
+- CTA to return home.
 
 ### Behavior
 
