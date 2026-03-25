@@ -9,7 +9,7 @@ import {
 const layout = createScaffoldLayout({ shape: "square" });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(286),
+  y: px(302),
   h: px(60),
   radius: px(30),
   text_size: px(20)
@@ -29,7 +29,7 @@ export const BODY_TEXT = {
 };
 export const FOOTER_TEXT = {
   ...layout.footer,
-  y: px(248),
+  y: px(262),
   h: px(28)
 };
 export const ACTION_DOCK = createFloatingDockStyle({

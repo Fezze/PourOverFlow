@@ -7,25 +7,29 @@ import {
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
-const dockY = px(356);
+const dockY = px(384);
 const dockHeight = px(88);
 const dockGap = 0;
 const secondaryWidth = Math.floor(layout.buttonW / 2);
 const actionBaseY = dockY + px(8);
 const actionBaseH = dockHeight - px(8);
+const iconButtonWidth = px(112);
+const iconGap = px(16);
+const centerX = layout.buttonX + Math.floor(layout.buttonW / 2);
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  x: layout.buttonX + secondaryWidth + dockGap,
+  x: centerX + Math.floor(iconGap / 2),
   y: actionBaseY,
-  w: layout.buttonW - secondaryWidth - dockGap,
+  w: iconButtonWidth,
   h: actionBaseH,
   radius: 0,
   text_size: px(34)
 });
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
+  x: centerX - Math.floor(iconGap / 2) - iconButtonWidth,
   y: actionBaseY,
-  w: secondaryWidth,
+  w: iconButtonWidth,
   h: actionBaseH,
   radius: 0,
   text_size: px(34)

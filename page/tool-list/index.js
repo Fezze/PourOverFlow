@@ -41,7 +41,7 @@ function createToolListConfig() {
       image_view: [
         {
           x: 18,
-          y: 24,
+          y: 28,
           w: 56,
           h: 56,
           key: "icon",
@@ -52,7 +52,7 @@ function createToolListConfig() {
       text_view: [
         {
           x: 92,
-          y: 18,
+          y: 20,
           w: LIST_FRAME.w - 112,
           h: LIST_FRAME.titleHeight,
           key: "title",
@@ -64,7 +64,7 @@ function createToolListConfig() {
         },
         {
           x: 92,
-          y: 58,
+          y: 60,
           w: LIST_FRAME.w - 112,
           h: LIST_FRAME.metaHeight,
           key: "meta",
