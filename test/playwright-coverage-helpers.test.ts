@@ -306,6 +306,20 @@ describe("playwright coverage helpers", () => {
     ).toBe(normalizePathForExpect(path.resolve("/home/deck/.config/simulator")));
   });
 
+  it("prefers host ~/.config for Flatpak-hosted Linux sessions", () => {
+    expect(
+      normalizePathForExpect(
+        resolveSimulatorRoot({
+          env: {
+            XDG_CONFIG_HOME: "/home/deck/.var/app/com.visualstudio.code/config"
+          },
+          platform: "linux",
+          homeDir: "/home/deck"
+        })
+      )
+    ).toBe(normalizePathForExpect(path.resolve("/home/deck/.config/simulator")));
+  });
+
   it("rejects simulator root resolution when no required env is available", () => {
     expect(() =>
       resolveSimulatorRoot({

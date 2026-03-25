@@ -270,7 +270,12 @@ export function resolveSimulatorRoot({
     return path.resolve(env.APPDATA, "simulator");
   }
 
-  const configHome = env.XDG_CONFIG_HOME || (homeDir ? path.join(homeDir, ".config") : "");
+  const hostConfigHome =
+    homeDir && env.XDG_CONFIG_HOME && env.XDG_CONFIG_HOME.includes(`${path.sep}.var${path.sep}app${path.sep}`)
+      ? path.join(homeDir, ".config")
+      : "";
+  const configHome =
+    hostConfigHome || env.XDG_CONFIG_HOME || (homeDir ? path.join(homeDir, ".config") : "");
   if (!configHome) {
     throw new Error(
       `Could not resolve the Zepp simulator root. Set ${DEFAULT_ZEPP_SIMULATOR_ROOT_ENV}, XDG_CONFIG_HOME, or HOME.`
