@@ -4,7 +4,7 @@ PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a w
 
 ## Current status
 
-The repo already includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, a cleaner phone-side Settings UX with contextual headers and card-based browse/edit screens, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, a haptics-first feedback layer, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`.
+The repo already includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, a cleaner phone-side Settings UX with contextual headers, color-banded sections, and a paginated recipe-step editor, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, a haptics-first feedback layer, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`.
 The latest watch UX pass also keeps brewer and recipe chooser pages quieter on-device: populated browse screens no longer spend space on bridge/cache chatter or redundant home buttons, real brewer method icons now render directly from the closed tool catalog assets, and the watch flow no longer spends a separate page on manual hardware checks.
 
 ## Project language
@@ -19,7 +19,7 @@ This project is to be run in English.
 
 - On the watch: `tool list -> recipe list -> recipe detail -> active brew`, with native scrolling and a hardware shortcut on the active brew screen when the device exposes one
 - During a session: step timer, total session timer, manual `Next` steps, and haptic feedback
-- On the phone: full recipe CRUD and history note editing with card-based browse and editor screens
+- On the phone: full recipe CRUD and history note editing with color-banded browse screens and a paginated step editor
 - Sync: `setting/ -> app-side/ -> messaging.peerSocket -> Device App`
 - Resume: best-effort `resume`, not a guaranteed full background engine
 

@@ -220,6 +220,7 @@ AppSettingsPage({
 ```
 
 V1 may additionally persist phone UI state under `pof_settings_ui_state_v1`, but that key is not part of the sync model and must not be treated as a domain record.
+The same UI state may also keep editor-only presentation state such as the currently visible recipe-step page, as long as it remains non-canonical and phone-local.
 
 ### Allowed views
 
@@ -237,6 +238,11 @@ Do not create extra hidden views for experiments.
 ## UI rules for the Settings App
 
 ### Base components
+
+- Keep the top navigation visible and stable across views.
+- Use visibly different section backgrounds or panel tones so recipe basics, brew profile, guided steps, history, and sync do not blur into one flat column.
+- Prefer one dominant hero or overview panel near the top of each view instead of many equally weighted cards.
+- The recipe-step editor should paginate or otherwise segment steps; do not render every step form expanded in one long scrolling wall by default.
 
 The implementer should build `setting/` mainly from:
 
