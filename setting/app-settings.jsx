@@ -81,14 +81,18 @@ const SUCCESS_CARD_STYLE = {
   ...INFO_BUTTON_STYLE,
   background: "#DFF6F0",
   color: "#0F5F58",
-  textAlign: "left"
+  textAlign: "left",
+  padding: "12px 14px",
+  lineHeight: "18px"
 };
 
 const ERROR_CARD_STYLE = {
   ...INFO_BUTTON_STYLE,
   background: "#FCE8E6",
   color: "#8C2C1F",
-  textAlign: "left"
+  textAlign: "left",
+  padding: "12px 14px",
+  lineHeight: "18px"
 };
 
 const HERO_BUTTON_STYLE = {
@@ -115,12 +119,12 @@ const SECTION_TITLE_STYLE = {
 
 const CARD_BUTTON_STYLE = {
   fontSize: "13px",
-  lineHeight: "20px",
+  lineHeight: "22px",
   borderRadius: "18px",
   background: "#FFFFFF",
   color: "#21303D",
   textAlign: "left",
-  padding: "12px 14px"
+  padding: "14px 16px"
 };
 
 const SOFT_ACTION_BUTTON_STYLE = {
@@ -144,10 +148,10 @@ const SHELL_HEADER_STYLE = {
 
 const PANEL_BASE_STYLE = {
   borderRadius: "24px",
-  padding: "12px",
+  padding: "14px",
   display: "flex",
   flexDirection: "column",
-  gap: "10px",
+  gap: "12px",
   boxShadow: "0 6px 18px rgba(22, 32, 43, 0.08)"
 };
 
@@ -177,13 +181,13 @@ const PANEL_TONES = {
 const PANEL_HEADER_STYLE = {
   fontSize: "14px",
   fontWeight: "700",
-  lineHeight: "18px",
+  lineHeight: "20px",
   color: "#16313A"
 };
 
 const PANEL_SUBTITLE_STYLE = {
   fontSize: "12px",
-  lineHeight: "16px",
+  lineHeight: "18px",
   color: "#45606E"
 };
 
@@ -221,9 +225,9 @@ const STEP_BADGE_STYLE = {
 
 const MINI_STAT_STYLE = {
   fontSize: "12px",
-  lineHeight: "16px",
-  borderRadius: "16px",
-  background: "#FFFFFF",
+  lineHeight: "18px",
+  borderRadius: "14px",
+  background: "#F9FBFC",
   color: "#1F2D3A",
   textAlign: "left",
   padding: "10px 12px"
@@ -239,6 +243,38 @@ const STEP_JUMP_STYLE = {
   textAlign: "center",
   padding: "8px 10px",
   minWidth: "48px"
+};
+
+const STATIC_NOTE_STYLE = {
+  fontSize: "12px",
+  lineHeight: "18px",
+  background: "transparent",
+  color: "#4A5D6A",
+  textAlign: "left",
+  padding: "0",
+  borderRadius: "0px"
+};
+
+const STATIC_NOTE_DARK_STYLE = {
+  ...STATIC_NOTE_STYLE,
+  color: "#C5D5E1"
+};
+
+const PANEL_TITLE_RIBBON_STYLE = {
+  fontSize: "12px",
+  fontWeight: "700",
+  lineHeight: "18px",
+  borderRadius: "14px",
+  background: "rgba(255,255,255,0.18)",
+  color: "#F3F8FB",
+  textAlign: "center",
+  padding: "6px 12px"
+};
+
+const PANEL_TITLE_LIGHT_STYLE = {
+  ...PANEL_TITLE_RIBBON_STYLE,
+  background: "rgba(255,255,255,0.55)",
+  color: "#234050"
 };
 
 const TOOL_OPTIONS = TOOL_CATALOG.map((tool) => ({
@@ -365,16 +401,13 @@ function createWrapRow(children, gap = "8px") {
 function createPanel(tone, title, subtitle, content) {
   const isDark = tone === "slate";
   const headerStyle = {
-    ...SECTION_TITLE_STYLE,
-    background: "transparent",
-    padding: "0",
-    color: isDark ? "#F3F8FB" : "#16313A"
+    ...(isDark ? PANEL_TITLE_RIBBON_STYLE : PANEL_TITLE_LIGHT_STYLE),
+    alignSelf: "center"
   };
   const subtitleStyle = {
-    ...CARD_BUTTON_STYLE,
+    ...(isDark ? STATIC_NOTE_DARK_STYLE : STATIC_NOTE_STYLE),
     background: "transparent",
-    padding: "0",
-    color: isDark ? "#C5D5E1" : "#45606E"
+    borderRadius: "0px"
   };
 
   return View(
@@ -922,7 +955,11 @@ AppSettingsPage({
 
     return View({ style: CARD_STACK_STYLE }, [
       createPanel("slate", "Recipe library", "Choose a brewer and shape what syncs to the watch.", [
-        createStaticCard(buildLibraryOverview(this.state.snapshot), SUCCESS_CARD_STYLE),
+        createStaticCard(buildLibraryOverview(this.state.snapshot), {
+          ...SUCCESS_CARD_STYLE,
+          background: "#314352",
+          color: "#D7F3EA"
+        }),
         latestResult
           ? createStaticCard(
               `Latest watch result\n${latestResult.recipeName} - ${latestResult.status} - ${formatDurationLabel(
@@ -1015,9 +1052,9 @@ AppSettingsPage({
         createStaticCard(
           recipeCount === 1 ? "1 recipe in this shelf." : `${recipeCount} recipes in this shelf.`,
           {
-            ...CARD_BUTTON_STYLE,
+            ...SUCCESS_CARD_STYLE,
             background: "#314352",
-            color: "#F4FAFC"
+            color: "#D7F3EA"
           }
         ),
         createButtonRow([
@@ -1182,9 +1219,9 @@ AppSettingsPage({
         draftRecipe.recipeId ? "Editing an existing recipe." : "Creating a new recipe.",
         [
           createStaticCard(buildDraftOverview(draftRecipe), {
-            ...CARD_BUTTON_STYLE,
+            ...SUCCESS_CARD_STYLE,
             background: "#314352",
-            color: "#F4FAFC"
+            color: "#D7F3EA"
           }),
           createWrapRow(
             buildRecipeStatCards(draftRecipe).map((label) =>
@@ -1373,9 +1410,9 @@ AppSettingsPage({
         createStaticCard(
           `${historyIndex.length} archived brews ready to review.`,
           {
-            ...CARD_BUTTON_STYLE,
+            ...SUCCESS_CARD_STYLE,
             background: "#314352",
-            color: "#F4FAFC"
+            color: "#D7F3EA"
           }
         )
       ]),
@@ -1424,9 +1461,9 @@ AppSettingsPage({
     return View({ style: CARD_STACK_STYLE }, [
       createPanel("slate", "History detail", "Archived snapshot, timing and phone notes.", [
         createStaticCard(buildHistoryCardLabel(historyEntry), {
-          ...CARD_BUTTON_STYLE,
+          ...SUCCESS_CARD_STYLE,
           background: "#314352",
-          color: "#F4FAFC"
+          color: "#D7F3EA"
         }),
         createStaticCard(
           `${snapshotTool ? snapshotTool.label : historyEntry.recipeSnapshot.toolId}\nFilter: ${
@@ -1505,15 +1542,15 @@ AppSettingsPage({
                 latestResult.elapsedMs
               )}`,
               {
-                ...CARD_BUTTON_STYLE,
+                ...SUCCESS_CARD_STYLE,
                 background: "#314352",
-                color: "#F4FAFC"
+                color: "#D7F3EA"
               }
             )
           : createStaticCard("No watch result has been mirrored back yet.", {
-              ...CARD_BUTTON_STYLE,
+              ...SUCCESS_CARD_STYLE,
               background: "#314352",
-              color: "#F4FAFC"
+              color: "#D7F3EA"
             })
       ])
     ]);
