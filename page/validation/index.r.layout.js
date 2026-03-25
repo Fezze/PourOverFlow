@@ -11,7 +11,7 @@ import {
 const layout = createScaffoldLayout({ shape: "round" });
 const homeButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  y: px(378),
+  y: px(362),
   h: px(60),
   radius: px(30),
   text_size: px(20)
@@ -25,9 +25,11 @@ TITLE_TEXT.x = px(64);
 TITLE_TEXT.y = px(64);
 TITLE_TEXT.w = px(352);
 TITLE_TEXT.text_size = px(26);
+TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 SUBTITLE_TEXT.x = px(64);
 SUBTITLE_TEXT.y = px(100);
 SUBTITLE_TEXT.w = px(352);
+SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
 export const STATUS_PANEL = createPanelStyle(layout, {
   y: px(118),
   h: px(82)
@@ -45,7 +47,7 @@ export const STATUS_TEXT = {
 };
 export const LIST_PANEL = createPanelStyle(layout, {
   y: px(210),
-  h: px(148),
+  h: px(138),
   color: SHARED_COLORS.surfaceMuted
 });
 export const LIST_FRAME = {

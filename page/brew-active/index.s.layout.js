@@ -1,7 +1,6 @@
 import { px } from "@zos/utils";
 import {
   SHARED_COLORS,
-  createFloatingDockStyle,
   createFloatingButtonStyle,
   createScaffoldLayout
 } from "../../shared/watch/layouts";
@@ -11,21 +10,23 @@ const dockY = px(292);
 const dockHeight = px(78);
 const dockGap = 0;
 const secondaryWidth = Math.floor(layout.buttonW / 2);
+const actionBaseY = dockY + px(8);
+const actionBaseH = dockHeight - px(8);
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
   x: layout.buttonX + secondaryWidth + dockGap,
-  y: dockY,
+  y: actionBaseY,
   w: layout.buttonW - secondaryWidth - dockGap,
-  h: dockHeight,
-  radius: px(39),
+  h: actionBaseH,
+  radius: 0,
   text_size: px(30)
 });
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  y: dockY,
+  y: actionBaseY,
   w: secondaryWidth,
-  h: dockHeight,
-  radius: px(39),
+  h: actionBaseH,
+  radius: 0,
   text_size: px(30)
 });
 
@@ -38,18 +39,34 @@ export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const BODY_TEXT = layout.body;
 export const FOOTER_TEXT = layout.footer;
-export const ACTION_DOCK = createFloatingDockStyle({
+export const ACTION_LEFT_BG = {
   x: secondaryButton.x,
+  y: actionBaseY,
+  w: secondaryButton.w,
+  h: actionBaseH,
+  radius: px(39),
+  color: SHARED_COLORS.secondary
+};
+export const ACTION_RIGHT_BG = {
+  x: primaryButton.x,
+  y: actionBaseY,
+  w: primaryButton.w,
+  h: actionBaseH,
+  radius: px(39),
+  color: SHARED_COLORS.secondary
+};
+export const ACTION_TOP_MASK = {
+  x: layout.buttonX,
   y: dockY,
-  w: primaryButton.w + secondaryButton.w + dockGap,
-  h: dockHeight,
-  radius: px(39)
-});
+  w: layout.buttonW,
+  h: px(8),
+  color: SHARED_COLORS.background
+};
 export const ACTION_DIVIDER = {
   x: layout.buttonX + secondaryWidth,
-  y: dockY + px(10),
+  y: actionBaseY,
   w: 1,
-  h: dockHeight - px(10),
+  h: actionBaseH,
   color: SHARED_COLORS.background
 };
 export const BUTTONS = [primaryButton, secondaryButton];

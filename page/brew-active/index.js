@@ -24,7 +24,9 @@ import { registerShortcutKey } from "../../shared/watch/shortcut-key";
 import { SHARED_COLORS, createPanelStyle } from "../../shared/watch/layouts";
 import {
   ACTION_DIVIDER,
-  ACTION_DOCK,
+  ACTION_LEFT_BG,
+  ACTION_RIGHT_BG,
+  ACTION_TOP_MASK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
@@ -167,6 +169,8 @@ Page({
     });
     this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      x: BODY_TEXT.x + 2,
+      w: BODY_TEXT.w - 4,
       y: BODY_TEXT.y + 24,
       h: 36,
       text_size: BODY_TEXT.text_size + 8,
@@ -186,6 +190,8 @@ Page({
     }));
     this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      x: BODY_TEXT.x + 14,
+      w: BODY_TEXT.w - 28,
       y: BODY_TEXT.y + 96,
       h: 38,
       text_size: BODY_TEXT.text_size + 2,
@@ -193,14 +199,22 @@ Page({
     });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      x: BODY_TEXT.x + 14,
+      w: BODY_TEXT.w - 28,
       y: BODY_TEXT.y + 138,
       h: 24,
       color: SHARED_COLORS.muted,
       text_size: BODY_TEXT.text_size - 2,
       text: buildStepMetaText(activeSession)
     });
-    if (ACTION_DOCK) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+    if (ACTION_LEFT_BG) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_LEFT_BG);
+    }
+    if (ACTION_RIGHT_BG) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_RIGHT_BG);
+    }
+    if (ACTION_TOP_MASK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_TOP_MASK);
     }
     if (ACTION_DIVIDER) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DIVIDER);
@@ -221,7 +235,7 @@ Page({
     });
     this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      y: BUTTONS[0].y - 34,
+      y: BUTTONS[0].y - 28,
       h: 30,
       text: buildFooterText(activeSession)
     });

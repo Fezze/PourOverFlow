@@ -71,6 +71,8 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
+      x: BODY_TEXT.x + 14,
+      w: BODY_TEXT.w - 28,
       y: BODY_TEXT.y + 6,
       h: BODY_TEXT.h + 14,
       text: selectedRecipe
