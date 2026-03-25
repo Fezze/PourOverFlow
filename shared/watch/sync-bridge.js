@@ -31,6 +31,7 @@ import {
 } from "../sync/bridge-transport.js";
 import { SYNC_MESSAGE_TYPES } from "../sync/message-types";
 import { isProbablySimulatorDevice } from "./runtime-env";
+import { logValidation } from "./validation-log";
 
 let isInitialized = false;
 let hasPrimedRuntimeSync = false;
@@ -309,6 +310,10 @@ export function requestBootstrap() {
     console.log(
       `Skipping watch bootstrap request connected=${isBridgeTransportConnected()} bleSendType=${typeof bleSend}`
     );
+    logValidation("bootstrap_skip", {
+      connected: isBridgeTransportConnected(),
+      bleSendType: typeof bleSend
+    });
     return false;
   }
 
@@ -322,6 +327,12 @@ export function requestBootstrap() {
 
   const syncMeta = readWatchSyncMeta();
 
+  logValidation("bootstrap_request", {
+    knownToolCatalogRevision: syncMeta.toolCatalogRevision,
+    knownRecipeCatalogRevision: syncMeta.recipeCatalogRevision,
+    knownHistoryRevision: syncMeta.historyRevision
+  });
+
   return safeSendEnvelope(
     createSyncEnvelope(SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP, {
       knownToolCatalogRevision: syncMeta.toolCatalogRevision,
@@ -333,6 +344,11 @@ export function requestBootstrap() {
 
 export function queueHistoryEntryForSync(historyEntry) {
   if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
+    logValidation("history_send_skip", {
+      historyId: historyEntry && historyEntry.historyId ? historyEntry.historyId : null,
+      connected: isBridgeTransportConnected(),
+      bleSendType: typeof bleSend
+    });
     return false;
   }
 
@@ -344,6 +360,11 @@ export function queueHistoryEntryForSync(historyEntry) {
     return false;
   }
 
+  logValidation("history_send_attempt", {
+    historyId: historyEntry.historyId,
+    status: historyEntry.status
+  });
+
   return safeSendEnvelope(
     createSyncEnvelope(SYNC_MESSAGE_TYPES.UPSERT_HISTORY_ENTRY, {
       entry: historyEntry
@@ -353,6 +374,11 @@ export function queueHistoryEntryForSync(historyEntry) {
 
 export function flushPendingHistoryQueue() {
   if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
+    logValidation("history_flush_skip", {
+      connected: isBridgeTransportConnected(),
+      bleSendType: typeof bleSend,
+      pendingHistoryCount: getPendingHistoryQueue().length
+    });
     return false;
   }
 
@@ -367,8 +393,17 @@ export function flushPendingHistoryQueue() {
   const pendingHistoryQueue = getPendingHistoryQueue();
   let sentAny = false;
 
+  logValidation("history_flush_attempt", {
+    pendingHistoryCount: pendingHistoryQueue.length
+  });
+
   pendingHistoryQueue.forEach((historyEntry) => {
     sentAny = queueHistoryEntryForSync(historyEntry) || sentAny;
+  });
+
+  logValidation("history_flush_result", {
+    pendingHistoryCount: pendingHistoryQueue.length,
+    sentAny
   });
 
   return sentAny;

@@ -79,6 +79,8 @@ Current verified platform note:
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - a haptics-first watch feedback model without a dedicated hardware-check page,
+- a shared `[pof-validation]` log prefix across display guard, resume, haptics, and queue replay paths so real-device checks can be traced without a dedicated watch debug screen,
+- real-watch logs already confirmed wake-up relaunch, resume reconciliation, display guard enable/disable, haptic cue delivery, and offline-history replay after reconnect,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
@@ -110,9 +112,7 @@ The current simulator smoke implementation remains Windows-centric because it lo
 
 ## What is still missing
 
-- hard validation of wake-up relaunch and anti-sleep behavior on a real device,
-- hard feedback validation on a real device,
-- confirmation that the haptics-only feedback path is comfortable and reliable on real hardware,
+- confirmation that the current haptics-only feedback tuning feels comfortable and not annoying during a real brew,
 - confirmation that the latest round-screen spacing pass and custom action docks still clear the mask comfortably on real hardware,
 - literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `phone-store`, `validators`, the page shells with defensive empty-state branches, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 
@@ -193,7 +193,7 @@ Helper phone key, non-canonical for sync:
 
 ## Nearest goal
 
-Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live source of open work. Right now that mainly means real-device validation of resume, anti-sleep, feedback behavior, queue replay, and final watch-screen comfort.
+Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live source of open work. Right now that mainly means comfort validation for haptics and final watch-screen comfort on real hardware.
 
 ## TODO and document maintenance
 
@@ -218,6 +218,8 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - `setting/index.js` is a practical toolchain entrypoint even when the main Settings App code lives in `.jsx`.
 - The current watch flow is no longer a local seed preview, and `active_session_v1` is already storage-backed; the remaining follow-up is resume hardening, not session persistence itself.
 - The session reducer is already much closer to the target model, but real resume and screen-sleep behavior still need hardware confirmation.
+- Real-device validation logs now use the `[pof-validation]` prefix for session start, display guard enable or disable, resume reconciliation, haptic cues, bootstrap requests, and pending-history replay attempts.
+- Real-watch validation logs already confirmed that wake-up relaunch, resume reconciliation, display guard activation, haptic playback, and offline queued-history replay are working on hardware.
 - `setting/` uses the helper key `pof_settings_ui_state_v1` to persist view state and drafts. That key must be ignored by `app-side` and future runtime sync.
 - With the current watch UI, lists and summary screens already refresh on runtime events, but this is not yet a fully reactive rendering system.
 - Active sessions are reconciled from stored timestamps on app entry, and phone-side storage change pushes are coalesced by slice.

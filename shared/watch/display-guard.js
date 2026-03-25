@@ -1,6 +1,7 @@
 import { resetPageBrightTime, setPageBrightTime, setWakeUpRelaunch } from "@zos/display";
 
 import { readActiveSession, writeActiveSession } from "../storage/watch-store";
+import { logValidation } from "./validation-log";
 
 const MIN_ACTIVE_BRIGHT_MS = 60 * 1000;
 const MAX_ACTIVE_BRIGHT_MS = 10 * 60 * 1000;
@@ -22,11 +23,15 @@ function getRecommendedBrightTime(activeSession) {
 
 export function enableActiveSessionDisplayGuard(activeSession = readActiveSession()) {
   if (!activeSession) {
+    logValidation("display_guard_skip", {
+      reason: "no_active_session"
+    });
     return false;
   }
 
   let wakeEnabled = false;
   let brightEnabled = false;
+  const recommendedBrightTime = getRecommendedBrightTime(activeSession);
 
   try {
     setWakeUpRelaunch(true);
@@ -37,7 +42,7 @@ export function enableActiveSessionDisplayGuard(activeSession = readActiveSessio
 
   try {
     setPageBrightTime({
-      brightTime: getRecommendedBrightTime(activeSession)
+      brightTime: recommendedBrightTime
     });
     brightEnabled = true;
   } catch (error) {
@@ -55,19 +60,36 @@ export function enableActiveSessionDisplayGuard(activeSession = readActiveSessio
     });
   }
 
+  logValidation("display_guard_enable", {
+    recipeId: activeSession.recipeId,
+    wakeEnabled,
+    brightEnabled,
+    brightTime: recommendedBrightTime
+  });
+
   return wakeEnabled || brightEnabled;
 }
 
 export function disableActiveSessionDisplayGuard() {
+  let wakeDisabled = true;
+  let brightReset = true;
+
   try {
     setWakeUpRelaunch(false);
   } catch (error) {
     console.log("Failed to disable wake-up relaunch", error);
+    wakeDisabled = false;
   }
 
   try {
     resetPageBrightTime();
   } catch (error) {
     console.log("Failed to reset page bright time", error);
+    brightReset = false;
   }
+
+  logValidation("display_guard_disable", {
+    wakeDisabled,
+    brightReset
+  });
 }

@@ -11,10 +11,8 @@
 
 ### Real-device validation
 
-- Validate wake-up relaunch and anti-sleep behavior on real hardware during an active brew.
-- Validate haptic cues on real hardware, including comfort and reliability during a real brew.
-- Validate that offline completion still queues history safely and replays to the phone when connectivity returns.
-- Validate that partial slice pushes keep recipe edits responsive and that watch startup still feels fast when the phone is unavailable.
+- Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.
+- Use the new `[pof-validation]` log prefix during hardware tests and write back concrete findings instead of leaving them in chat only.
 
 ### Watch UI follow-up
 
@@ -49,10 +47,10 @@
 ## Real-watch checks
 
 - vibration
-- sound and fallback behavior
 - screen sleep
 - wake-up relaunch
 - resume comfort during a real brew
+- offline completion queued locally, then replayed after reconnect
 
 ## Out of scope
 

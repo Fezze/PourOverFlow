@@ -111,7 +111,7 @@ Current platform note:
 
 ## Next work
 
-The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): real-device validation of wake-up relaunch, anti-sleep behavior, haptic or audio feedback, queue replay, and final watch-screen comfort that cannot be proven by simulator or pure tests alone.
+The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): confirm haptic comfort over a real brew and finish the remaining round-screen comfort pass that cannot be proven by simulator or pure tests alone.
 
 ## Test commands
 
@@ -137,8 +137,7 @@ The verification workflow is intentionally local-first and does not assume CI. I
 
 ## What is still missing in the repo
 
-- hard validation of wake-up relaunch, anti-sleep, and haptic behavior on a real device,
-- confirmation on real hardware that the latest haptics-only feedback path is comfortable and reliable,
+- confirmation on real hardware that the latest haptics-only feedback tuning is comfortable and reliable over a full brew,
 - literal 100% local coverage, if the team still wants to keep pushing the current baselines.
 - a concrete project Figma node or page link, if the team wants tighter visual matching than the current Zepp-design-system-based UX pass.
 

@@ -180,7 +180,8 @@ Implementation state:
 
 - storage-backed `active_session_v1` is already implemented,
 - timestamp-based resume reconciliation is implemented on app entry,
-- real-device wake and anti-sleep validation still remains open.
+- real-device validation logs now emit `[pof-validation] display_guard_enable` and `[pof-validation] display_guard_disable` entries with the applied wake and bright flags,
+- real-watch logs already confirmed wake-up relaunch together with display-guard activation; remaining work is comfort validation rather than technical availability.
 
 ## Watch flow 7 - resume after sleep or app return
 
@@ -198,6 +199,8 @@ Restore a sensible state without pretending a full background engine exists.
 ### Implementation state
 
 - the current runtime reconciles persisted sessions on app entry before rendering the resume gate or active brew page,
+- the runtime now emits `[pof-validation]` logs for `resume_attempt`, `resume_success`, and resume-clear/finalize paths to support real-watch verification,
+- real-watch logs already confirmed successful resume reconciliation on hardware,
 - if the session auto-completes during reconciliation, the watch writes the result locally, queues sync, clears `active_session_v1`, and routes to `result-summary`.
 
 ### What not to do
@@ -216,6 +219,11 @@ Restore a sensible state without pretending a full background engine exists.
 4. send `UPSERT_HISTORY_ENTRY`,
 5. clear `active_session_v1`,
 6. navigate to `result-summary`.
+
+Runtime note:
+
+- real-device validation logs now emit `[pof-validation] history_entry_queued`, `history_flush_attempt`, and `history_flush_result` so offline completion and reconnect replay can be confirmed from logs.
+- real-watch logs already confirmed queued history replay after reconnect with a successful `history_flush_result`.
 
 ### Aborted
 

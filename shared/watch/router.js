@@ -30,6 +30,7 @@ import {
 } from "../storage/watch-store";
 import { disableActiveSessionDisplayGuard } from "./display-guard";
 import { flushPendingHistoryQueue, requestBootstrap } from "./sync-bridge";
+import { logValidation } from "./validation-log";
 
 export const PAGE_URLS = {
   home: "page/home/index",
@@ -43,6 +44,11 @@ export const PAGE_URLS = {
 function persistCompletedHistoryEntry(historyEntry) {
   writeLastResult(createLastResultSummary(historyEntry));
   enqueuePendingHistoryEntry(historyEntry);
+  logValidation("history_entry_queued", {
+    historyId: historyEntry.historyId,
+    status: historyEntry.status,
+    pendingHistoryCount: getPendingHistoryQueue().length
+  });
   flushPendingHistoryQueue();
 }
 
@@ -51,6 +57,12 @@ function finalizeFinishedSession(nextSession) {
   persistCompletedHistoryEntry(historyEntry);
   clearActiveSession();
   disableActiveSessionDisplayGuard();
+  logValidation("session_finalize", {
+    recipeId: nextSession.recipeId,
+    status: nextSession.status,
+    currentStepIndex: nextSession.currentStepIndex,
+    historyId: historyEntry.historyId
+  });
   replace({ url: PAGE_URLS.resultSummary });
   return { completed: true, historyEntry };
 }
@@ -163,6 +175,12 @@ export function startRecipe(recipeSummary) {
   writeSelectedRecipeId(recipeSummary.recipeId);
   const activeSession = createActiveBrewSession(recipeSnapshot);
   writeActiveSession(activeSession);
+  logValidation("session_start", {
+    recipeId: activeSession.recipeId,
+    recipeName: recipeSnapshot.name,
+    firstStepKind: getCurrentSessionStep(activeSession)?.kind || null,
+    expectedStepEndAt: activeSession.expectedStepEndAt || null
+  });
   playFeedbackCue(getCurrentSessionStep(activeSession).feedbackCue);
   push({ url: PAGE_URLS.brewActive });
   return true;
@@ -186,6 +204,11 @@ export function resumeActiveSession() {
   }
 
   replace({ url: PAGE_URLS.brewActive });
+  logValidation("session_resume_route", {
+    recipeId: resumeResult.activeSession.recipeId,
+    status: resumeResult.activeSession.status,
+    currentStepIndex: resumeResult.activeSession.currentStepIndex
+  });
   return true;
 }
 
@@ -201,6 +224,10 @@ export function discardActiveSessionFromHome() {
   persistCompletedHistoryEntry(historyEntry);
   clearActiveSession();
   disableActiveSessionDisplayGuard();
+  logValidation("session_discard_from_home", {
+    recipeId: abortedSession.recipeId,
+    historyId: historyEntry.historyId
+  });
   replace({ url: PAGE_URLS.home });
   return true;
 }
@@ -246,6 +273,12 @@ export function advanceOrCompleteActiveSession() {
 
   maybePlayCurrentStepCue(activeSession, nextSession);
   writeActiveSession(nextSession);
+  logValidation("session_advance", {
+    recipeId: nextSession.recipeId,
+    status: nextSession.status,
+    currentStepIndex: nextSession.currentStepIndex,
+    stepKind: getCurrentSessionStep(nextSession)?.kind || null
+  });
   replace({ url: PAGE_URLS.brewActive });
   return { completed: false, activeSession: nextSession };
 }
@@ -257,6 +290,11 @@ export function abortActiveBrew() {
     const historyEntry = buildHistoryEntryFromSession(abortedSession);
     persistCompletedHistoryEntry(historyEntry);
     clearActiveSession();
+    logValidation("session_abort", {
+      recipeId: abortedSession.recipeId,
+      currentStepIndex: abortedSession.currentStepIndex,
+      historyId: historyEntry.historyId
+    });
   }
 
   disableActiveSessionDisplayGuard();
@@ -267,17 +305,32 @@ export function reconcileActiveSessionOnEntry(now = Date.now()) {
   const activeSession = readActiveSession();
 
   if (!activeSession) {
+    logValidation("resume_skip", {
+      reason: "no_active_session"
+    });
     return {
       activeSession: null,
       finalized: false
     };
   }
 
+  logValidation("resume_attempt", {
+    recipeId: activeSession.recipeId,
+    previousStatus: activeSession.status,
+    currentStepIndex: activeSession.currentStepIndex,
+    expectedStepEndAt: activeSession.expectedStepEndAt || null,
+    now
+  });
+
   const resumedSession = resumeSession(activeSession, { now });
 
   if (!resumedSession) {
     clearActiveSession();
     disableActiveSessionDisplayGuard();
+    logValidation("resume_clear", {
+      recipeId: activeSession.recipeId,
+      reason: "resume_returned_null"
+    });
     return {
       activeSession: null,
       finalized: false
@@ -285,6 +338,10 @@ export function reconcileActiveSessionOnEntry(now = Date.now()) {
   }
 
   if (resumedSession.status === "completed") {
+    logValidation("resume_finalize_completed", {
+      recipeId: resumedSession.recipeId,
+      currentStepIndex: resumedSession.currentStepIndex
+    });
     finalizeFinishedSession(resumedSession);
     return {
       activeSession: null,
@@ -295,6 +352,10 @@ export function reconcileActiveSessionOnEntry(now = Date.now()) {
   if (resumedSession.status === "aborted" || resumedSession.status === "expired") {
     clearActiveSession();
     disableActiveSessionDisplayGuard();
+    logValidation("resume_clear", {
+      recipeId: resumedSession.recipeId,
+      reason: resumedSession.status
+    });
     return {
       activeSession: null,
       finalized: false
@@ -304,6 +365,13 @@ export function reconcileActiveSessionOnEntry(now = Date.now()) {
   if (JSON.stringify(resumedSession) !== JSON.stringify(activeSession)) {
     writeActiveSession(resumedSession);
   }
+
+  logValidation("resume_success", {
+    recipeId: resumedSession.recipeId,
+    status: resumedSession.status,
+    currentStepIndex: resumedSession.currentStepIndex,
+    expectedStepEndAt: resumedSession.expectedStepEndAt || null
+  });
 
   return {
     activeSession: readActiveSession(),

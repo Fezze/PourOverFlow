@@ -27,6 +27,22 @@ describe("feedback helpers", () => {
     expect(getFeedbackLabel("unknown")).toBe("No cue");
   });
 
+  it("treats the none cue as a successful no-op", async () => {
+    const runtime = await loadRuntimeModule();
+    runtime.resetZeppRuntime();
+    const { playFeedbackCueDetailed, playFeedbackCue } = await loadFeedbackModule();
+
+    expect(playFeedbackCueDetailed("none")).toMatchObject({
+      success: true,
+      channel: "none",
+      sourceType: "none",
+      feedbackCue: "none",
+      attempts: []
+    });
+    expect(playFeedbackCue("none")).toBe(true);
+    expect(runtime.__zeusRuntime.vibratorInstances.size).toBe(0);
+  });
+
   it("reports unsupported audio cues as unavailable", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();

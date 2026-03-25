@@ -1,4 +1,5 @@
 import { Vibrator, VIBRATOR_SCENE_DURATION_LONG, VIBRATOR_SCENE_SHORT_MIDDLE, VIBRATOR_SCENE_SHORT_STRONG } from "@zos/sensor";
+import { logValidation } from "../watch/validation-log";
 
 const FEEDBACK_LABELS = {
   none: "No cue",
@@ -113,6 +114,13 @@ export function getFeedbackLabel(feedbackCue) {
 
 export function playFeedbackCueDetailed(feedbackCue) {
   switch (feedbackCue) {
+    case "none":
+      return withAttempts(createFeedbackResult({
+        success: true,
+        feedbackCue,
+        channel: "none",
+        sourceType: "none"
+      }), []);
     case "vibrate_short": {
       return {
         ...playVibration(VIBRATOR_SCENE_SHORT_MIDDLE),
@@ -146,5 +154,17 @@ export function playFeedbackCueDetailed(feedbackCue) {
 }
 
 export function playFeedbackCue(feedbackCue) {
-  return playFeedbackCueDetailed(feedbackCue).success;
+  const result = playFeedbackCueDetailed(feedbackCue);
+
+  if (feedbackCue !== "none") {
+    logValidation("feedback_cue", {
+      feedbackCue,
+      success: result.success,
+      channel: result.channel,
+      sourceType: result.sourceType,
+      attempts: result.attempts
+    });
+  }
+
+  return result.success;
 }
