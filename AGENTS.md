@@ -6,9 +6,8 @@ This file is a repo-level instruction set for the next AI agent. Treat it as hig
 
 ## Repo status
 
-- The repo has Stages 3, 4, and 5 completed.
-- There is a Zepp app scaffold, a seed library, canonical phone storage using `index + records`, real CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, a best-effort feedback layer, and baseline logic plus sync tests.
-- The current work scope is late Stage 6: real-device validation, lifecycle hardening, and follow-up cleanup.
+- The repo has the Zepp app scaffold, seed library, canonical phone storage using `index + records`, real CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, a haptics-first feedback layer, and baseline logic plus sync tests.
+- The current work scope is cleanup, remaining real-watch comfort validation, and follow-up tooling or watch UX hardening.
 - This repo is a Zepp OS project, so any task involving implementation, architecture, debugging, or validation must use the `zepp-miniapp-builder` skill as the default workflow.
 
 ## Project language
@@ -70,8 +69,7 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 
 ## How to implement
 
-- Build according to the stages in [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md).
-- Scaffold and contracts first, then UI and engine, then resume and sync hardening.
+- Build according to the current open work in [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md).
 - Keep domain logic in shared, testable modules without Zepp runtime dependencies.
 - The watch UI layer should stay thin: read state and render.
 - `setting/` must remain the only place for recipe and history CRUD.
@@ -124,7 +122,7 @@ Minimum standard:
 
 - pure-logic tests for the model, session reducer, and sync,
 - simulator validation for layout and flow,
-- real-device validation for haptics, audio, screen sleep, and resume.
+- real-device validation for haptics, screen sleep, resume, and queue replay.
 - improve coverage when meaningful tests can be added without turning the suite into coverage padding.
 - prefer behavior-focused tests over superficial assertions written only to move the percentage.
 
@@ -132,33 +130,31 @@ Do not treat the simulator as proof of feedback behavior or screen-off behavior.
 
 ## What to do first
 
-The first implementation task from the current repo state is Stage 6:
+The first implementation task from the current repo state is the nearest sensible item in [docs/TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md), which is usually one of:
 
-- validate `setWakeUpRelaunch(true)` and `setPageBrightTime(...)` on real hardware,
-- verify resume after restart and after screen sleep on a real device,
-- verify `pendingHistoryQueue` replay in an offline -> online scenario,
-- validate haptic and audio feedback on a real device,
-- keep `npm test` and `zeus build` green after every larger change.
+- remaining comfort validation for haptics on a real brew,
+- round-screen comfort cleanup on real hardware,
+- repo cleanup or tooling follow-up that does not change the product scope.
 
 ## Discovered toolchain nuances
 
 - For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under `assets/<target>.<shape>/icon.png`, not only the logical `icon.png` name in `app.json`.
 - The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`.
-- Stage 6 adds timestamp-based resume reconciliation and active-brew display guard handling, but real-device confirmation is still pending.
+- Timestamp-based resume reconciliation and active-brew display guard handling are implemented, and real-watch logs already confirmed the core wake, resume, and queue replay paths.
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
 - The phone-side Settings UI now relies on active top navigation, contextual shell headers, summary cards, and card-tap record opening; avoid regressing it back to row-heavy admin-style screens with redundant `Edit` buttons.
 - Watch browse and result pages already refresh on runtime events when new snapshots arrive, but this is not yet a fully reactive UI system.
 - Watch browse now uses scrollable brewer and recipe lists plus a dedicated `recipe-detail` start page; if a later agent redesigns watch browse, update the flow docs and backlog instead of changing it silently.
 - `brew-active` now binds the Zepp shortcut key as a secondary confirm / next-step action when the device exposes it; keep it additive, not mandatory.
-- The watch now includes a dedicated `validation` page, reachable from `result-summary`, for Stage 6 hardware checks. Keep it focused on haptics, sound, sync responsiveness, and readable runtime state rather than turning it into a general-purpose debug menu.
-- Keep populated watch chooser pages quiet. `tool-list` and `recipe-list` should prioritize selection, not bridge/cache diagnostics or redundant home actions. Transport state belongs on the dedicated `validation` page.
-- The validation page now prefers direct vibration and a stronger sound cue with buzzer fallback. Treat that as best-effort hardware behavior that still needs real-watch confirmation, not simulator proof.
+- The watch no longer includes a dedicated hardware-check page. Use the normal brew flow plus `[pof-validation]` logs for real-device validation instead of reintroducing a watch-side debug menu.
+- Keep populated watch chooser pages quiet. `tool-list` and `recipe-list` should prioritize selection, not bridge/cache diagnostics or redundant home actions.
+- The current feedback baseline is haptics-only. Treat audio cues as unsupported unless product scope changes explicitly.
 - The latest UX pass follows official Zepp design-system list patterns. If stricter Figma matching is needed later, the repo should first store a concrete project Figma page or node link instead of relying on a generic "use Figma" instruction.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 - In local simulator workflows, `zeus dev` may push the app more reliably than bridge `install`; if bridge `install` appears to do nothing in the simulator, prefer `zeus dev` for deployment and keep bridge for connection/debug tasks.
 - Zeus Bridge may prompt for explicit target selection when more than one online simulator or device is visible; picking the intended target such as `Balance 2` is expected behavior, not a failure case.
 - `zeus dev` may also prompt for explicit device selection with text such as `Which device would you like to preview?`; on this repo, `Amazfit Balance 2` was a valid target for simulator deployment.
-- A successful simulator push can be confirmed without visual inspection by checking `C:\Users\krzys\AppData\Roaming\simulator\last_app_info.json`, the deployed app folder under `C:\Users\krzys\AppData\Roaming\simulator\apps\PourOverFlow20001`, and recent `side-service` `status:opened` lines in `C:\Users\krzys\AppData\Roaming\simulator\logs\renderer.log`.
+- A successful simulator push can be confirmed without visual inspection by checking `last_app_info.json`, the deployed app folder under the resolved simulator root (`%APPDATA%/simulator` on Windows or `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux), and recent `side-service` `status:opened` lines in `renderer.log`.
 - `shared/watch/layouts.js` now depends on `getDeviceInfo()` together with `data:os.device.info`; keep that permission in the manifest baseline, and keep the fallback path so a permission issue does not immediately crash first paint.
 - In the latest simulator debugging pass, `page/home/index.js` reached full widget render successfully; a simulator-console `ui pause` line alone is not enough evidence that the page crashed during build.
 - Current WIP state: automatic startup bootstrap is restored for real hardware, while `shared/watch/sync-bridge.js` skips simulator auto-bootstrap using a battery heuristic (`Battery().getCurrent() === 0`) until the simulator-side `@zos/ble.send` behavior is better understood.
@@ -171,6 +167,7 @@ The first implementation task from the current repo state is Stage 6:
 - The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks `zosLoader:./index.[pf].layout.js`, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
 - The repo includes `npm run test:playwright` and `npm run test:playwright:harness` as no-coverage Playwright smoke runs, so the simulator path and the browser module harness can both be exercised without writing coverage reports.
 - The same script supports `npm run test:playwright:coverage:harness`, which opens a local browser harness page and executes real browser-safe project modules for Playwright/V8 coverage without a simulator; keep treating it as complementary to Vitest, not as proof of Zepp-only runtime behavior.
+- The simulator smoke script now resolves simulator metadata from `%APPDATA%/simulator` on Windows, `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux, or an explicit `ZEPP_SIMULATOR_ROOT` override.
 - The repo-standard full local verification job is the VS Code compound task `Verify: all tests and coverage` in `.vscode/tasks.json`; it runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in one pass.
 - Prefer the task-based job over wrapper scripts, because wrapper orchestration proved less reliable than direct task execution for Vitest and Zeus on this Windows-local toolchain.
 - There is no repo-level CI assumption right now. Treat the VS Code verification task as the single source of truth for the full non-simulator verification stack, and only mirror it into CI later if CI is actually introduced.

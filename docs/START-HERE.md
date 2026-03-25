@@ -53,7 +53,10 @@ Current verified platform note:
 - the Vitest commands and `zeus build` are expected to work once Node and Zeus CLI are installed,
 - the Playwright harness commands on Linux require `PLAYWRIGHT_COVERAGE_BROWSER`,
 - Flatpak-hosted VS Code sessions should prefer `scripts/playwright-flatpak-host-browser.sh` for Playwright harness runs,
-- the simulator smoke command is still Windows-centric because the current script reads simulator metadata from `APPDATA`.
+- the simulator smoke command now resolves simulator metadata from:
+  - `%APPDATA%/simulator` on Windows,
+  - `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux,
+  - or an explicit `ZEPP_SIMULATOR_ROOT` override.
 
 ## What is already in place
 
@@ -108,7 +111,7 @@ Current verified platform note:
 Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `zeus dev` before treating the simulator result as meaningful.
 Playwright coverage here is intentionally limited to the browser module harness under `coverage/playwright/harness/`. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
 `Verify: all tests and coverage` is the repo-standard local job. If CI is introduced later, it should mirror the same command list rather than reassemble the test stack in a second place.
-The current simulator smoke implementation remains Windows-centric because it looks up Zepp simulator metadata under `APPDATA`; Linux simulator parity should be treated as a follow-up, not an assumed baseline.
+The current simulator smoke implementation now has a Linux baseline through `${XDG_CONFIG_HOME:-~/.config}/simulator`. Use `ZEPP_SIMULATOR_ROOT` if your simulator metadata lives elsewhere.
 
 ## What is still missing
 
@@ -233,7 +236,7 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.
 - Zeus Bridge may ask the user to choose the active online target, for example `Balance 2`, when multiple candidates are available.
 - `zeus dev` may also ask the user to choose the preview target, for example `Amazfit Balance 2`, when multiple simulator device profiles are available.
-- Simulator deployment can be verified from files and logs even when CLI output is quiet: `last_app_info.json`, the deployed app folder under `AppData\Roaming\simulator\apps\PourOverFlow20001`, and recent `side-service` `status:opened` lines in `renderer.log`.
+- Simulator deployment can be verified from files and logs even when CLI output is quiet: `last_app_info.json`, the deployed app folder under the resolved simulator root (`%APPDATA%/simulator` on Windows or `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux), and recent `side-service` `status:opened` lines in `renderer.log`.
 - `shared/watch/layouts.js` now uses `getDeviceInfo()` together with `data:os.device.info`, and it also keeps a fallback layout size so a permission problem does not immediately crash first paint.
 - The latest simulator run confirmed that `page/home/index.js` reached full widget render successfully; a later console `ui pause` entry was not, by itself, proof of a home-page build crash.
 - Automatic startup bootstrap is restored for real hardware, but `shared/watch/sync-bridge.js` still skips it in simulator heuristic mode (`Battery().getCurrent() === 0`) while the simulator-side `@zos/ble.send` path is still being debugged.

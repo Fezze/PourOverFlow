@@ -23,7 +23,6 @@
 
 ### Tooling follow-up
 
-- Generalize the simulator smoke script so it does not depend on Windows-only `APPDATA` paths before treating Linux simulator smoke as a supported baseline.
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.
 - Decide whether the Playwright module harness should stay focused on browser-safe shared modules or grow browser stubs for selected `@zos/*` modules.
 - Only keep pushing toward literal `100%` local coverage if it still matters; the main remaining hotspots are defensive branches in `sync-bridge`, storage helpers, validators, router edge paths, display-guard behavior, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`.

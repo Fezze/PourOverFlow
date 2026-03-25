@@ -7,6 +7,7 @@ import {
   DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV,
   DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR,
   DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS,
+  DEFAULT_ZEPP_SIMULATOR_ROOT_ENV,
   buildCoverageRoots,
   buildCoverageRootsWithAdditionalRoots,
   getSimulatorAppSourceCandidates,
@@ -19,6 +20,7 @@ import {
   normalizeCoverageFilePath,
   parseDevToolsActivePort,
   parsePlaywrightCoverageArgs,
+  resolveSimulatorRoot,
   toCoverageDisplayPath
 } from "../scripts/playwright-coverage-helpers.mjs";
 
@@ -248,6 +250,80 @@ describe("playwright coverage helpers", () => {
         [DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV]: "D:/Portable/Chrome/chrome.exe"
       } as NodeJS.ProcessEnv)[0]
     ).toBe("D:/Portable/Chrome/chrome.exe");
+  });
+
+  it("resolves the simulator root from an explicit override", () => {
+    expect(
+      normalizePathForExpect(
+        resolveSimulatorRoot({
+          env: {
+            [DEFAULT_ZEPP_SIMULATOR_ROOT_ENV]: "/tmp/custom-simulator-root"
+          },
+          platform: "linux",
+          homeDir: "/home/deck"
+        })
+      )
+    ).toBe(normalizePathForExpect(path.resolve("/tmp/custom-simulator-root")));
+  });
+
+  it("resolves the simulator root from APPDATA on Windows", () => {
+    expect(
+      normalizePathForExpect(
+        resolveSimulatorRoot({
+          env: {
+            APPDATA: "C:/Users/krzys/AppData/Roaming"
+          },
+          platform: "win32",
+          homeDir: "C:/Users/krzys"
+        })
+      )
+    ).toBe(normalizePathForExpect(path.resolve("C:/Users/krzys/AppData/Roaming/simulator")));
+  });
+
+  it("resolves the simulator root from XDG config on Linux", () => {
+    expect(
+      normalizePathForExpect(
+        resolveSimulatorRoot({
+          env: {
+            XDG_CONFIG_HOME: "/home/deck/.config"
+          },
+          platform: "linux",
+          homeDir: "/home/deck"
+        })
+      )
+    ).toBe(normalizePathForExpect(path.resolve("/home/deck/.config/simulator")));
+  });
+
+  it("falls back to ~/.config on Linux when XDG config is unset", () => {
+    expect(
+      normalizePathForExpect(
+        resolveSimulatorRoot({
+          env: {},
+          platform: "linux",
+          homeDir: "/home/deck"
+        })
+      )
+    ).toBe(normalizePathForExpect(path.resolve("/home/deck/.config/simulator")));
+  });
+
+  it("rejects simulator root resolution when no required env is available", () => {
+    expect(() =>
+      resolveSimulatorRoot({
+        env: {},
+        platform: "win32",
+        homeDir: ""
+      })
+    ).toThrow(`Could not resolve the Zepp simulator root. Set ${DEFAULT_ZEPP_SIMULATOR_ROOT_ENV} or make APPDATA available.`);
+
+    expect(() =>
+      resolveSimulatorRoot({
+        env: {},
+        platform: "linux",
+        homeDir: ""
+      })
+    ).toThrow(
+      `Could not resolve the Zepp simulator root. Set ${DEFAULT_ZEPP_SIMULATOR_ROOT_ENV}, XDG_CONFIG_HOME, or HOME.`
+    );
   });
 });
 

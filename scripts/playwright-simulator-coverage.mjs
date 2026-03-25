@@ -1,5 +1,6 @@
 import path from "node:path";
 import http from "node:http";
+import os from "node:os";
 import { chromium } from "playwright-core";
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import istanbulCoverage from "istanbul-lib-coverage";
@@ -16,6 +17,7 @@ import {
   isSimulatorDeploymentForCurrentProject,
   isRelevantCoveragePathWithOptions,
   getMockBrowserExecutableCandidates,
+  resolveSimulatorRoot,
   normalizeCoverageFilePathWithOptions,
   parseDevToolsActivePort,
   parsePlaywrightCoverageArgs,
@@ -58,7 +60,11 @@ async function main() {
 }
 
 async function runSimulatorCoverage(options) {
-  const simulatorRoot = path.join(resolveAppData(), "simulator");
+  const simulatorRoot = resolveSimulatorRoot({
+    env: process.env,
+    platform: process.platform,
+    homeDir: os.homedir()
+  });
   const devToolsPortPath = path.join(simulatorRoot, "DevToolsActivePort");
   const lastAppInfoPath = path.join(simulatorRoot, "last_app_info.json");
   const outputDir = path.resolve(PROJECT_ROOT, options.outputDir);
@@ -66,7 +72,8 @@ async function runSimulatorCoverage(options) {
     mode: "simulator",
     startedAt: new Date().toISOString(),
     durationMs: options.durationMs,
-    outputDir
+    outputDir,
+    simulatorRoot
   };
 
   const devToolsInfo = parseDevToolsActivePort(await readFile(devToolsPortPath, "utf8"));
@@ -258,14 +265,6 @@ async function fetchInspectableSimulatorPages(devToolsPort) {
   }
 
   return payload.filter((page) => isInspectablePageUrl(page?.url));
-}
-
-function resolveAppData() {
-  if (!process.env.APPDATA) {
-    throw new Error("APPDATA is not available, so the simulator DevTools port file could not be located.");
-  }
-
-  return process.env.APPDATA;
 }
 
 async function assertFreshSimulatorDeployment({ projectRoot, lastAppInfo }) {

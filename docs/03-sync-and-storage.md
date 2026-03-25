@@ -22,14 +22,14 @@ The watch stores operational data only:
 - latest result,
 - sync metadata together with a queue of unsynced history entries.
 
-Implementation state after Stage 6 code implementation:
+Implementation state:
 
 - `catalog_cache_v1`, `last_result_v1`, `sync_meta_v1`, and `active_session_v1` are already persisted locally on the watch,
 - active sessions are reconciled from timestamps on app entry before new phone bootstrap is required,
 - phone-side storage-driven bootstrap pushes are coalesced with a short debounce,
 - phone-side sync now schedules only the affected slice (`tools`, `catalog`, or `history`) instead of pushing a full bootstrap snapshot on every storage write,
 - bootstrap requests are revision-aware, so the phone may answer with only the stale slices or with nothing if the watch is already up to date,
-- real-device validation for wake, anti-sleep, and feedback behavior still remains a Stage 6 follow-up.
+- the remaining real-device follow-up is comfort validation for haptics and round-screen watch fit, not the basic transport or resume mechanics.
 
 ## Phone-side storage keys
 
@@ -327,7 +327,7 @@ This is intentional. The active session lives on its own snapshot.
 
 ## Resume policy
 
-Resume should depend on `active_session_v1`, not on sync from the phone. Stage 6 now reconciles session state from persisted timestamps before asking the phone for fresh bootstrap data, but real-device confirmation is still required.
+Resume should depend on `active_session_v1`, not on sync from the phone. The runtime now reconciles session state from persisted timestamps before asking the phone for fresh bootstrap data, and real-watch logs have already confirmed the core resume path.
 
 During resume:
 

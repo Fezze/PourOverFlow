@@ -84,7 +84,14 @@ Current platform note:
 - `npm test`, `npm run test:coverage`, and `zeus build` should work once Node and Zeus CLI are installed.
 - `npm run test:playwright:harness` and `npm run test:playwright:coverage:harness` need the browser path above on Linux.
 - when VS Code runs as a Flatpak, prefer the repo wrapper `scripts/playwright-flatpak-host-browser.sh` so Playwright can launch host Chromium with forwarded pipe FDs.
-- `npm run test:playwright` is still Windows-centric today because the simulator smoke script reads Zepp simulator metadata from `APPDATA`; treat Linux simulator smoke as unverified until that path is generalized.
+- `npm run test:playwright` now supports the common Linux simulator path too:
+  - Windows: `%APPDATA%/simulator`
+  - Linux: `${XDG_CONFIG_HOME:-~/.config}/simulator`
+- if your simulator metadata lives somewhere custom, set `ZEPP_SIMULATOR_ROOT` before the simulator smoke command.
+
+```bash
+export ZEPP_SIMULATOR_ROOT="$HOME/.config/simulator"
+```
 
 ## Most important documents
 
@@ -125,7 +132,7 @@ The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\doc
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in sequence without relying on a wrapper script or CI.
 - `zeus build` remains the required compile gate after larger changes.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
-- the simulator smoke path currently assumes a Windows Zepp simulator installation because it reads simulator metadata from `APPDATA`.
+- the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.
 
 Playwright in this repo is intentionally split in two:
 - simulator smoke only, through `npm run test:playwright`

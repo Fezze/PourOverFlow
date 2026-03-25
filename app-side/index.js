@@ -27,20 +27,14 @@ import {
 const STORAGE_PUSH_DEBOUNCE_MS = 150;
 const inboundBridgeTransportState = createBridgeTransportState();
 
-console.log("PourOverFlow app-side module loaded");
-
 function sendEnvelope(syncEnvelope) {
   try {
     if (!messaging || !messaging.peerSocket || typeof messaging.peerSocket.send !== "function") {
-      console.log("App-side peerSocket send is unavailable");
       return false;
     }
 
     const payload = encodeEnvelopeForPeerSocket(syncEnvelope);
     const transportFrames = buildChunkedBridgeTransportPayloads(payload);
-    console.log(
-      `App-side sending sync envelope type=${syncEnvelope.messageType} bytes=${payload ? payload.byteLength : "n/a"} chunks=${transportFrames.length}`
-    );
     transportFrames.forEach((frameBuffer) => {
       messaging.peerSocket.send(frameBuffer);
     });
@@ -93,11 +87,9 @@ function pushSnapshotSlices(settingsStorage, options = {}) {
   );
 
   if (!orderedSlices.length) {
-    console.log("App-side skipped snapshot push because the watch is already up to date");
     return false;
   }
 
-  console.log(`App-side pushing sync slices: ${orderedSlices.join(", ")}`);
   let sentAny = false;
 
   orderedSlices.forEach((slice) => {
@@ -164,24 +156,16 @@ function ensureAppSideRuntime(service) {
     const snapshotPushScheduler = createSnapshotPushScheduler();
     service.snapshotPushScheduler = snapshotPushScheduler;
     service.settingsStorage = settingsStorage;
-    const snapshot = ensurePhoneStorage(settingsStorage);
-    console.log(
-      `PourOverFlow app-side ready. tools=${snapshot.tools.length} recipes=${snapshot.recipeIndex.length} history=${snapshot.historyIndex.length}`
-    );
+    ensurePhoneStorage(settingsStorage);
 
     if (!messaging || !messaging.peerSocket || typeof messaging.peerSocket.addListener !== "function") {
-      console.log("App-side peerSocket listener is unavailable");
       return false;
     }
 
     messaging.peerSocket.addListener("message", (payload) => {
-      console.log(`App-side received peerSocket payload bytes=${payload ? payload.byteLength : "n/a"}`);
       const transportResult = readBridgeTransportPayload(inboundBridgeTransportState, payload);
 
       if (transportResult.status === "pending") {
-        console.log(
-          `App-side waiting for chunked sync envelope transfer=${transportResult.transferId} chunk=${transportResult.chunkIndex + 1}/${transportResult.chunkCount}`
-        );
         return;
       }
 
@@ -196,8 +180,6 @@ function ensureAppSideRuntime(service) {
         console.log("App-side failed to decode peerSocket payload");
         return;
       }
-
-      console.log(`App-side decoded sync envelope type=${syncEnvelope.messageType}`);
 
       if (syncEnvelope.messageType === SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP) {
         const phoneSnapshot = readPhoneSnapshot(settingsStorage);
@@ -241,11 +223,6 @@ function ensureAppSideRuntime(service) {
       if (key === SETTINGS_UI_STORAGE_KEY) {
         return;
       }
-
-      const nextSnapshot = readPhoneSnapshot(settingsStorage);
-      console.log(
-        `settingsStorage changed: ${key} (tools=${nextSnapshot.tools.length}, recipes=${nextSnapshot.recipeIndex.length}, history=${nextSnapshot.historyIndex.length})`
-      );
       snapshotPushScheduler.schedule(settingsStorage, key);
     });
 
@@ -262,11 +239,9 @@ function ensureAppSideRuntime(service) {
 
 AppSideService({
   onInit() {
-    console.log("PourOverFlow app-side onInit");
     ensureAppSideRuntime(this);
   },
   onRun() {
-    console.log("PourOverFlow app-side onRun");
     ensureAppSideRuntime(this);
   },
   onDestroy() {

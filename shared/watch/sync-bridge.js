@@ -30,7 +30,6 @@ import {
   readBridgeTransportPayload
 } from "../sync/bridge-transport.js";
 import { SYNC_MESSAGE_TYPES } from "../sync/message-types";
-import { isProbablySimulatorDevice } from "./runtime-env";
 import { logValidation } from "./validation-log";
 
 let isInitialized = false;
@@ -50,10 +49,6 @@ function isBridgeTransportConnected() {
 }
 
 function markBridgeHandshakeResolved(reason, options = {}) {
-  if (!hasResolvedShake) {
-    console.log(`Watch sync handshake resolved via ${reason}: appSidePort=${appSidePort}`);
-  }
-
   hasResolvedShake = true;
 
   if (options.markConnected) {
@@ -62,21 +57,11 @@ function markBridgeHandshakeResolved(reason, options = {}) {
 }
 
 function sendBuffer(buffer, size, label) {
-  const bufferType =
-    buffer && buffer.constructor && buffer.constructor.name ? buffer.constructor.name : typeof buffer;
-
-  console.log(
-    `Sending watch sync payload type=${label} bufferType=${bufferType} byteLength=${buffer ? buffer.byteLength : "n/a"} size=${size}`
-  );
-
   if (typeof bleSend !== "function") {
     throw new TypeError("BLE send is unavailable in the current runtime");
   }
 
-  const result = bleSend(buffer, size);
-
-  console.log(`bleSend returned type=${typeof result} value=${String(result)}`);
-  return result;
+  return bleSend(buffer, size);
 }
 
 function sendShake() {
@@ -118,14 +103,10 @@ function sendEnvelope(syncEnvelope) {
 
 function safeSendEnvelope(syncEnvelope) {
   if (!canAttemptBridgeSend()) {
-    console.log(
-      `Skipping watch sync send type=${syncEnvelope.messageType} connected=${isWatchConnected()} bleSendType=${typeof bleSend}`
-    );
     return false;
   }
 
   if (!hasBridgeHandshake()) {
-    console.log(`Deferring watch sync type=${syncEnvelope.messageType} until shake resolves`);
     sendShake();
     return false;
   }
@@ -154,10 +135,6 @@ function flushStartupSyncIfReady() {
   shouldBootstrapAfterShake = false;
   shouldFlushQueueAfterShake = false;
 
-  console.log(
-    `Automatic startup bootstrap attempted: requestBootstrap=${requestedBootstrap} flushPendingHistoryQueue=${flushedQueue}`
-  );
-
   return requestedBootstrap || flushedQueue;
 }
 
@@ -170,7 +147,6 @@ function handleIncomingMessage(index, data, size) {
 
   if (bridgeFrame && bridgeFrame.type === APP_BRIDGE_MESSAGE_TYPES.SHAKE) {
     markBridgeHandshakeResolved("remote-shake", { markConnected: true });
-    console.log(`Watch sync bridge shake received: appSidePort=${appSidePort}`);
     flushStartupSyncIfReady();
     return;
   }
@@ -182,9 +158,6 @@ function handleIncomingMessage(index, data, size) {
   );
 
   if (transportResult.status === "pending") {
-    console.log(
-      `Watch sync bridge waiting for chunked payload transfer=${transportResult.transferId} chunk=${transportResult.chunkIndex + 1}/${transportResult.chunkCount}`
-    );
     return;
   }
 
@@ -204,7 +177,6 @@ function handleIncomingMessage(index, data, size) {
   }
 
   markBridgeHandshakeResolved("incoming-sync-envelope", { markConnected: true });
-  console.log(`Watch sync bridge received type=${syncEnvelope.messageType} index=${index} size=${size}`);
 
   switch (syncEnvelope.messageType) {
     case SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG:
@@ -226,7 +198,6 @@ function handleIncomingMessage(index, data, size) {
 
 function handleConnectionStatus(status) {
   const connected = Boolean(status) && typeof bleSend === "function";
-  console.log(`Watch sync connection status changed: connected=${connected}`);
   setConnectionStatus(connected);
 
   if (!connected) {
@@ -250,9 +221,6 @@ export function initWatchSyncBridge() {
     createConnect(handleIncomingMessage);
     addListener(handleConnectionStatus);
     isInitialized = true;
-    console.log(
-      `Watch sync bridge initialized: bleSend=${typeof bleSend} connectStatus=${Boolean(connectStatus())} simulatorHint=${isProbablySimulatorDevice()}`
-    );
     setConnectionStatus(Boolean(connectStatus()) && typeof bleSend === "function");
 
     if (Boolean(connectStatus()) && typeof bleSend === "function") {
@@ -307,9 +275,6 @@ export function primeWatchSyncBridge() {
 
 export function requestBootstrap() {
   if (!canAttemptBridgeSend() || !isBridgeTransportConnected()) {
-    console.log(
-      `Skipping watch bootstrap request connected=${isBridgeTransportConnected()} bleSendType=${typeof bleSend}`
-    );
     logValidation("bootstrap_skip", {
       connected: isBridgeTransportConnected(),
       bleSendType: typeof bleSend

@@ -6,6 +6,7 @@ export const DEFAULT_PLAYWRIGHT_COVERAGE_MODE = "simulator";
 export const DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR = "coverage/playwright/simulator";
 export const DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR = "coverage/playwright/harness";
 export const DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV = "PLAYWRIGHT_COVERAGE_BROWSER";
+export const DEFAULT_ZEPP_SIMULATOR_ROOT_ENV = "ZEPP_SIMULATOR_ROOT";
 export const DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS = 2000;
 
 const WINDOWS_CHROMIUM_CANDIDATES = [
@@ -247,6 +248,36 @@ function normalizeDisplaySegment(value) {
 export function getMockBrowserExecutableCandidates(env = process.env) {
   const override = env[DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV];
   return [override, ...WINDOWS_CHROMIUM_CANDIDATES].filter(Boolean);
+}
+
+export function resolveSimulatorRoot({
+  env = process.env,
+  platform = process.platform,
+  homeDir = env.HOME || env.USERPROFILE || ""
+} = {}) {
+  const explicitRoot = env[DEFAULT_ZEPP_SIMULATOR_ROOT_ENV];
+  if (explicitRoot) {
+    return path.resolve(explicitRoot);
+  }
+
+  if (platform === "win32") {
+    if (!env.APPDATA) {
+      throw new Error(
+        `Could not resolve the Zepp simulator root. Set ${DEFAULT_ZEPP_SIMULATOR_ROOT_ENV} or make APPDATA available.`
+      );
+    }
+
+    return path.resolve(env.APPDATA, "simulator");
+  }
+
+  const configHome = env.XDG_CONFIG_HOME || (homeDir ? path.join(homeDir, ".config") : "");
+  if (!configHome) {
+    throw new Error(
+      `Could not resolve the Zepp simulator root. Set ${DEFAULT_ZEPP_SIMULATOR_ROOT_ENV}, XDG_CONFIG_HOME, or HOME.`
+    );
+  }
+
+  return path.resolve(configHome, "simulator");
 }
 
 function mapHttpCoverageUrlToPath(rawUrl, httpUrlRoots = []) {
