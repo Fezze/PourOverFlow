@@ -12,13 +12,13 @@
 ### Real-device validation
 
 - Validate wake-up relaunch and anti-sleep behavior on real hardware during an active brew.
-- Validate haptic and sound cues on real hardware, including silent-mode behavior and fallback paths.
+- Validate haptic cues on real hardware, including comfort and reliability during a real brew.
 - Validate that offline completion still queues history safely and replays to the phone when connectivity returns.
 - Validate that partial slice pushes keep recipe edits responsive and that watch startup still feels fast when the phone is unavailable.
 
 ### Watch UI follow-up
 
-- Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, `result-summary`, and `validation`.
+- Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, and `result-summary`.
 - Refine the custom side-by-side action dock on `brew-active` until it matches the intended Zepp-style shape more closely.
 - Add page-level scrolling or another safe overflow strategy on static watch pages that can exceed the comfortable round-screen safe area.
 - If tighter visual matching is still desired later, store a concrete project Figma node or page link in the repo and map the watch screens to it explicitly.

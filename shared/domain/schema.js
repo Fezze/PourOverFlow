@@ -12,8 +12,6 @@ export const FEEDBACK_CUES = [
   "none",
   "vibrate_short",
   "vibrate_long",
-  "sound_soft",
-  "sound_strong",
   "combo_short"
 ];
 

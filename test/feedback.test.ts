@@ -23,8 +23,26 @@ describe("feedback helpers", () => {
     const { getFeedbackLabel } = await loadFeedbackModule();
 
     expect(getFeedbackLabel("vibrate_short")).toBe("Short haptic cue");
-    expect(getFeedbackLabel("sound_strong")).toBe("Strong system sound");
+    expect(getFeedbackLabel("combo_short")).toBe("Short haptic cue");
     expect(getFeedbackLabel("unknown")).toBe("No cue");
+  });
+
+  it("reports unsupported audio cues as unavailable", async () => {
+    const runtime = await loadRuntimeModule();
+    runtime.resetZeppRuntime();
+    const { playFeedbackCueDetailed } = await loadFeedbackModule();
+
+    expect(playFeedbackCueDetailed("sound_strong")).toMatchObject({
+      success: false,
+      channel: "none",
+      attempts: [
+        {
+          channel: "audio",
+          sourceType: "sound_strong",
+          reason: "unsupported"
+        }
+      ]
+    });
   });
 
   it("plays a direct vibration cue for short haptic feedback", async () => {
@@ -41,24 +59,22 @@ describe("feedback helpers", () => {
     });
   });
 
-  it("falls back to the buzzer when combo feedback cannot use the vibration motor", async () => {
+  it("keeps combo feedback haptic-only", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
 
-    playFeedbackCue("vibrate_short");
-    const vibrator = getLastItem(runtime.__zeusRuntime.vibratorInstances);
-    vibrator.start.mockImplementation(() => {
-      throw new Error("vibration unavailable");
-    });
-
     expect(playFeedbackCue("combo_short")).toBe(true);
 
-    const fallbackBuzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    expect(fallbackBuzzer.start).toHaveBeenCalledWith(2, 0);
+    const vibrator = getLastItem(runtime.__zeusRuntime.vibratorInstances);
+    expect(vibrator.start).toHaveBeenCalledWith({
+      mode: 103
+    });
+    expect(runtime.__zeusRuntime.buzzerInstances.size).toBe(0);
+    expect(runtime.__zeusRuntime.systemSoundInstances.size).toBe(0);
   });
 
-  it("plays the long vibration cue and rejects unsupported buzzer fallback source types", async () => {
+  it("plays the long vibration cue and does not fall back to non-haptic channels", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
@@ -72,57 +88,19 @@ describe("feedback helpers", () => {
     vibrator.start.mockImplementation(() => {
       throw new Error("vibration unavailable");
     });
-    playFeedbackCue("vibrate_long");
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    buzzer.getSourceType.mockReturnValue({
-      OPERATE: 1
-    });
     expect(playFeedbackCue("vibrate_long")).toBe(false);
+    expect(runtime.__zeusRuntime.buzzerInstances.size).toBe(0);
   });
 
-  it("falls back to the buzzer when system sounds cannot provide the requested cue", async () => {
+  it("treats sound cues as unsupported in the haptics-only runtime", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();
     const { playFeedbackCue } = await loadFeedbackModule();
 
-    playFeedbackCue("sound_soft");
-    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
-    systemSound.getSourceType.mockReturnValue({});
-    expect(playFeedbackCue("sound_strong")).toBe(true);
-
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    expect(buzzer.start).toHaveBeenCalledWith(2, 0);
-  });
-
-  it("tries alternate strong sound source types before falling back to the buzzer", async () => {
-    const runtime = await loadRuntimeModule();
-    runtime.resetZeppRuntime();
-    const { playFeedbackCue } = await loadFeedbackModule();
-
-    playFeedbackCue("sound_soft");
-    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
-    systemSound.getSourceType.mockReturnValue({
-      REGULAR: 10,
-      MESSAGE: 11
-    });
-
-    expect(playFeedbackCue("sound_strong")).toBe(true);
-    expect(systemSound.start).toHaveBeenLastCalledWith(11, 0);
-  });
-
-  it("treats explicit start failures as a real failure and falls back to the buzzer", async () => {
-    const runtime = await loadRuntimeModule();
-    runtime.resetZeppRuntime();
-    const { playFeedbackCue } = await loadFeedbackModule();
-
-    playFeedbackCue("sound_soft");
-    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
-    systemSound.start.mockReturnValue(false);
-
-    expect(playFeedbackCue("sound_strong")).toBe(true);
-
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    expect(buzzer.start).toHaveBeenCalledWith(2, 0);
+    expect(playFeedbackCue("sound_soft")).toBe(false);
+    expect(playFeedbackCue("sound_strong")).toBe(false);
+    expect(runtime.__zeusRuntime.systemSoundInstances.size).toBe(0);
+    expect(runtime.__zeusRuntime.buzzerInstances.size).toBe(0);
   });
 
   it("returns false when the requested cue cannot be played", async () => {
@@ -131,14 +109,6 @@ describe("feedback helpers", () => {
     const { playFeedbackCue } = await loadFeedbackModule();
 
     expect(playFeedbackCue("unknown")).toBe(false);
-
-    playFeedbackCue("sound_soft");
-    const systemSound = getLastItem(runtime.__zeusRuntime.systemSoundInstances);
-    systemSound.getEnabled.mockReturnValue(false);
-    playFeedbackCue("sound_strong");
-    const buzzer = getLastItem(runtime.__zeusRuntime.buzzerInstances);
-    buzzer.isEnabled.mockReturnValue(false);
-
     expect(playFeedbackCue("sound_strong")).toBe(false);
   });
 });

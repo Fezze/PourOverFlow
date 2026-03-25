@@ -40,7 +40,7 @@ A Zepp/Amazfit user who wants a simple `choose -> start -> execute` flow, withou
 - start of the brewing session,
 - guided steps with a step timer and full-session timer,
 - steps that require manual progression,
-- best-effort haptic feedback and optional audio,
+- best-effort haptic feedback,
 - session resume after reopening the app or waking the watch,
 - saving the latest result when the session ends.
 

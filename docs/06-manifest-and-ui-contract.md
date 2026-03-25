@@ -69,8 +69,7 @@ Implementation should start from this outline:
             "page/recipe-list/index",
             "page/recipe-detail/index",
             "page/brew-active/index",
-            "page/result-summary/index",
-            "page/validation/index"
+            "page/result-summary/index"
           ]
         },
         "app-side": {
@@ -138,9 +137,6 @@ page/brew-active/index.s.layout.js
 page/result-summary/index.js
 page/result-summary/index.r.layout.js
 page/result-summary/index.s.layout.js
-page/validation/index.js
-page/validation/index.r.layout.js
-page/validation/index.s.layout.js
 setting/index.jsx
 app-side/index.js
 ```
@@ -152,7 +148,6 @@ The watch UI now follows these repo-level rules:
 - populated chooser pages stay quiet and selection-focused,
 - `tool-list` and `recipe-list` rely on native scrolling instead of piling extra footer actions onto list screens,
 - brewing starts from `recipe-detail`, not directly from a list tap,
-- `validation` is the dedicated watch surface for runtime and hardware checks,
 - round-screen layouts should use a conservative content width instead of treating the full black circle as a safe text area,
 - card content should keep visible inner padding from the panel edges,
 - destructive or secondary watch actions should prefer short icon-first treatment over another full-width text button,

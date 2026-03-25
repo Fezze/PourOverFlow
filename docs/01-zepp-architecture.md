@@ -229,7 +229,7 @@ Do not add at the start:
 ### Best-effort feedback
 
 - haptics through `Vibrator` are the priority,
-- audio through `SystemSounds` or `Buzzer` only after a capability check and with system sound mode in mind.
+- the current watch baseline is haptics-only because real-device audio cues were not reliable across the target runtime.
 
 ### Explicitly out for the baseline
 

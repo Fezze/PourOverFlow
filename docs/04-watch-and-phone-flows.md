@@ -234,7 +234,6 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 - total time,
 - basic time delta,
 - CTA to browse again,
-- CTA to open validation checks,
 - CTA to return home.
 
 ### What we do not do here
@@ -242,33 +241,6 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 - full note editing,
 - full text rating workflow,
 - browsing the full history.
-
-## Watch flow 10 - hardware validation
-
-### Screen
-
-`validation`
-
-### Goal
-
-Give the product a stable on-watch surface for manual hardware checks without mixing that logic into the main brew pages.
-
-### Contents
-
-- current bridge status,
-- current cache and queue status,
-- action row for a short haptic cue,
-- action row for a soft system sound,
-- action row for a bootstrap plus pending-queue sync check,
-- CTA to return home.
-
-### Behavior
-
-- the page rebuilds on runtime events for `catalog`, `last_result`, `sync_meta`, `connection`, and validation-note updates,
-- haptic actions should try direct vibration first and still write a readable validation note when the capability is unavailable,
-- sound actions should try a stronger system-sound set first and then fall back to the buzzer before writing the validation note,
-- the sync action should stay fast when the bridge is offline and report that it skipped the request instead of blocking the watch UI,
-- the page is intentionally entered from `result-summary`, so hardware validation stays adjacent to a completed or resumed brew flow instead of crowding `home`.
 
 ## Phone flow 1 - `setting/` boot
 

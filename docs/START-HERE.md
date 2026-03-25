@@ -78,13 +78,12 @@ Current verified platform note:
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists, real method icons, and a dedicated recipe detail/start page,
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
-- a dedicated `validation` page, reachable from `result-summary`, for on-watch hardware checks,
-- Vibrator-first validation cues with stronger sound validation that now tries multiple system-sound source types before falling back to the buzzer,
+- a haptics-first watch feedback model without a dedicated hardware-check page,
 - debounced storage-driven snapshot pushes in `app-side/`,
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
 - mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay,
-- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `result-summary`, and `validation`, including runtime-event refresh and empty or stale-state fallbacks,
+- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`, including runtime-event refresh and empty or stale-state fallbacks,
 - a round-screen watch UI pass that removes repeated app-name chrome, keeps populated chooser screens quieter, adds a dedicated recipe detail/start page, and uses custom lower action docks on the main action screens.
 
 ## Test loop
@@ -113,7 +112,7 @@ The current simulator smoke implementation remains Windows-centric because it lo
 
 - hard validation of wake-up relaunch and anti-sleep behavior on a real device,
 - hard feedback validation on a real device,
-- real-watch use of the `validation` page to confirm haptics, audio, and offline-safe sync checks,
+- confirmation that the haptics-only feedback path is comfortable and reliable on real hardware,
 - confirmation that the latest round-screen spacing pass and custom action docks still clear the mask comfortably on real hardware,
 - literal 100% local coverage, if still desired, now mostly means the remaining hotspots in `sync-bridge`, `phone-store`, `validators`, the page shells with defensive empty-state branches, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 
@@ -226,7 +225,7 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
 - The mocked Zepp runtime harness now also exercises page shells by aliasing `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocking `zosLoader:` layout modules, and asserting widget creation plus runtime-event refresh behavior from captured `Page(...)` definitions.
-- The watch now has a dedicated `validation` page for hardware checks. It intentionally focuses on readable bridge and queue status plus explicit haptic, sound, and sync actions instead of becoming a generic debug surface.
+- The watch no longer keeps a dedicated hardware-check page. Real-device feedback validation should happen through the normal brew flow and log inspection instead of a separate on-watch debug surface.
 - The repo now uses `scripts/playwright-simulator-coverage.mjs` for two meaningful Playwright roles only: simulator smoke without coverage and module-harness smoke or coverage for browser-safe shared code.
 - Simulator-side V8 coverage was intentionally removed from the repo-standard test menu because the current simulator exposes shell/framework/preload scripts more reliably than PourOverFlow app code.
 - In simulator validation, `zeus dev` may deploy to the simulator more reliably than bridge `install`; use bridge mainly for connection and target-aware debugging if `install` looks like a no-op.

@@ -95,33 +95,6 @@ describe("dependency-gated edge branches", () => {
     expect(consoleSpy).toHaveBeenCalled();
   });
 
-  it("covers feedback fallback when SystemSounds cannot be constructed", async () => {
-    vi.doMock("@zos/sensor", () => ({
-      Buzzer: class Buzzer {
-        isEnabled() {
-          return true;
-        }
-        getSourceType() {
-          return { SUCCESS: 2 };
-        }
-        start() {
-          return true;
-        }
-      },
-      SystemSounds: class SystemSounds {
-        constructor() {
-          throw new Error("system sounds unavailable");
-        }
-      }
-    }));
-
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const feedback = await import("../shared/engine/feedback.js?system-sounds-fallback");
-
-    expect(() => feedback.playFeedbackCue("sound_soft")).not.toThrow();
-    expect(consoleSpy).toHaveBeenCalled();
-  });
-
   it("covers sync-bridge guard branches when BLE send is unavailable even though the transport reports connected", async () => {
     vi.doMock("@zos/ble", () => ({
       addListener: vi.fn(),

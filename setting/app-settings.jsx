@@ -138,8 +138,15 @@ const STEP_KIND_OPTIONS = RECIPE_STEP_KINDS.map((stepKind) => ({
   value: stepKind
 }));
 
+const FEEDBACK_LABELS = {
+  none: "none",
+  vibrate_short: "short haptic",
+  vibrate_long: "long haptic",
+  combo_short: "finish haptic"
+};
+
 const FEEDBACK_OPTIONS = FEEDBACK_CUES.map((feedbackCue) => ({
-  name: feedbackCue,
+  name: FEEDBACK_LABELS[feedbackCue] || feedbackCue,
   value: feedbackCue
 }));
 

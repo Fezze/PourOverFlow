@@ -2,7 +2,7 @@ import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import { getToolById } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
-import { goHome, goToToolList, goToValidation, PAGE_URLS } from "../../shared/watch/router";
+import { goHome, goToToolList, PAGE_URLS } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   ACTION_DOCK,
@@ -84,13 +84,6 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: "Check",
-      click_func: () => {
-        goToValidation();
-      }
-    });
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[2],
       text: "Home",
       click_func: () => {
         goHome();
@@ -102,7 +95,7 @@ Page({
       h: 24,
       color: MUTED_TEXT,
       text: lastResult
-        ? "Open checks or start another brew."
+        ? "Start another brew or go home."
         : "Full history stays on the phone."
     });
   }
