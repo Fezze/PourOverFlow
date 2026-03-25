@@ -176,6 +176,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - Current verified limitation: the simulator DevTools endpoint may expose only the Electron shell page under `Program Files/simulator/resources/app.asar/...`; in that state simulator-side V8 coverage is not meaningful for app-code assertions and should be treated as blocked by the simulator, not by the app code.
 - The simulator-side Playwright commands now include a freshness gate: they verify that `last_app_info.json` points at this repo and that the deployed simulator app is not older than the latest app-facing source files. If the gate fails, redeploy with `zeus dev` before trusting simulator results.
 - Additional verified limitation after a fresh deploy: the simulator Playwright coverage path may still yield only framework/preload scripts such as `mobile-main-service.js` and simulator preload code, not PourOverFlow app scripts. The repo intentionally keeps simulator Playwright as smoke-only and uses module-harness coverage as the meaningful Playwright coverage path.
+- Cross-platform simulator-root helpers must not rely on the host OS path separator when interpreting Linux or Flatpak `XDG_CONFIG_HOME` values. Keep Linux path detection slash-agnostic so coverage and simulator helpers still work when the repo is edited from Windows but validated against Linux-style paths in tests.
 
 ## When to update documents
 
