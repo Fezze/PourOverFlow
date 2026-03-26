@@ -165,7 +165,6 @@ function createDefaultRuntimeState() {
     selectedRecipeId: null,
     activeSession,
     lastResult,
-    validationNote: null,
     catalogCache,
     syncMeta,
     catalogReady: Number.isFinite(catalogCache.cachedAt) && catalogCache.cachedAt > 0,
@@ -409,18 +408,4 @@ export function setConnectionStatus(connected) {
 
 export function isWatchConnected() {
   return Boolean(getRuntimeState().connected);
-}
-
-export function readValidationNote() {
-  return getRuntimeState().validationNote || null;
-}
-
-export function writeValidationNote(note) {
-  const nextNote = typeof note === "string" && note ? note : null;
-  getRuntimeState().validationNote = nextNote;
-  emitRuntimeEvent({
-    type: "validation_note",
-    value: nextNote
-  });
-  return nextNote;
 }

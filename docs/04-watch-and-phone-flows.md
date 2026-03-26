@@ -53,7 +53,8 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 If a tool has no recipes:
 
 - still show the tool in the list,
-- in `recipe-list`, show an empty state with CTA `Create on phone`.
+- in `recipe-list`, show an empty state that says recipes are created on the phone first,
+- keep the watch CTA focused on `Refresh from phone` after the user updates the library in Settings.
 
 ## Watch flow 3 - recipe selection
 
@@ -92,6 +93,7 @@ Minimum UI set:
 
 1. read `selectedRecipeId` from watch runtime state,
 2. show a compact summary of the selected `RecipeSnapshot`,
+3. keep longer recipe metadata inside compact scrollable summary rows instead of one tall static text block,
 3. keep the start CTA separate from the browse list,
 4. in the healthy state, prefer a single prominent `Start brew` CTA and let system back navigation return to `recipe-list`,
 5. allow going back to `recipe-list` without mutating the recipe snapshot,
@@ -241,6 +243,7 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 - status,
 - total time,
 - basic time delta,
+- compact scrollable summary rows when the body content grows past the comfortable round-screen safe area,
 - CTA to browse again,
 - CTA to return home.
 

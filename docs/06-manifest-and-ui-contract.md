@@ -150,6 +150,7 @@ The watch UI now follows these repo-level rules:
 - brewing starts from `recipe-detail`, not directly from a list tap,
 - round-screen layouts should use a conservative content width instead of treating the full black circle as a safe text area,
 - card content should keep visible inner padding from the panel edges,
+- static detail or summary pages should prefer compact scrollable summary rows over one tall fixed text block when content can exceed the comfortable safe area,
 - destructive or secondary watch actions should prefer short Zepp-safe labels or icon treatment over another full-width text button,
 - active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern.
 

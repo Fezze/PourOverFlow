@@ -19,20 +19,83 @@ import {
 } from "zosLoader:./index.[pf].layout.js";
 
 const MUTED_TEXT = 0xaab4c2;
+const DETAIL_LIST_FRAME = {
+  x: DETAIL_PANEL.x + 10,
+  y: DETAIL_PANEL.y + 12,
+  w: DETAIL_PANEL.w - 20,
+  h: DETAIL_PANEL.h - 24,
+  itemHeight: 68,
+  itemSpace: 8,
+  itemRadius: 18
+};
 
-function buildRecipeBody(recipe) {
+function buildRecipeRows(recipe) {
   const snapshot = recipe.recipeSnapshot;
 
   if (!snapshot) {
-    return "Recipe details are missing from the local snapshot. Return to the list and refresh after the next phone sync.";
+    return [];
   }
 
   return [
-    `${snapshot.coffeeDoseG}g coffee / ${snapshot.totalWaterMl}ml water`,
-    `${snapshot.waterTempC}C / ${snapshot.grindLabel}`,
-    `${Math.round(snapshot.estimatedTotalDurationMs / 1000)}s / ${snapshot.steps.length} steps`,
-    `${snapshot.filterLabel} filter`
-  ].join("\n");
+    {
+      title: "Dose and water",
+      meta: `${snapshot.coffeeDoseG}g coffee / ${snapshot.totalWaterMl}ml water`
+    },
+    {
+      title: "Brew profile",
+      meta: `${snapshot.waterTempC}C / ${snapshot.grindLabel}`
+    },
+    {
+      title: "Time and steps",
+      meta: `${Math.round(snapshot.estimatedTotalDurationMs / 1000)}s / ${snapshot.steps.length} steps`
+    },
+    {
+      title: "Filter",
+      meta: `${snapshot.filterLabel} filter`
+    },
+    {
+      title: "Notes",
+      meta: snapshot.description || "Start when ready."
+    }
+  ];
+}
+
+function createDetailListConfig() {
+  return [
+    {
+      type_id: 1,
+      item_bg_color: 0x171d26,
+      item_bg_radius: DETAIL_LIST_FRAME.itemRadius,
+      item_press_effect: false,
+      text_view: [
+        {
+          x: 16,
+          y: 10,
+          w: DETAIL_LIST_FRAME.w - 32,
+          h: 22,
+          key: "title",
+          color: 0xf5f7fa,
+          text_size: 18,
+          align_h: hmUI.align.LEFT,
+          align_v: hmUI.align.CENTER_V
+        },
+        {
+          x: 16,
+          y: 32,
+          w: DETAIL_LIST_FRAME.w - 32,
+          h: 26,
+          key: "meta",
+          color: 0xaab4c2,
+          text_size: 15,
+          text_style: hmUI.text_style.WRAP,
+          align_h: hmUI.align.LEFT,
+          align_v: hmUI.align.CENTER_V
+        }
+      ],
+      text_view_count: 2,
+      item_height: DETAIL_LIST_FRAME.itemHeight
+    }
+  ];
 }
 
 Page({
@@ -45,6 +108,7 @@ Page({
   build() {
     const selectedRecipe = getSelectedRecipe();
     const snapshot = selectedRecipe ? selectedRecipe.recipeSnapshot : null;
+    const detailRows = selectedRecipe ? buildRecipeRows(selectedRecipe) : [];
     const accentColor = snapshot ? getColorNumber(snapshot.colorToken) : 0x2d8c82;
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
@@ -69,16 +133,37 @@ Page({
       radius: DETAIL_PANEL.radius,
       color: accentColor
     });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      x: BODY_TEXT.x + 14,
-      w: BODY_TEXT.w - 28,
-      y: BODY_TEXT.y + 6,
-      h: BODY_TEXT.h + 14,
-      text: selectedRecipe
-        ? buildRecipeBody(selectedRecipe)
-        : "Open the recipe list again or refresh the phone sync."
-    });
+    if (detailRows.length) {
+      hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
+        x: DETAIL_LIST_FRAME.x,
+        y: DETAIL_LIST_FRAME.y,
+        w: DETAIL_LIST_FRAME.w,
+        h: DETAIL_LIST_FRAME.h,
+        item_space: DETAIL_LIST_FRAME.itemSpace,
+        item_config: createDetailListConfig(),
+        item_config_count: 1,
+        data_array: detailRows,
+        data_count: detailRows.length,
+        data_type_config: [
+          {
+            start: 0,
+            end: detailRows.length - 1,
+            type_id: 1
+          }
+        ],
+        data_type_config_count: 1,
+        enable_scroll_bar: true
+      });
+    } else {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...BODY_TEXT,
+        x: BODY_TEXT.x + 14,
+        w: BODY_TEXT.w - 28,
+        y: BODY_TEXT.y + 6,
+        h: BODY_TEXT.h + 14,
+        text: "Open the recipe list again or refresh the phone sync."
+      });
+    }
     if (ACTION_DOCK) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
     }
@@ -106,7 +191,7 @@ Page({
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
         color: MUTED_TEXT,
-        text: snapshot.description || "Start when ready."
+        text: "Scroll for details, then start when ready."
       });
     }
   }

@@ -148,6 +148,8 @@ The first implementation task from the current repo state is the nearest sensibl
 - `brew-active` now binds the Zepp shortcut key as a secondary confirm / next-step action when the device exposes it; keep it additive, not mandatory.
 - The watch no longer includes a dedicated hardware-check page. Use the normal brew flow plus `[pof-validation]` logs for real-device validation instead of reintroducing a watch-side debug menu.
 - Keep populated watch chooser pages quiet. `tool-list` and `recipe-list` should prioritize selection, not bridge/cache diagnostics or redundant home actions.
+- Keep empty watch chooser pages explicit too. If a brewer has no recipes, the watch should say recipes are created on the phone first and only then offer a refresh action from the watch.
+- `recipe-detail` and `result-summary` now use compact scrollable summary rows instead of one tall static text block; keep that pattern unless a later redesign intentionally replaces it.
 - The current feedback baseline is haptics-only. Treat audio cues as unsupported unless product scope changes explicitly.
 - The latest UX pass follows official Zepp design-system list patterns. If stricter Figma matching is needed later, the repo should first store a concrete project Figma page or node link instead of relying on a generic "use Figma" instruction.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.

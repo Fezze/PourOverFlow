@@ -281,8 +281,11 @@ describe("page shell runtime coverage", () => {
     watchStore.getRuntimeState().selectedToolId = fixture.primaryRecord.toolId;
     watchStore.writeSelectedRecipeId(fixture.primarySummary.recipeId);
     const pageInstance = buildPage(pageDefinition);
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.data_count).toBeGreaterThanOrEqual(4);
     expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Start brew");
     buttons[0].click_func();
@@ -508,8 +511,11 @@ describe("page shell runtime coverage", () => {
 
     const pageInstance = buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
 
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.data_count).toBe(3);
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === fixture.lastResult.recipeName)).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Home")).toBe(true);
@@ -604,10 +610,12 @@ describe("page shell runtime coverage", () => {
     buildPage(pageDefinition);
 
     expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
+    const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
+    expect(textWidgets.some((widget) => String(widget.text).includes("Create recipes on phone first"))).toBe(true);
     expect(buttons).toHaveLength(1);
-    expect(buttons[0].text).toBe("Refresh library");
+    expect(buttons[0].text).toBe("Refresh from phone");
     buttons[0].click_func();
     expect(runtime.ble.send).not.toHaveBeenCalled();
   });
