@@ -608,6 +608,7 @@ describe("page shell runtime coverage", () => {
     expect(textWidgets.some((widget) => widget.text === "Status")).toBe(true);
     expect(textWidgets.some((widget) => widget.text === "Total time")).toBe(true);
     expect(textWidgets.some((widget) => widget.text === "Timing delta")).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Full history stays on the phone."))).toBe(false);
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === fixture.lastResult.recipeName)).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Home")).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(false);
@@ -764,8 +765,10 @@ describe("page shell runtime coverage", () => {
     buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
+    const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
 
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "No result yet")).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Full history stays on the phone."))).toBe(true);
 
     buttons[0].click_func();
     expect(runtime.router.push).toHaveBeenCalledWith({

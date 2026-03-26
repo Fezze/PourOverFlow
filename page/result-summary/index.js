@@ -18,16 +18,16 @@ const PANEL_COLOR = 0x171d26;
 const MUTED_TEXT = 0xaab4c2;
 const RESULT_PANEL = lastResult => ({
   x: lastResult ? TITLE_TEXT.x - 4 : BUTTONS[0].x,
-  y: lastResult ? TITLE_TEXT.y - 16 : BODY_TEXT.y - 8,
+  y: lastResult ? SUBTITLE_TEXT.y + SUBTITLE_TEXT.h + 12 : BODY_TEXT.y - 8,
   w: lastResult ? TITLE_TEXT.w + 8 : BUTTONS[0].w,
-  h: lastResult ? BUTTONS[0].y - (TITLE_TEXT.y - 16) - 14 : 120,
+  h: lastResult ? BUTTONS[0].y - (SUBTITLE_TEXT.y + SUBTITLE_TEXT.h + 12) - 12 : 120,
   radius: 26
 });
 const createResultListFrame = (panel) => ({
   x: panel.x + 10,
-  y: panel.y + 92,
+  y: panel.y + 18,
   w: panel.w - 20,
-  h: panel.h - 102,
+  h: panel.h - 28,
   itemHeight: 62,
   itemSpace: 8,
   itemRadius: 18
@@ -257,12 +257,14 @@ Page({
         }
       });
     }
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      y: lastResult ? BUTTONS[0].y - 34 : BUTTONS[1].y - 34,
-      h: 24,
-      color: MUTED_TEXT,
-      text: "Full history stays on the phone."
-    });
+    if (!lastResult) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...FOOTER_TEXT,
+        y: BUTTONS[1].y - 34,
+        h: 24,
+        color: MUTED_TEXT,
+        text: "Full history stays on the phone."
+      });
+    }
   }
 });

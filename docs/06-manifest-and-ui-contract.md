@@ -150,6 +150,8 @@ The watch UI now follows these repo-level rules:
 - `tool-list` should keep the centered title visible and let the list itself own most of the page height instead of wrapping the populated state in an extra container box,
 - `tool-list` should render the centered title above the active list surface so later list widgets cannot visually bury it,
 - populated `result-summary` may use the same continuous-panel pattern plus a single primary `Home` CTA when `Browse` would route to nearly the same place,
+- populated `result-summary` should keep its first visible summary row below the subtitle block instead of tucking it into the upper round-mask clip zone,
+- populated `result-summary` should not keep the phone-history footer hint when that hint steals space from the summary itself,
 - brewing starts from `recipe-detail`, not directly from a list tap,
 - round-screen layouts should use a conservative content width instead of treating the full black circle as a safe text area,
 - round-screen list screens should avoid pinning the first visible card directly against the top edge when a calmer centered starting position fits better,
