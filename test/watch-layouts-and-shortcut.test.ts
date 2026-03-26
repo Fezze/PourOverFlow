@@ -99,6 +99,29 @@ describe("watch layouts and shortcut helpers", () => {
     }
   });
 
+  it("keeps the tool-list layouts centered and wider on both shapes", async () => {
+    vi.doMock("@zos/device", () => ({
+      getDeviceInfo: () => ({
+        width: 480,
+        height: 480
+      })
+    }));
+
+    const roundToolList = await import("../page/tool-list/index.r.layout.js");
+    const squareToolList = await import("../page/tool-list/index.s.layout.js");
+
+    expect(roundToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
+    expect(roundToolList.LIST_PANEL.x).toBeLessThan(64);
+    expect(roundToolList.LIST_PANEL.w).toBeGreaterThan(352);
+    expect(roundToolList.LIST_PANEL.y).toBeLessThan(roundToolList.LIST_FRAME.y);
+    expect(roundToolList.LIST_FRAME.y).toBeGreaterThan(roundToolList.TITLE_TEXT.y + roundToolList.TITLE_TEXT.h);
+
+    expect(squareToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
+    expect(squareToolList.LIST_PANEL.x).toBeLessThan(28);
+    expect(squareToolList.LIST_PANEL.w).toBeGreaterThan(320);
+    expect(squareToolList.LIST_PANEL.y).toBeLessThan(squareToolList.LIST_FRAME.y);
+  });
+
   it("registers the shortcut key handler and debounces repeated presses", async () => {
     let capturedHandler: ((key: string) => boolean) | null = null;
 

@@ -76,6 +76,7 @@ const ui = {
   align: {
     LEFT: "LEFT",
     RIGHT: "RIGHT",
+    CENTER_H: "CENTER_H",
     CENTER_V: "CENTER_V",
     TOP: "TOP"
   },
