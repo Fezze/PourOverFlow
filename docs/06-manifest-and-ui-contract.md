@@ -148,6 +148,7 @@ The watch UI now follows these repo-level rules:
 - populated chooser pages stay quiet and selection-focused,
 - `tool-list` and `recipe-list` rely on native scrolling instead of piling extra footer actions onto list screens,
 - `tool-list` may use a centered title plus one continuous panel behind the header and list content, instead of a detached header floating above a short list box,
+- populated `result-summary` may use the same continuous-panel pattern plus a single primary `Home` CTA when `Browse` would route to nearly the same place,
 - brewing starts from `recipe-detail`, not directly from a list tap,
 - round-screen layouts should use a conservative content width instead of treating the full black circle as a safe text area,
 - round-screen list screens should avoid pinning the first visible card directly against the top edge when a calmer centered starting position fits better,

@@ -16,22 +16,22 @@ import {
 
 const PANEL_COLOR = 0x171d26;
 const MUTED_TEXT = 0xaab4c2;
-const RESULT_PANEL = {
-  x: BUTTONS[0].x,
-  y: BODY_TEXT.y - 8,
-  w: BUTTONS[0].w,
-  h: 120,
+const RESULT_PANEL = lastResult => ({
+  x: lastResult ? TITLE_TEXT.x - 4 : BUTTONS[0].x,
+  y: lastResult ? TITLE_TEXT.y - 16 : BODY_TEXT.y - 8,
+  w: lastResult ? TITLE_TEXT.w + 8 : BUTTONS[0].w,
+  h: lastResult ? BUTTONS[0].y - (TITLE_TEXT.y - 16) - 14 : 120,
   radius: 26
-};
-const RESULT_LIST_FRAME = {
-  x: RESULT_PANEL.x + 10,
-  y: RESULT_PANEL.y + 10,
-  w: RESULT_PANEL.w - 20,
-  h: RESULT_PANEL.h - 20,
+});
+const createResultListFrame = (panel) => ({
+  x: panel.x + 10,
+  y: panel.y + 92,
+  w: panel.w - 20,
+  h: panel.h - 102,
   itemHeight: 62,
   itemSpace: 8,
   itemRadius: 18
-};
+});
 
 function buildResultRows(lastResult) {
   if (!lastResult) {
@@ -54,18 +54,18 @@ function buildResultRows(lastResult) {
   ];
 }
 
-function createResultListConfig() {
+function createResultListConfig(resultListFrame) {
   return [
     {
       type_id: 1,
       item_bg_color: PANEL_COLOR,
-      item_bg_radius: RESULT_LIST_FRAME.itemRadius,
+      item_bg_radius: resultListFrame.itemRadius,
       item_press_effect: false,
       text_view: [
         {
           x: 16,
           y: 10,
-          w: RESULT_LIST_FRAME.w - 32,
+          w: resultListFrame.w - 32,
           h: 20,
           key: "title",
           color: 0xf5f7fa,
@@ -76,7 +76,7 @@ function createResultListConfig() {
         {
           x: 16,
           y: 30,
-          w: RESULT_LIST_FRAME.w - 32,
+          w: resultListFrame.w - 32,
           h: 22,
           key: "meta",
           color: 0xaab4c2,
@@ -87,7 +87,7 @@ function createResultListConfig() {
         }
       ],
       text_view_count: 2,
-      item_height: RESULT_LIST_FRAME.itemHeight
+      item_height: resultListFrame.itemHeight
     }
   ];
 }
@@ -103,6 +103,8 @@ Page({
     const lastResult = readLastResult();
     const tool = lastResult ? getToolById(lastResult.toolId) : null;
     const resultRows = buildResultRows(lastResult);
+    const resultPanel = RESULT_PANEL(lastResult);
+    const resultListFrame = createResultListFrame(resultPanel);
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "last_result") {
@@ -122,17 +124,17 @@ Page({
       });
     }
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      ...RESULT_PANEL,
+      ...resultPanel,
       color: PANEL_COLOR
     });
     if (resultRows.length) {
       hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
-        x: RESULT_LIST_FRAME.x,
-        y: RESULT_LIST_FRAME.y,
-        w: RESULT_LIST_FRAME.w,
-        h: RESULT_LIST_FRAME.h,
-        item_space: RESULT_LIST_FRAME.itemSpace,
-        item_config: createResultListConfig(),
+        x: resultListFrame.x,
+        y: resultListFrame.y,
+        w: resultListFrame.w,
+        h: resultListFrame.h,
+        item_space: resultListFrame.itemSpace,
+        item_config: createResultListConfig(resultListFrame),
         item_config_count: 1,
         data_array: resultRows,
         data_count: resultRows.length,
@@ -159,28 +161,36 @@ Page({
     if (ACTION_DOCK) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
     }
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[0],
-      text: "Browse",
-      click_func: () => {
-        goToToolList();
-      }
-    });
-    hmUI.createWidget(hmUI.widget.BUTTON, {
-      ...BUTTONS[1],
-      text: "Home",
-      click_func: () => {
-        goHome();
-      }
-    });
+    if (lastResult) {
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        ...BUTTONS[0],
+        text: "Home",
+        click_func: () => {
+          goHome();
+        }
+      });
+    } else {
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        ...BUTTONS[0],
+        text: "Browse",
+        click_func: () => {
+          goToToolList();
+        }
+      });
+      hmUI.createWidget(hmUI.widget.BUTTON, {
+        ...BUTTONS[1],
+        text: "Home",
+        click_func: () => {
+          goHome();
+        }
+      });
+    }
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...FOOTER_TEXT,
-      y: BUTTONS[1].y - 34,
+      y: lastResult ? BUTTONS[0].y - 34 : BUTTONS[1].y - 34,
       h: 24,
       color: MUTED_TEXT,
-      text: lastResult
-        ? "Scroll for summary, then brew again or go home."
-        : "Full history stays on the phone."
+      text: "Full history stays on the phone."
     });
   }
 });

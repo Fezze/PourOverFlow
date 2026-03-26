@@ -519,10 +519,11 @@ describe("page shell runtime coverage", () => {
     expect(scrollList).toBeTruthy();
     expect(scrollList.data_count).toBe(3);
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === fixture.lastResult.recipeName)).toBe(true);
-    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Home")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(false);
+    expect(buttons).toHaveLength(1);
 
-    buttons[1].click_func();
+    buttons[0].click_func();
     expect(runtime.router.replace).toHaveBeenCalledWith({
       url: "page/home/index"
     });

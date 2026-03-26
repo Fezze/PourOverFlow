@@ -39,6 +39,12 @@ export const BODY_TEXT = layout.body;
 export const FOOTER_TEXT = layout.footer;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
+TITLE_TEXT.x = px(48);
+TITLE_TEXT.y = px(68);
+TITLE_TEXT.w = px(384);
+SUBTITLE_TEXT.x = px(56);
+SUBTITLE_TEXT.y = px(106);
+SUBTITLE_TEXT.w = px(368);
 export const ACTION_DOCK = createFloatingDockStyle({
   x: primaryButton.x,
   y: primaryButton.y,

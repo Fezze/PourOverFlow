@@ -150,6 +150,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - Keep populated watch chooser pages quiet. `tool-list` and `recipe-list` should prioritize selection, not bridge/cache diagnostics or redundant home actions.
 - Keep empty watch chooser pages explicit too. If a brewer has no recipes, the watch should say recipes are created on the phone first and only then offer a refresh action from the watch.
 - `recipe-detail` and `result-summary` now use compact scrollable summary rows instead of one tall static text block; keep that pattern unless a later redesign intentionally replaces it.
+- Keep populated `result-summary` calm too: prefer one primary `Home` CTA and a continuous summary panel instead of bringing back a redundant `Browse + Home` pair.
 - The current feedback baseline is haptics-only. Treat audio cues as unsupported unless product scope changes explicitly.
 - The latest UX pass follows official Zepp design-system list patterns. If stricter Figma matching is needed later, the repo should first store a concrete project Figma page or node link instead of relying on a generic "use Figma" instruction.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
