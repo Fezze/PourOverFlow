@@ -31,6 +31,7 @@ import {
   toOptionalNumber
 } from "../zepp-app/shared/domain/schema.js";
 import {
+  SEED_LIBRARY_VERSION,
   getSeedRecipeRecordById,
   getSeedRecipeRecords
 } from "../zepp-app/shared/domain/seed-library.js";
@@ -268,9 +269,11 @@ describe("domain catalog and schema helpers", () => {
     const seedRecipes = getSeedRecipeRecords(9_000);
     const v60Recipe = getSeedRecipeRecordById("seed_v60_bloom_classic", 9_000);
 
-    expect(seedRecipes).toHaveLength(12);
+    expect(seedRecipes).toHaveLength(24);
+    expect(SEED_LIBRARY_VERSION).toBe(2);
     expect(v60Recipe?.createdAt).toBe(9_000);
     expect(getSeedRecipeRecordById("missing_seed", 9_000)).toBeNull();
+    expect(getSeedRecipeRecordById("seed_v60_high_sweet", 9_000)?.toolId).toBe("tool_v60");
 
     v60Recipe.name = "Mutated";
     expect(getSeedRecipeRecordById("seed_v60_bloom_classic", 9_000)?.name).toBe("V60 Bloom Classic");

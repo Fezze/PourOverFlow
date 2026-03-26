@@ -1,6 +1,10 @@
 import { expect, test, vi } from "vitest";
 
-import { createRecipeSnapshot } from "../zepp-app/shared/domain/schema.js";
+import { createRecipeSnapshot, createRecipeSummary } from "../zepp-app/shared/domain/schema.js";
+import {
+  SEED_LIBRARY_VERSION,
+  getSeedRecipeRecordsForVersion
+} from "../zepp-app/shared/domain/seed-library.js";
 import {
   duplicateRecipeRecord,
   deleteRecipeRecord,
@@ -92,11 +96,65 @@ test("ensurePhoneStorage seeds tool catalog, seed recipes and sync meta", () => 
   const snapshot = ensurePhoneStorage(settingsStorage);
 
   expect(snapshot.tools).toHaveLength(6);
-  expect(snapshot.recipeIndex).toHaveLength(12);
+  expect(snapshot.recipeIndex).toHaveLength(24);
   expect(snapshot.historyIndex).toHaveLength(0);
   expect(snapshot.syncMeta.toolCatalogRevision).toBe(1);
   expect(snapshot.syncMeta.recipeCatalogRevision).toBe(1);
+  expect(snapshot.syncMeta.seedCatalogVersion).toBe(SEED_LIBRARY_VERSION);
   expect(settingsStorage.getItem(getPhoneRecipeRecordKey("seed_ap_daily_clean"))).toBeTruthy();
+  expect(settingsStorage.getItem(getPhoneRecipeRecordKey("seed_v60_high_sweet"))).toBeTruthy();
+});
+
+test("ensurePhoneStorage seeds an uneven library where every brewer has more than two recipes", () => {
+  const settingsStorage = createMockSettingsStorage();
+  const snapshot = ensurePhoneStorage(settingsStorage);
+  const recipeCountsByTool = Object.fromEntries(
+    Object.entries(snapshot.recipesByTool).map(([toolId, recipeSummaries]) => [toolId, recipeSummaries.length])
+  );
+
+  expect(Object.values(recipeCountsByTool).every((recipeCount) => recipeCount > 2)).toBe(true);
+  expect(recipeCountsByTool).toEqual({
+    tool_aeropress: 4,
+    tool_v60: 5,
+    tool_kalita_wave: 3,
+    tool_chemex: 4,
+    tool_clever_dripper: 3,
+    tool_french_press: 5
+  });
+});
+
+test("ensurePhoneStorage migrates existing installs by adding only newly introduced seed recipes", () => {
+  const settingsStorage = createMockSettingsStorage();
+  const oldSeedTimestamp = 1_000;
+  const versionOneSeeds = getSeedRecipeRecordsForVersion(1, oldSeedTimestamp);
+
+  versionOneSeeds.forEach((recipeRecord) => {
+    settingsStorage.setItem(getPhoneRecipeRecordKey(recipeRecord.recipeId), JSON.stringify(recipeRecord));
+  });
+  settingsStorage.setItem(
+    "pof_recipe_index_v1",
+    JSON.stringify(versionOneSeeds.map((recipeRecord) => createRecipeSummary(recipeRecord)))
+  );
+  settingsStorage.setItem("pof_history_index_v1", JSON.stringify([]));
+  settingsStorage.setItem(
+    "pof_sync_meta_v1",
+    JSON.stringify({
+      schemaVersion: 1,
+      toolCatalogRevision: 4,
+      recipeCatalogRevision: 7,
+      historyRevision: 2,
+      seedCatalogVersion: 1,
+      seededAt: oldSeedTimestamp
+    })
+  );
+
+  const snapshot = ensurePhoneStorage(settingsStorage);
+
+  expect(snapshot.recipeIndex).toHaveLength(24);
+  expect(snapshot.syncMeta.seedCatalogVersion).toBe(SEED_LIBRARY_VERSION);
+  expect(snapshot.syncMeta.recipeCatalogRevision).toBe(8);
+  expect(readRecipeRecord(settingsStorage, "seed_ap_daily_clean")?.createdAt).toBe(oldSeedTimestamp);
+  expect(readRecipeRecord(settingsStorage, "seed_v60_high_sweet")?.createdAt).not.toBe(oldSeedTimestamp);
 });
 
 test("saveRecipeRecord persists a user recipe into index plus record storage", () => {

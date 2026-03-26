@@ -76,6 +76,7 @@ interface PhoneSyncMeta {
   toolCatalogRevision: number
   recipeCatalogRevision: number
   historyRevision: number
+  seedCatalogVersion: number
   seededAt: number
   lastBootstrapAt?: number
   lastWatchSeenAt?: number
@@ -129,6 +130,13 @@ interface WatchSyncMeta {
 4. if `pof_sync_meta_v1` does not exist, create initial revisions.
 
 Seeding must be idempotent. Later launches must not overwrite user data.
+
+The current implementation also keeps `seedCatalogVersion` inside `pof_sync_meta_v1` so the phone can append only newly introduced seed recipes on later app versions without replaying the whole catalog.
+That migration path is additive:
+
+- new installs get the full current seed set,
+- older installs receive only recipes introduced after their stored `seedCatalogVersion`,
+- edited or deleted older seeds must not be overwritten or silently resurrected.
 
 `pof_settings_ui_state_v1` is not part of domain seeding. It is phone UI state only.
 
@@ -252,6 +260,11 @@ Do not send raw JS objects. The messaging layer should use `ArrayBuffer` only.
 
 - incremented only when the seed catalog changes in a new app version,
 - not changed by normal user activity.
+
+This remains separate from `seedCatalogVersion`:
+
+- `toolCatalogRevision` is the watch-facing sync revision,
+- `seedCatalogVersion` is the phone-side seed-migration baseline.
 
 ### `recipeCatalogRevision`
 

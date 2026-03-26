@@ -131,7 +131,7 @@ test("normalize builds full phone bootstrap snapshots from seeded storage", () =
 
   expect(toolSnapshot.tools).toHaveLength(6);
   expect(catalogSnapshot.recipeCatalogRevision).toBe(1);
-  expect(Object.keys(catalogSnapshot.recipeSnapshotsById)).toHaveLength(12);
+  expect(Object.keys(catalogSnapshot.recipeSnapshotsById)).toHaveLength(24);
   expect(historySnapshot.latestResult).toBeNull();
 });
 

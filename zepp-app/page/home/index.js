@@ -129,7 +129,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: scaffoldState.activeSession ? "X" : "Sync",
+      text: scaffoldState.activeSession ? "Discard" : "Sync",
       click_func: () => {
         if (scaffoldState.activeSession) {
           discardActiveSessionFromHome();

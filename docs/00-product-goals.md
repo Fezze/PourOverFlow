@@ -86,7 +86,8 @@ The list below is frozen for v1. Every `toolId` is stable, ASCII-safe, and must 
 The seed library should be curated but lightweight:
 
 - minimum shipping bar: at least 1 starter recipe for each supported tool,
-- product target: 2 starter recipes for each tool,
+- current starter target: an uneven 24-recipe library where every supported tool has more than 2 recipes,
+- recipe counts do not need to match exactly across tools as long as the library stays curated,
 - seed recipes must be editable and clonable by the user,
 - seed recipes must use only the step model supported by v1.
 

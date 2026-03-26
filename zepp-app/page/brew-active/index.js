@@ -33,6 +33,22 @@ import {
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
+const CONTENT_PANEL = {
+  x: BODY_TEXT.x,
+  y: BODY_TEXT.y + 88,
+  w: BODY_TEXT.w,
+  h: BUTTONS[0].y - (BODY_TEXT.y + 88) - 18,
+  radius: 28,
+  color: SHARED_COLORS.surface
+};
+const CONTENT_FRAME = {
+  x: CONTENT_PANEL.x + 14,
+  y: CONTENT_PANEL.y + 16,
+  w: CONTENT_PANEL.w - 28,
+  h: CONTENT_PANEL.h - 32,
+  itemRadius: 22
+};
+
 function buildProgressText(activeSession) {
   return `Step ${activeSession.currentStepIndex + 1}/${activeSession.recipeSnapshot.steps.length}`;
 }
@@ -64,7 +80,7 @@ function buildStepMetaText(activeSession) {
   return parts.join(" / ");
 }
 
-function buildFooterText(activeSession) {
+function buildAssistText(activeSession) {
   const currentStep = getCurrentSessionStep(activeSession);
 
   if (!currentStep) {
@@ -75,11 +91,53 @@ function buildFooterText(activeSession) {
     return "Shortcut button also works when available.";
   }
 
-  if (currentStep.kind === "timed_wait" || currentStep.kind === "timed_action") {
-    return "Timed step.";
-  }
+  return "";
+}
 
-  return "Tap Next to continue.";
+function estimateInstructionLineCount(text, contentWidth = CONTENT_FRAME.w) {
+  const approxCharsPerLine = Math.max(18, Math.floor(contentWidth / 10));
+  return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
+}
+
+function buildStaticInstructionFrame(instructionText) {
+  const lineCount = estimateInstructionLineCount(instructionText);
+  return {
+    x: CONTENT_FRAME.x,
+    y: CONTENT_FRAME.y,
+    w: CONTENT_FRAME.w,
+    h: Math.max(CONTENT_FRAME.h, lineCount * 22)
+  };
+}
+
+function canRenderStaticInstruction(instructionText) {
+  return buildStaticInstructionFrame(instructionText).h <= CONTENT_FRAME.h;
+}
+
+function createInstructionScrollConfig(itemHeight) {
+  return [
+    {
+      type_id: 1,
+      item_bg_color: SHARED_COLORS.surface,
+      item_bg_radius: CONTENT_FRAME.itemRadius,
+      item_press_effect: false,
+      text_view: [
+        {
+          x: 10,
+          y: 8,
+          w: CONTENT_FRAME.w - 20,
+          h: itemHeight - 16,
+          key: "body",
+          color: SHARED_COLORS.text,
+          text_size: BODY_TEXT.text_size + 3,
+          text_style: hmUI.text_style.WRAP,
+          align_h: hmUI.align.LEFT,
+          align_v: hmUI.align.TOP
+        }
+      ],
+      text_view_count: 1,
+      item_height: itemHeight
+    }
+  ];
 }
 
 function buildPrimaryActionLabel(activeSession) {
@@ -116,11 +174,9 @@ Page({
 
     if (
       !activeSession ||
-      !this.descriptionWidget ||
       !this.progressWidget ||
       !this.stepTitleWidget ||
-      !this.metaWidget ||
-      !this.footerWidget
+      !this.metaWidget
     ) {
       return;
     }
@@ -128,9 +184,13 @@ Page({
     this.progressWidget.text = buildProgressText(activeSession);
     const currentStep = getCurrentSessionStep(activeSession);
     this.stepTitleWidget.text = currentStep ? currentStep.title : "Unknown step";
-    this.descriptionWidget.text = buildDescriptionText(activeSession);
     this.metaWidget.text = buildStepMetaText(activeSession);
-    this.footerWidget.text = buildFooterText(activeSession);
+    if (this.descriptionWidget) {
+      this.descriptionWidget.text = buildDescriptionText(activeSession);
+    }
+    if (this.footerWidget) {
+      this.footerWidget.text = buildAssistText(activeSession);
+    }
   },
   build() {
     const reconcileResult = reconcileActiveSessionOnEntry();
@@ -198,36 +258,61 @@ Page({
       color: SHARED_COLORS.text,
       text: currentStep ? currentStep.title : "Unknown step"
     });
-    hmUI.createWidget(hmUI.widget.FILL_RECT, createPanelStyle({
-      buttonX: BODY_TEXT.x,
-      buttonW: BODY_TEXT.w
-    }, {
-      x: BODY_TEXT.x,
-      y: BODY_TEXT.y + 74,
-      w: BODY_TEXT.w,
-      h: 102,
-      radius: 28,
-      color: SHARED_COLORS.surface
-    }));
-    this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      x: BODY_TEXT.x + 14,
-      w: BODY_TEXT.w - 28,
-      y: BODY_TEXT.y + 96,
-      h: 38,
-      text_size: BODY_TEXT.text_size + 2,
-      text: buildDescriptionText(activeSession)
-    });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      x: BODY_TEXT.x + 14,
-      w: BODY_TEXT.w - 28,
-      y: BODY_TEXT.y + 138,
+      x: BODY_TEXT.x + 4,
+      w: BODY_TEXT.w - 8,
+      y: BODY_TEXT.y + 62,
       h: 24,
       color: SHARED_COLORS.muted,
       text_size: BODY_TEXT.text_size - 2,
       text: buildStepMetaText(activeSession)
     });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, createPanelStyle({
+      buttonX: BODY_TEXT.x,
+      buttonW: BODY_TEXT.w
+    }, CONTENT_PANEL));
+
+    const descriptionText = buildDescriptionText(activeSession);
+    if (canRenderStaticInstruction(descriptionText)) {
+      const staticInstructionFrame = buildStaticInstructionFrame(descriptionText);
+      this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+        ...BODY_TEXT,
+        x: staticInstructionFrame.x,
+        y: staticInstructionFrame.y,
+        w: staticInstructionFrame.w,
+        h: CONTENT_FRAME.h,
+        text_size: BODY_TEXT.text_size + 3,
+        text_style: hmUI.text_style.WRAP,
+        text: descriptionText
+      });
+    } else {
+      const scrollItemHeight = Math.max(CONTENT_FRAME.h + 28, estimateInstructionLineCount(descriptionText) * 22 + 18);
+      hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
+        x: CONTENT_FRAME.x,
+        y: CONTENT_FRAME.y,
+        w: CONTENT_FRAME.w,
+        h: CONTENT_FRAME.h,
+        item_space: 0,
+        item_config: createInstructionScrollConfig(scrollItemHeight),
+        item_config_count: 1,
+        data_array: [
+          {
+            body: descriptionText
+          }
+        ],
+        data_count: 1,
+        data_type_config: [
+          {
+            start: 0,
+            end: 0,
+            type_id: 1
+          }
+        ],
+        data_type_config_count: 1,
+        enable_scroll_bar: false
+      });
+    }
     if (ACTION_LEFT_BG) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_LEFT_BG);
     }
@@ -256,12 +341,17 @@ Page({
         abortActiveBrew();
       }
     });
-    this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-      ...FOOTER_TEXT,
-      y: BUTTONS[0].y - 28,
-      h: 30,
-      text: buildFooterText(activeSession)
-    });
+    const assistText = buildAssistText(activeSession);
+    if (assistText) {
+      this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+        ...FOOTER_TEXT,
+        y: BUTTONS[0].y - 28,
+        h: 30,
+        text: assistText
+      });
+    } else {
+      this.footerWidget = null;
+    }
 
     this.activeTimer = setInterval(() => {
       const beforeSession = readActiveSession();

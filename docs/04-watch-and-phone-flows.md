@@ -26,7 +26,7 @@ Start quickly even when the phone is unavailable.
 The resume gate is not a separate page. It is a simple `home` state with two buttons:
 
 - primary action to resume the active brew,
-- a short secondary discard action,
+- a clear secondary `Discard` action,
 - an optional shortcut into the latest result.
 
 `Discard session` reads the snapshot only to build a `HistoryEntry` with status `aborted`, and then clears `active_session_v1`.
@@ -136,6 +136,7 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - primary timer: step timer when the step is timed,
 - secondary timer: total session timer,
 - brew metadata: `waterMl` and `targetTotalWaterMl` when present,
+- assist copy only when it actually adds value, such as a resume or shortcut hint,
 - CTA:
   - a bottom side-by-side action dock,
   - short Zepp-safe labels or icons instead of raw decorative glyphs or two full-width text buttons,
@@ -147,6 +148,9 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - round-screen pages should keep the main copy within a stricter safe width than the full circular background,
 - important CTA surfaces should sit above the most aggressive lower-edge clip zone,
 - panel text should keep visible inner padding from its own background rather than hugging the card edges.
+- the main instruction body should take the largest available middle block on the page instead of giving that space to generic footer copy,
+- the current step metadata may live above the instruction body so the large instruction panel can stay readable,
+- instruction scrolling should be an overflow fallback only, not the default for short normal step copy.
 
 ### Behavior by step type
 
@@ -159,7 +163,8 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 
 - counts down `durationMs`,
 - may auto-advance when time ends if `requiresConfirm: false`,
-- if `requiresConfirm: true`, it stops and waits for `Next`.
+- if `requiresConfirm: true`, it stops and waits for `Next`,
+- the page should not repeat a generic label such as `Timed step.` when the timer and metadata already make that clear.
 
 #### `timed_wait`
 

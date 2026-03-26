@@ -341,7 +341,7 @@ async function runHarness() {
 
       const seedRecipes = getSeedRecipeRecords(9_000);
       const seedRecipe = getSeedRecipeRecordById("seed_v60_bloom_classic", 9_000);
-      assert(seedRecipes.length === 12, "Seed helper should expose the full starter library.", state);
+      assert(seedRecipes.length === 24, "Seed helper should expose the full starter library.", state);
       assert(seedRecipe.createdAt === 9_000, "Seed helper should stamp the requested timestamp.", state);
       seedRecipe.name = "Mutated";
       assert(
@@ -539,7 +539,7 @@ async function runHarness() {
       const settingsStorage = createMockSettingsStorage();
       const seededSnapshot = ensurePhoneStorage(settingsStorage);
       assert(seededSnapshot.tools.length === 6, "Seeding should populate six tools.", state);
-      assert(seededSnapshot.recipeIndex.length === 12, "Seeding should populate twelve recipes.", state);
+      assert(seededSnapshot.recipeIndex.length === 24, "Seeding should populate the full twenty-four recipe library.", state);
       assert(
         Array.isArray(
           safeParseJson({

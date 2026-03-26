@@ -73,6 +73,7 @@ Current verified platform note:
 - Zepp app scaffold with passing `npm run build`,
 - a dedicated `zepp-app/` subtree so Zeus only watches the mini-app package and not root-level coverage output,
 - seed data in `settingsStorage`,
+- a versioned seed catalog that can append newly introduced seed recipes without replaying the whole library on existing installs,
 - real CRUD for recipes and history notes in `setting/`,
 - a cleaner phone-side Settings UX with active top navigation, contextual shell headers, color-banded sections, and a paginated recipe-step editor,
 - runtime sync with `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
@@ -82,6 +83,7 @@ Current verified platform note:
 - timestamp-based active session reconciliation on app entry,
 - active-brew display guard handling for wake-up relaunch and page bright time,
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists, real method icons, and a dedicated recipe detail/start page,
+- an uneven 24-recipe starter library so every supported brewer now has more than 2 recipes,
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - explicit empty `recipe-list` guidance that tells the user to create recipes on the phone first and then refresh from the watch,
 - compact summary rows on `recipe-detail` and populated `result-summary`, with both screens staying static for normal-length content and only falling back to scrolling when the content really overflows, calmer continuous panels, and a single `Home` CTA on the populated result screen so longer content does not rely on a single fixed-height text block,
@@ -104,7 +106,7 @@ Current verified platform note:
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
-- Current meaningful coverage baselines after the latest test expansion are `93.30% / 83.59% / 97.51% / 93.20%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
+- Current meaningful coverage baselines after the latest test expansion are `93.79% / 83.81% / 97.98% / 93.69%` for `npm run test:coverage` and `93.36% / 82.40% / 92.76% / 93.36%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
@@ -216,10 +218,12 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 ## Current watch-flow baseline
 
 - `home` shows a resume gate,
+- the resume gate now uses a clear `Discard` secondary action instead of a raw `X`,
 - `tool-list` and `recipe-list` use the synced catalog and recipe data,
 - `active_session_v1` is persisted locally,
 - timed steps, confirm steps, and finish steps have separate reducer semantics,
 - `brew-active` shows both the step timer and session timer,
+- `brew-active` now gives the main instruction body more of the page and only uses an internal scroll area when the step body genuinely overflows,
 - the feedback layer is best-effort and capability-gated,
 - baseline session reducer tests exist,
 - `npm test` and `npm run build` pass.

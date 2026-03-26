@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSupportedTools } from "../zepp-app/shared/constants/tool-catalog.js";
-import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.js";
+import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../zepp-app/shared/domain/seed-library.js";
 import { CURRENT_SCHEMA_VERSION, createRecipeSnapshot, createRecipeSummary } from "../zepp-app/shared/domain/schema.js";
 import { createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
 import { WATCH_STORAGE_KEYS } from "../zepp-app/shared/storage/keys.js";
@@ -49,6 +49,30 @@ function createCatalogFixture() {
       endedAt: 3_000,
       elapsedMs: 120_000,
       totalDeltaMs: -1_500
+    }
+  };
+}
+
+function createExpandedCatalogFixture() {
+  const seedRecords = getSeedRecipeRecords(4_000);
+  const recipeSummaries = seedRecords.map((recipeRecord) => createRecipeSummary(recipeRecord));
+  const recipeSnapshotsById = Object.fromEntries(
+    seedRecords.map((recipeRecord) => [recipeRecord.recipeId, createRecipeSnapshot(recipeRecord)])
+  );
+  const recipesByTool = getSupportedTools().reduce((accumulator, tool) => {
+    accumulator[tool.toolId] = recipeSummaries.filter((recipeSummary) => recipeSummary.toolId === tool.toolId);
+    return accumulator;
+  }, {});
+
+  return {
+    catalogCache: {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      toolCatalogRevision: 5,
+      recipeCatalogRevision: 11,
+      tools: getSupportedTools(),
+      recipesByTool,
+      recipeSnapshotsById,
+      cachedAt: 5_000
     }
   };
 }
@@ -433,7 +457,7 @@ describe("page shell runtime coverage", () => {
       expect(buttons.map((widget) => widget.text)).toEqual(["Skip", "Stop"]);
       expect(buttons.every((widget) => /^[\x20-\x7E]+$/.test(String(widget.text)))).toBe(true);
       expect(textWidgets.some((widget) => String(widget.text).includes("Target 50 ml /"))).toBe(true);
-      expect(textWidgets.some((widget) => String(widget.text).includes("Timed step."))).toBe(true);
+      expect(textWidgets.some((widget) => String(widget.text).includes("Timed step."))).toBe(false);
       expect(runtime.display.setWakeUpRelaunch).toHaveBeenCalled();
       buttons[0].click_func();
       expect(runtime.router.replace).toHaveBeenCalledWith({
@@ -442,6 +466,47 @@ describe("page shell runtime coverage", () => {
       expect(watchStore.readActiveSession()?.currentStepIndex).toBe(2);
 
       (pageDefinition.onDestroy as () => void).call(pageInstance);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("falls back to an internal scroll area when the active-brew instruction body overflows", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const now = 260_000;
+    const longSnapshot = {
+      ...fixture.primarySnapshot,
+      steps: fixture.primarySnapshot.steps.map((step, index) => (
+        index === 1
+          ? {
+              ...step,
+              body: "Pour slowly from the center, keep the kettle low, and stay steady through the spiral. ".repeat(12)
+            }
+          : { ...step }
+      ))
+    };
+    const activeSession = createActiveBrewSession(longSnapshot, { now });
+
+    activeSession.currentStepIndex = 1;
+    activeSession.status = "running";
+    activeSession.currentStepStartedAt = now;
+    activeSession.expectedStepEndAt = now + 15_000;
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
+    });
+
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    try {
+      buildPage(pageDefinition);
+
+      const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+      expect(scrollList).toBeTruthy();
+      expect(scrollList.enable_scroll_bar).toBe(false);
+      expect(scrollList.data_count).toBe(1);
     } finally {
       vi.useRealTimers();
     }
@@ -678,6 +743,7 @@ describe("page shell runtime coverage", () => {
     const [primaryButton, secondaryButton, tertiaryButton] = buttons;
 
     expect(primaryButton.text).toBe("Resume");
+    expect(secondaryButton.text).toBe("Discard");
     primaryButton.click_func();
     expect(runtime.router.replace).toHaveBeenCalledWith({
       url: "page/brew-active/index"
@@ -734,6 +800,55 @@ describe("page shell runtime coverage", () => {
     expect(buttons[0].text).toBe("Refresh from phone");
     buttons[0].click_func();
     expect(runtime.ble.send).not.toHaveBeenCalled();
+  });
+
+  it("renders expanded uneven seed counts across the watch browse flow", async () => {
+    const fixture = createExpandedCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/tool-list/index.js", createLayoutMock());
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
+    });
+
+    buildPage(pageDefinition);
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.data_count).toBe(6);
+    expect(scrollList.data_array).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "AeroPress", meta: "4 recipes" }),
+        expect.objectContaining({ title: "Hario V60", meta: "5 recipes" }),
+        expect.objectContaining({ title: "Kalita Wave", meta: "3 recipes" }),
+        expect.objectContaining({ title: "Chemex", meta: "4 recipes" }),
+        expect.objectContaining({ title: "Clever Dripper", meta: "3 recipes" }),
+        expect.objectContaining({ title: "French Press", meta: "5 recipes" })
+      ])
+    );
+  });
+
+  it("shows more than two recipes for a brewer when the expanded seed cache is present", async () => {
+    const fixture = createExpandedCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-list/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
+    });
+
+    watchStore.getRuntimeState().selectedToolId = "tool_v60";
+    buildPage(pageDefinition);
+
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.data_count).toBe(5);
+    expect(scrollList.data_array.map((item) => item.title)).toEqual([
+      "V60 Bloom Classic",
+      "V60 Fast Morning",
+      "V60 High Sweet",
+      "V60 Low Agitation",
+      "V60 Evening Balance"
+    ]);
   });
 
   it("shows fallback controls when the selected recipe snapshot is missing", async () => {

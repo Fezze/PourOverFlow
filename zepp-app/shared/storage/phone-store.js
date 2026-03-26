@@ -16,7 +16,11 @@ import {
   toNumberOrFallback,
   toOptionalNumber
 } from "../domain/schema.js";
-import { getSeedRecipeRecords } from "../domain/seed-library.js";
+import {
+  SEED_LIBRARY_VERSION,
+  getSeedRecipeRecords,
+  getSeedRecipeRecordsAddedAfterVersion
+} from "../domain/seed-library.js";
 import { validateHistoryEntry, validateRecipeRecord } from "../domain/validators.js";
 import {
   getPhoneHistoryRecordKey,
@@ -58,6 +62,7 @@ export function createDefaultPhoneSyncMeta() {
     toolCatalogRevision: 1,
     recipeCatalogRevision: 1,
     historyRevision: 0,
+    seedCatalogVersion: 1,
     seededAt: Date.now()
   };
 }
@@ -102,6 +107,7 @@ function writeRecipeRecords(settingsStorage, recipeRecords) {
 
 export function ensurePhoneStorage(settingsStorage) {
   const seedTimestamp = Date.now();
+  const hasRecipeIndex = Boolean(settingsStorage.getItem(PHONE_STORAGE_KEYS.recipeIndex));
 
   if (!settingsStorage.getItem(PHONE_STORAGE_KEYS.tools)) {
     writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.tools, TOOL_CATALOG);
@@ -123,9 +129,12 @@ export function ensurePhoneStorage(settingsStorage) {
   if (!settingsStorage.getItem(PHONE_STORAGE_KEYS.syncMeta)) {
     writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, {
       ...createDefaultPhoneSyncMeta(),
+      seedCatalogVersion: hasRecipeIndex ? 1 : SEED_LIBRARY_VERSION,
       seededAt: seedTimestamp
     });
   }
+
+  migrateSeedRecipeLibrary(settingsStorage, seedTimestamp);
 
   return readPhoneSnapshot(settingsStorage);
 }
@@ -143,7 +152,48 @@ export function readHistoryIndex(settingsStorage) {
 }
 
 export function readPhoneSyncMeta(settingsStorage) {
-  return readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, createDefaultPhoneSyncMeta());
+  const syncMeta = readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, createDefaultPhoneSyncMeta());
+
+  return {
+    ...createDefaultPhoneSyncMeta(),
+    ...syncMeta,
+    seedCatalogVersion: Number.isFinite(syncMeta?.seedCatalogVersion)
+      ? syncMeta.seedCatalogVersion
+      : 1
+  };
+}
+
+function migrateSeedRecipeLibrary(settingsStorage, seedTimestamp) {
+  const currentSyncMeta = readPhoneSyncMeta(settingsStorage);
+  const currentSeedCatalogVersion = currentSyncMeta.seedCatalogVersion || 1;
+
+  if (currentSeedCatalogVersion >= SEED_LIBRARY_VERSION) {
+    return currentSyncMeta;
+  }
+
+  const recipeIndex = readRecipeIndex(settingsStorage);
+  const existingRecipeIds = new Set(recipeIndex.map((recipeSummary) => recipeSummary.recipeId));
+  const missingSeedRecipes = getSeedRecipeRecordsAddedAfterVersion(currentSeedCatalogVersion, seedTimestamp)
+    .filter((recipeRecord) => !existingRecipeIds.has(recipeRecord.recipeId));
+
+  if (missingSeedRecipes.length) {
+    writeRecipeRecords(settingsStorage, missingSeedRecipes);
+    writeRecipeIndex(settingsStorage, [
+      ...recipeIndex,
+      ...missingSeedRecipes.map((recipeRecord) => createRecipeSummary(recipeRecord))
+    ]);
+  }
+
+  const nextSyncMeta = {
+    ...currentSyncMeta,
+    seedCatalogVersion: SEED_LIBRARY_VERSION,
+    recipeCatalogRevision: missingSeedRecipes.length
+      ? currentSyncMeta.recipeCatalogRevision + 1
+      : currentSyncMeta.recipeCatalogRevision
+  };
+
+  writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, nextSyncMeta);
+  return nextSyncMeta;
 }
 
 export function readRecipeRecord(settingsStorage, recipeId) {
