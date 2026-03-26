@@ -140,6 +140,7 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - CTA:
   - a bottom side-by-side action dock,
   - short Zepp-safe labels or icons instead of raw decorative glyphs or two full-width text buttons,
+  - a calm paired-pill dock with one clear primary action on the right and a quieter secondary action on the left,
 - physical shortcut:
   - trigger the primary action when the watch exposes Zepp's shortcut key
 
@@ -151,6 +152,7 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - the main instruction body should take the largest available middle block on the page instead of giving that space to generic footer copy,
 - the current step metadata may live above the instruction body so the large instruction panel can stay readable,
 - instruction scrolling should be an overflow fallback only, not the default for short normal step copy.
+- the dock chrome itself should stay simple; prefer one rounded dock surface plus two rounded action pills over extra masks, dividers, or stacked filler rectangles.
 
 ### Behavior by step type
 

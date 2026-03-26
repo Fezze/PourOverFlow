@@ -136,7 +136,8 @@ That migration path is additive:
 
 - new installs get the full current seed set,
 - older installs receive only recipes introduced after their stored `seedCatalogVersion`,
-- edited or deleted older seeds must not be overwritten or silently resurrected.
+- edited or deleted older seeds must not be overwritten or silently resurrected,
+- a migration should therefore add only newer seed records, not re-run the whole original seed set.
 
 `pof_settings_ui_state_v1` is not part of domain seeding. It is phone UI state only.
 

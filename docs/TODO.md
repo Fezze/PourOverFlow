@@ -17,7 +17,7 @@
 ### Watch UI follow-up
 
 - Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, and `result-summary`.
-- Refine the custom side-by-side action dock on `brew-active` until it matches the intended Zepp-style shape more closely.
+- Confirm on real hardware that the simplified paired-pill `brew-active` dock feels balanced and that the primary-right / secondary-left emphasis reads clearly during a live brew.
 - Confirm on real hardware that the new `Discard` label on the `home` resume gate reads clearly and does not feel too heavy compared with the primary `Resume` action.
 - Confirm on real hardware that the larger `brew-active` instruction panel still reads comfortably when step metadata updates every second.
 - If tighter visual matching is still desired later, store a concrete project Figma node or page link in the repo and map the watch screens to it explicitly.

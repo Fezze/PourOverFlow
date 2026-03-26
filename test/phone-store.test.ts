@@ -18,7 +18,7 @@ import {
   saveRecipeRecord,
   updateHistoryEntryFeedback
 } from "../zepp-app/shared/storage/phone-store.js";
-import { getPhoneRecipeRecordKey } from "../zepp-app/shared/storage/keys.js";
+import { PHONE_STORAGE_KEYS, getPhoneRecipeRecordKey } from "../zepp-app/shared/storage/keys.js";
 
 function createMockSettingsStorage() {
   const values = new Map();
@@ -155,6 +155,42 @@ test("ensurePhoneStorage migrates existing installs by adding only newly introdu
   expect(snapshot.syncMeta.recipeCatalogRevision).toBe(8);
   expect(readRecipeRecord(settingsStorage, "seed_ap_daily_clean")?.createdAt).toBe(oldSeedTimestamp);
   expect(readRecipeRecord(settingsStorage, "seed_v60_high_sweet")?.createdAt).not.toBe(oldSeedTimestamp);
+});
+
+test("ensurePhoneStorage does not resurrect deleted older seed recipes during a newer seed migration", () => {
+  const settingsStorage = createMockSettingsStorage();
+  const oldSeedTimestamp = 2_000;
+  const retainedVersionOneSeeds = getSeedRecipeRecordsForVersion(1, oldSeedTimestamp)
+    .filter((recipeRecord) => recipeRecord.recipeId !== "seed_ap_daily_clean");
+
+  retainedVersionOneSeeds.forEach((recipeRecord) => {
+    settingsStorage.setItem(getPhoneRecipeRecordKey(recipeRecord.recipeId), JSON.stringify(recipeRecord));
+  });
+  settingsStorage.setItem(
+    PHONE_STORAGE_KEYS.recipeIndex,
+    JSON.stringify(retainedVersionOneSeeds.map((recipeRecord) => createRecipeSummary(recipeRecord)))
+  );
+  settingsStorage.setItem(PHONE_STORAGE_KEYS.historyIndex, JSON.stringify([]));
+  settingsStorage.setItem(
+    PHONE_STORAGE_KEYS.syncMeta,
+    JSON.stringify({
+      schemaVersion: 1,
+      toolCatalogRevision: 2,
+      recipeCatalogRevision: 5,
+      historyRevision: 0,
+      seedCatalogVersion: 1,
+      seededAt: oldSeedTimestamp
+    })
+  );
+
+  const snapshot = ensurePhoneStorage(settingsStorage);
+
+  expect(snapshot.recipeIndex).toHaveLength(23);
+  expect(readRecipeRecord(settingsStorage, "seed_ap_daily_clean")).toBeNull();
+  expect(snapshot.recipeIndex.some((recipeSummary) => recipeSummary.recipeId === "seed_ap_daily_clean")).toBe(false);
+  expect(readRecipeRecord(settingsStorage, "seed_v60_high_sweet")).toBeTruthy();
+  expect(snapshot.syncMeta.seedCatalogVersion).toBe(SEED_LIBRARY_VERSION);
+  expect(snapshot.syncMeta.recipeCatalogRevision).toBe(6);
 });
 
 test("saveRecipeRecord persists a user recipe into index plus record storage", () => {

@@ -124,6 +124,35 @@ describe("watch layouts and shortcut helpers", () => {
     expect(squareToolList.LIST_FRAME.y).toBeGreaterThan(squareToolList.TITLE_TEXT.y + squareToolList.TITLE_TEXT.h);
   });
 
+  it("keeps the brew-active dock as a simple paired-pill layout on both shapes", async () => {
+    vi.doMock("@zos/device", () => ({
+      getDeviceInfo: () => ({
+        width: 480,
+        height: 480
+      })
+    }));
+
+    const layouts = await import("../zepp-app/shared/watch/layouts.js");
+    const roundBrewActive = await import("../zepp-app/page/brew-active/index.r.layout.js");
+    const squareBrewActive = await import("../zepp-app/page/brew-active/index.s.layout.js");
+
+    expect(roundBrewActive.ACTION_DOCK.color).toBe(layouts.SHARED_COLORS.surfaceMuted);
+    expect(roundBrewActive.ACTION_DOCK.radius).toBeGreaterThan(30);
+    expect(roundBrewActive.BUTTONS[0].normal_color).toBe(layouts.SHARED_COLORS.primary);
+    expect(roundBrewActive.BUTTONS[1].normal_color).toBe(layouts.SHARED_COLORS.secondary);
+    expect(roundBrewActive.BUTTONS[0].x).toBeGreaterThan(roundBrewActive.BUTTONS[1].x);
+    expect(roundBrewActive.BUTTONS[0].radius).toBeGreaterThan(20);
+    expect(roundBrewActive.BUTTONS[1].radius).toBeGreaterThan(20);
+
+    expect(squareBrewActive.ACTION_DOCK.color).toBe(layouts.SHARED_COLORS.surfaceMuted);
+    expect(squareBrewActive.ACTION_DOCK.radius).toBeGreaterThan(24);
+    expect(squareBrewActive.BUTTONS[0].normal_color).toBe(layouts.SHARED_COLORS.primary);
+    expect(squareBrewActive.BUTTONS[1].normal_color).toBe(layouts.SHARED_COLORS.secondary);
+    expect(squareBrewActive.BUTTONS[0].x).toBeGreaterThan(squareBrewActive.BUTTONS[1].x);
+    expect(squareBrewActive.BUTTONS[0].radius).toBeGreaterThan(18);
+    expect(squareBrewActive.BUTTONS[1].radius).toBeGreaterThan(18);
+  });
+
   it("registers the shortcut key handler and debounces repeated presses", async () => {
     let capturedHandler: ((key: string) => boolean) | null = null;
 

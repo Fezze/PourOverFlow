@@ -453,11 +453,13 @@ describe("page shell runtime coverage", () => {
       const pageInstance = buildPage(pageDefinition);
       const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
       const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
+      const fillRects = runtime.getCreatedWidgets().filter((widget) => widget.type === "FILL_RECT");
 
       expect(buttons.map((widget) => widget.text)).toEqual(["Skip", "Stop"]);
       expect(buttons.every((widget) => /^[\x20-\x7E]+$/.test(String(widget.text)))).toBe(true);
       expect(textWidgets.some((widget) => String(widget.text).includes("Target 50 ml /"))).toBe(true);
       expect(textWidgets.some((widget) => String(widget.text).includes("Timed step."))).toBe(false);
+      expect(fillRects.length).toBeGreaterThanOrEqual(2);
       expect(runtime.display.setWakeUpRelaunch).toHaveBeenCalled();
       buttons[0].click_func();
       expect(runtime.router.replace).toHaveBeenCalledWith({

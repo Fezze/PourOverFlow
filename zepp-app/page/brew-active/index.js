@@ -22,10 +22,7 @@ import {
 import { registerShortcutKey } from "../../shared/watch/shortcut-key";
 import { SHARED_COLORS, createPanelStyle } from "../../shared/watch/layouts";
 import {
-  ACTION_DIVIDER,
-  ACTION_LEFT_BG,
-  ACTION_RIGHT_BG,
-  ACTION_TOP_MASK,
+  ACTION_DOCK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
@@ -313,17 +310,8 @@ Page({
         enable_scroll_bar: false
       });
     }
-    if (ACTION_LEFT_BG) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_LEFT_BG);
-    }
-    if (ACTION_RIGHT_BG) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_RIGHT_BG);
-    }
-    if (ACTION_TOP_MASK) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_TOP_MASK);
-    }
-    if (ACTION_DIVIDER) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DIVIDER);
+    if (ACTION_DOCK) {
+      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
     }
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],

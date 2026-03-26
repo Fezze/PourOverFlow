@@ -165,7 +165,7 @@ The watch UI now follows these repo-level rules:
 - only fall back to scrollable summary rows when the recipe metadata genuinely overflows the safe area,
 - once a detail page already shows visible summary rows and a clear CTA, avoid spending extra footer space on generic "scroll" hints,
 - destructive or secondary watch actions should prefer short Zepp-safe labels or icon treatment over another full-width text button,
-- active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern.
+- active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern, but keep that dock visually simple: one rounded base surface and two rounded pill actions instead of extra mask or divider chrome.
 
 ## Asset contract for icons
 

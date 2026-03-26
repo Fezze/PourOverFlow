@@ -156,6 +156,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - The current feedback baseline is haptics-only. Treat audio cues as unsupported unless product scope changes explicitly.
 - The phone-side seed flow now stores `seedCatalogVersion` inside `pof_sync_meta_v1`; later seed growth should be additive and migration-based, and must not resurrect deleted older seeds.
 - The `home` resume gate now uses `Discard` as the secondary action label, and `brew-active` now gives the main instruction body most of the page height while scrolling only on real overflow.
+- The `brew-active` action row now follows a simpler paired-pill dock pattern: one rounded base surface, a clearer primary-right action, and no extra divider or mask chrome.
 - The latest UX pass follows official Zepp design-system list patterns. If stricter Figma matching is needed later, the repo should first store a concrete project Figma page or node link instead of relying on a generic "use Figma" instruction.
 - `app-side` now coalesces storage-driven snapshot pushes with a small debounce, so high-frequency Settings edits do not immediately spam the bridge.
 - In local simulator workflows, `zeus dev` may push the app more reliably than bridge `install`; if bridge `install` appears to do nothing in the simulator, prefer `zeus dev` for deployment and keep bridge for connection/debug tasks.
