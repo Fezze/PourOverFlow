@@ -251,7 +251,8 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 - status,
 - total time,
 - basic time delta,
-- compact scrollable summary rows when the body content grows past the comfortable round-screen safe area,
+- compact static summary rows when the normal result payload fits without overflow,
+- compact scrollable summary rows only when a future longer result body grows past the comfortable round-screen safe area,
 - for populated result state, one calm primary CTA back to `home`,
 - keep the summary panel visually continuous behind the centered header and the visible list rows instead of splitting it into a short floating card plus redundant exit actions.
 

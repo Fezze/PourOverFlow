@@ -56,10 +56,34 @@ function createCatalogFixture() {
 function createLayoutMock(overrides = {}) {
   return {
     BACKGROUND: {},
-    TITLE_TEXT: {},
-    SUBTITLE_TEXT: {},
-    BODY_TEXT: {},
-    FOOTER_TEXT: {},
+    TITLE_TEXT: {
+      x: 48,
+      y: 68,
+      w: 384,
+      h: 38,
+      text_size: 26
+    },
+    SUBTITLE_TEXT: {
+      x: 56,
+      y: 106,
+      w: 368,
+      h: 34,
+      text_size: 15
+    },
+    BODY_TEXT: {
+      x: 64,
+      y: 134,
+      w: 352,
+      h: 74,
+      text_size: 17
+    },
+    FOOTER_TEXT: {
+      x: 64,
+      y: 398,
+      w: 352,
+      h: 38,
+      text_size: 14
+    },
     ACTION_DOCK: {},
     LIST_PANEL: {},
     DETAIL_PANEL: {
@@ -86,10 +110,29 @@ function createLayoutMock(overrides = {}) {
       titleHeight: 40,
       metaHeight: 24
     },
-    EMPTY_BUTTON: {},
-    PRIMARY_BUTTON: {},
-    HOME_BUTTON: {},
-    BUTTONS: [{}, {}, {}],
+    EMPTY_BUTTON: {
+      x: 64,
+      y: 382,
+      w: 352,
+      h: 64
+    },
+    PRIMARY_BUTTON: {
+      x: 64,
+      y: 382,
+      w: 352,
+      h: 64
+    },
+    HOME_BUTTON: {
+      x: 64,
+      y: 382,
+      w: 352,
+      h: 64
+    },
+    BUTTONS: [
+      { x: 64, y: 382, w: 352, h: 64 },
+      { x: 64, y: 324, w: 170, h: 40 },
+      { x: 246, y: 324, w: 170, h: 40 }
+    ],
     ...overrides
   };
 }
@@ -556,11 +599,15 @@ describe("page shell runtime coverage", () => {
 
     const pageInstance = buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();
-    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
+    const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
+    const fillRects = widgets.filter((widget) => widget.type === "FILL_RECT");
 
-    expect(scrollList).toBeTruthy();
-    expect(scrollList.data_count).toBe(3);
+    expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
+    expect(fillRects.length).toBeGreaterThanOrEqual(4);
+    expect(textWidgets.some((widget) => widget.text === "Status")).toBe(true);
+    expect(textWidgets.some((widget) => widget.text === "Total time")).toBe(true);
+    expect(textWidgets.some((widget) => widget.text === "Timing delta")).toBe(true);
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === fixture.lastResult.recipeName)).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Home")).toBe(true);
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Browse")).toBe(false);
@@ -590,6 +637,28 @@ describe("page shell runtime coverage", () => {
     });
 
     expect(runtime.router.replace).not.toHaveBeenCalled();
+  });
+
+  it("keeps result-summary scrollable only when future content really overflows", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/result-summary/index.js", createLayoutMock());
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify({
+        ...fixture.lastResult,
+        totalDeltaMs:
+          "This is an intentionally long future-facing summary string that should force the result panel into a genuine overflow state instead of rendering as static rows. ".repeat(
+            14
+          )
+      })
+    });
+
+    buildPage(pageDefinition);
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.enable_scroll_bar).toBe(false);
+    expect(scrollList.data_count).toBe(3);
   });
 
   it("covers the home resume, discard, and latest-result button paths", async () => {

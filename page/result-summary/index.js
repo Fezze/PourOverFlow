@@ -92,6 +92,70 @@ function createResultListConfig(resultListFrame) {
   ];
 }
 
+function estimateResultLineCount(text, resultListFrame) {
+  const approxCharsPerLine = Math.max(24, Math.floor((resultListFrame.w - 32) / 8));
+  return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
+}
+
+function buildStaticResultRows(resultRows, resultListFrame) {
+  const items = [];
+  let currentY = resultListFrame.y;
+
+  resultRows.forEach((row, index) => {
+    const lineCount = estimateResultLineCount(row.meta, resultListFrame);
+    const rowHeight = 38 + (lineCount - 1) * 14;
+
+    items.push({
+      frame: {
+        x: resultListFrame.x,
+        y: currentY,
+        w: resultListFrame.w,
+        h: rowHeight,
+        radius: resultListFrame.itemRadius,
+        color: PANEL_COLOR
+      },
+      title: {
+        x: resultListFrame.x + 16,
+        y: currentY + 7,
+        w: resultListFrame.w - 32,
+        h: 18,
+        text: row.title,
+        color: 0xf5f7fa,
+        text_size: 17,
+        align_h: hmUI.align.LEFT,
+        align_v: hmUI.align.CENTER_V
+      },
+      meta: {
+        x: resultListFrame.x + 16,
+        y: currentY + 24,
+        w: resultListFrame.w - 32,
+        h: Math.max(16, lineCount * 14),
+        text: row.meta,
+        color: MUTED_TEXT,
+        text_size: 15,
+        text_style: hmUI.text_style.WRAP,
+        align_h: hmUI.align.LEFT,
+        align_v: hmUI.align.CENTER_V
+      }
+    });
+
+    currentY += rowHeight + (index === resultRows.length - 1 ? 0 : resultListFrame.itemSpace);
+  });
+
+  return items;
+}
+
+function canRenderStaticResultRows(resultRows, resultListFrame) {
+  if (!resultRows.length) {
+    return false;
+  }
+
+  const totalHeight = buildStaticResultRows(resultRows, resultListFrame).reduce((sum, row) => sum + row.frame.h, 0) +
+    resultListFrame.itemSpace * Math.max(0, resultRows.length - 1);
+
+  return totalHeight <= resultListFrame.h;
+}
+
 Page({
   onDestroy() {
     if (this.unsubscribeRuntime) {
@@ -128,26 +192,34 @@ Page({
       color: PANEL_COLOR
     });
     if (resultRows.length) {
-      hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
-        x: resultListFrame.x,
-        y: resultListFrame.y,
-        w: resultListFrame.w,
-        h: resultListFrame.h,
-        item_space: resultListFrame.itemSpace,
-        item_config: createResultListConfig(resultListFrame),
-        item_config_count: 1,
-        data_array: resultRows,
-        data_count: resultRows.length,
-        data_type_config: [
-          {
-            start: 0,
-            end: resultRows.length - 1,
-            type_id: 1
-          }
-        ],
-        data_type_config_count: 1,
-        enable_scroll_bar: true
-      });
+      if (canRenderStaticResultRows(resultRows, resultListFrame)) {
+        buildStaticResultRows(resultRows, resultListFrame).forEach((row) => {
+          hmUI.createWidget(hmUI.widget.FILL_RECT, row.frame);
+          hmUI.createWidget(hmUI.widget.TEXT, row.title);
+          hmUI.createWidget(hmUI.widget.TEXT, row.meta);
+        });
+      } else {
+        hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
+          x: resultListFrame.x,
+          y: resultListFrame.y,
+          w: resultListFrame.w,
+          h: resultListFrame.h,
+          item_space: resultListFrame.itemSpace,
+          item_config: createResultListConfig(resultListFrame),
+          item_config_count: 1,
+          data_array: resultRows,
+          data_count: resultRows.length,
+          data_type_config: [
+            {
+              start: 0,
+              end: resultRows.length - 1,
+              type_id: 1
+            }
+          ],
+          data_type_config_count: 1,
+          enable_scroll_bar: false
+        });
+      }
     } else {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
