@@ -97,7 +97,8 @@ Minimum UI set:
 3. keep the start CTA separate from the browse list,
 4. in the healthy state, prefer a single prominent `Start brew` CTA and let system back navigation return to `recipe-list`,
 5. allow going back to `recipe-list` without mutating the recipe snapshot,
-6. keep detail text inset from the card edges instead of stretching all the way to the inner background bounds.
+6. keep detail text inset from the card edges instead of stretching all the way to the inner background bounds,
+7. let the summary card visually run down toward the CTA instead of spending that space on an extra footer hint about scrolling.
 
 ## Watch flow 5 - session start
 

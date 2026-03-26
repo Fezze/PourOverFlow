@@ -283,11 +283,13 @@ describe("page shell runtime coverage", () => {
     const pageInstance = buildPage(pageDefinition);
     const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
+    const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
 
     expect(scrollList).toBeTruthy();
     expect(scrollList.data_count).toBeGreaterThanOrEqual(4);
     expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Start brew");
+    expect(textWidgets.some((widget) => String(widget.text).includes("Scroll for details"))).toBe(false);
     buttons[0].click_func();
 
     expect(runtime.router.push).toHaveBeenCalledWith({

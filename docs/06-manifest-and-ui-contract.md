@@ -151,6 +151,7 @@ The watch UI now follows these repo-level rules:
 - round-screen layouts should use a conservative content width instead of treating the full black circle as a safe text area,
 - card content should keep visible inner padding from the panel edges,
 - static detail or summary pages should prefer compact scrollable summary rows over one tall fixed text block when content can exceed the comfortable safe area,
+- once a detail page already shows visible summary rows and a clear CTA, avoid spending extra footer space on generic "scroll" hints,
 - destructive or secondary watch actions should prefer short Zepp-safe labels or icon treatment over another full-width text button,
 - active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern.
 

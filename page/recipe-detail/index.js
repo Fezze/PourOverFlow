@@ -18,11 +18,10 @@ import {
   TITLE_TEXT
 } from "zosLoader:./index.[pf].layout.js";
 
-const MUTED_TEXT = 0xaab4c2;
 const DETAIL_LIST_FRAME = {
-  x: DETAIL_PANEL.x + 10,
+  x: DETAIL_PANEL.x + 8,
   y: DETAIL_PANEL.y + 12,
-  w: DETAIL_PANEL.w - 20,
+  w: DETAIL_PANEL.w - 16,
   h: DETAIL_PANEL.h - 24,
   itemHeight: 68,
   itemSpace: 8,
@@ -187,12 +186,5 @@ Page({
       });
     }
 
-    if (selectedRecipe && snapshot) {
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        ...FOOTER_TEXT,
-        color: MUTED_TEXT,
-        text: "Scroll for details, then start when ready."
-      });
-    }
   }
 });

@@ -19,8 +19,10 @@ export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const DETAIL_PANEL = createPanelStyle(layout, {
+  x: px(24),
   y: px(100),
-  h: px(122)
+  w: px(336),
+  h: px(176)
 });
 export const BODY_TEXT = {
   ...layout.body,

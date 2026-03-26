@@ -21,8 +21,10 @@ export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 export const DETAIL_PANEL = createPanelStyle(layout, {
+  x: px(56),
   y: px(110),
-  h: px(138)
+  w: px(368),
+  h: px(246)
 });
 export const BODY_TEXT = {
   ...layout.body,
