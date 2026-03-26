@@ -81,7 +81,7 @@ Current verified platform note:
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists, real method icons, and a dedicated recipe detail/start page,
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - explicit empty `recipe-list` guidance that tells the user to create recipes on the phone first and then refresh from the watch,
-- compact scrollable summary rows on `recipe-detail` and populated `result-summary`, with calmer continuous panels and a single `Home` CTA on the populated result screen so longer content does not rely on a single fixed-height text block,
+- compact summary rows on `recipe-detail` and populated `result-summary`, with `recipe-detail` staying static for normal-length recipes and only falling back to scrolling when the content really overflows, calmer continuous panels, and a single `Home` CTA on the populated result screen so longer content does not rely on a single fixed-height text block,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - a haptics-first watch feedback model without a dedicated hardware-check page,
 - a shared `[pof-validation]` log prefix across display guard, resume, haptics, and queue replay paths so real-device checks can be traced without a dedicated watch debug screen,

@@ -155,7 +155,8 @@ The watch UI now follows these repo-level rules:
 - round-screen list screens should avoid pinning the first visible card directly against the top edge when a calmer centered starting position fits better,
 - round-screen list rows should keep the icon column inset enough to avoid mask clipping on the first visible items,
 - card content should keep visible inner padding from the panel edges,
-- static detail or summary pages should prefer compact scrollable summary rows over one tall fixed text block when content can exceed the comfortable safe area,
+- static detail or summary pages should prefer compact summary rows over one tall fixed text block, and `recipe-detail` should stay non-scrollable when those rows still fit on screen,
+- only fall back to scrollable summary rows when the recipe metadata genuinely overflows the safe area,
 - once a detail page already shows visible summary rows and a clear CTA, avoid spending extra footer space on generic "scroll" hints,
 - destructive or secondary watch actions should prefer short Zepp-safe labels or icon treatment over another full-width text button,
 - active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern.

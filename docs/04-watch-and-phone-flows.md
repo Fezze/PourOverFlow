@@ -99,12 +99,13 @@ Minimum UI set:
 
 1. read `selectedRecipeId` from watch runtime state,
 2. show a compact summary of the selected `RecipeSnapshot`,
-3. keep longer recipe metadata inside compact scrollable summary rows instead of one tall static text block,
-3. keep the start CTA separate from the browse list,
-4. in the healthy state, prefer a single prominent `Start brew` CTA and let system back navigation return to `recipe-list`,
-5. allow going back to `recipe-list` without mutating the recipe snapshot,
-6. keep detail text inset from the card edges instead of stretching all the way to the inner background bounds,
-7. let the summary card visually run down toward the CTA instead of spending that space on an extra footer hint about scrolling.
+3. keep normal recipe metadata inside compact static summary rows when the content fits without overflow,
+4. fall back to compact scrollable summary rows only when longer recipe metadata would exceed the comfortable safe area,
+5. keep the start CTA separate from the browse list,
+6. in the healthy state, prefer a single prominent `Start brew` CTA and let system back navigation return to `recipe-list`,
+7. allow going back to `recipe-list` without mutating the recipe snapshot,
+8. keep detail text inset from the card edges instead of stretching all the way to the inner background bounds,
+9. let the summary card visually run down toward the CTA instead of spending that space on an extra footer hint about scrolling.
 
 ## Watch flow 5 - session start
 

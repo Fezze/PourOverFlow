@@ -42,21 +42,81 @@ function buildRecipeRows(recipe) {
     },
     {
       title: "Brew profile",
-      meta: `${snapshot.waterTempC}C / ${snapshot.grindLabel}`
+      meta: `${snapshot.waterTempC}C / ${snapshot.grindLabel} / ${snapshot.filterLabel} filter`
     },
     {
       title: "Time and steps",
       meta: `${Math.round(snapshot.estimatedTotalDurationMs / 1000)}s / ${snapshot.steps.length} steps`
     },
     {
-      title: "Filter",
-      meta: `${snapshot.filterLabel} filter`
-    },
-    {
       title: "Notes",
       meta: snapshot.description || "Start when ready."
     }
   ];
+}
+
+function estimateDetailLineCount(text) {
+  const approxCharsPerLine = Math.max(24, Math.floor((DETAIL_LIST_FRAME.w - 32) / 8));
+  return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
+}
+
+function buildStaticDetailRows(detailRows) {
+  const items = [];
+  let currentY = DETAIL_LIST_FRAME.y;
+
+  detailRows.forEach((row, index) => {
+    const lineCount = estimateDetailLineCount(row.meta);
+    const rowHeight = 38 + (lineCount - 1) * 14;
+
+    items.push({
+      frame: {
+        x: DETAIL_LIST_FRAME.x,
+        y: currentY,
+        w: DETAIL_LIST_FRAME.w,
+        h: rowHeight,
+        radius: DETAIL_LIST_FRAME.itemRadius,
+        color: 0x171d26
+      },
+      title: {
+        x: DETAIL_LIST_FRAME.x + 16,
+        y: currentY + 7,
+        w: DETAIL_LIST_FRAME.w - 32,
+        h: 18,
+        text: row.title,
+        color: 0xf5f7fa,
+        text_size: 18,
+        align_h: hmUI.align.LEFT,
+        align_v: hmUI.align.CENTER_V
+      },
+      meta: {
+        x: DETAIL_LIST_FRAME.x + 16,
+        y: currentY + 24,
+        w: DETAIL_LIST_FRAME.w - 32,
+        h: Math.max(16, lineCount * 14),
+        text: row.meta,
+        color: 0xaab4c2,
+        text_size: 15,
+        text_style: hmUI.text_style.WRAP,
+        align_h: hmUI.align.LEFT,
+        align_v: hmUI.align.CENTER_V
+      }
+    });
+
+    currentY += rowHeight + (index === detailRows.length - 1 ? 0 : DETAIL_LIST_FRAME.itemSpace);
+  });
+
+  return items;
+}
+
+function canRenderStaticDetailRows(detailRows) {
+  if (!detailRows.length) {
+    return false;
+  }
+
+  const totalHeight = buildStaticDetailRows(detailRows).reduce((sum, row) => sum + row.frame.h, 0) +
+    DETAIL_LIST_FRAME.itemSpace * Math.max(0, detailRows.length - 1);
+
+  return totalHeight <= DETAIL_LIST_FRAME.h;
 }
 
 function createDetailListConfig() {
@@ -133,26 +193,34 @@ Page({
       color: accentColor
     });
     if (detailRows.length) {
-      hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
-        x: DETAIL_LIST_FRAME.x,
-        y: DETAIL_LIST_FRAME.y,
-        w: DETAIL_LIST_FRAME.w,
-        h: DETAIL_LIST_FRAME.h,
-        item_space: DETAIL_LIST_FRAME.itemSpace,
-        item_config: createDetailListConfig(),
-        item_config_count: 1,
-        data_array: detailRows,
-        data_count: detailRows.length,
-        data_type_config: [
-          {
-            start: 0,
-            end: detailRows.length - 1,
-            type_id: 1
-          }
-        ],
-        data_type_config_count: 1,
-        enable_scroll_bar: true
-      });
+      if (canRenderStaticDetailRows(detailRows)) {
+        buildStaticDetailRows(detailRows).forEach((row) => {
+          hmUI.createWidget(hmUI.widget.FILL_RECT, row.frame);
+          hmUI.createWidget(hmUI.widget.TEXT, row.title);
+          hmUI.createWidget(hmUI.widget.TEXT, row.meta);
+        });
+      } else {
+        hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
+          x: DETAIL_LIST_FRAME.x,
+          y: DETAIL_LIST_FRAME.y,
+          w: DETAIL_LIST_FRAME.w,
+          h: DETAIL_LIST_FRAME.h,
+          item_space: DETAIL_LIST_FRAME.itemSpace,
+          item_config: createDetailListConfig(),
+          item_config_count: 1,
+          data_array: detailRows,
+          data_count: detailRows.length,
+          data_type_config: [
+            {
+              start: 0,
+              end: detailRows.length - 1,
+              type_id: 1
+            }
+          ],
+          data_type_config_count: 1,
+          enable_scroll_bar: false
+        });
+      }
     } else {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,

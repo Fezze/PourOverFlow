@@ -62,7 +62,13 @@ function createLayoutMock(overrides = {}) {
     FOOTER_TEXT: {},
     ACTION_DOCK: {},
     LIST_PANEL: {},
-    DETAIL_PANEL: {},
+    DETAIL_PANEL: {
+      x: 56,
+      y: 110,
+      w: 368,
+      h: 246,
+      radius: 24
+    },
     STATUS_PANEL: {},
     STATUS_TEXT: {},
     ACTION_LEFT_BG: {},
@@ -283,12 +289,16 @@ describe("page shell runtime coverage", () => {
     watchStore.getRuntimeState().selectedToolId = fixture.primaryRecord.toolId;
     watchStore.writeSelectedRecipeId(fixture.primarySummary.recipeId);
     const pageInstance = buildPage(pageDefinition);
-    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
     const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
+    const fillRects = runtime.getCreatedWidgets().filter((widget) => widget.type === "FILL_RECT");
 
-    expect(scrollList).toBeTruthy();
-    expect(scrollList.data_count).toBeGreaterThanOrEqual(4);
+    expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
+    expect(fillRects.length).toBeGreaterThanOrEqual(5);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Dose and water"))).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Brew profile"))).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Time and steps"))).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Notes"))).toBe(true);
     expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Start brew");
     expect(textWidgets.some((widget) => String(widget.text).includes("Scroll for details"))).toBe(false);
@@ -320,6 +330,37 @@ describe("page shell runtime coverage", () => {
     });
 
     expect(runtime.router.replace).not.toHaveBeenCalled();
+  });
+
+  it("keeps recipe-detail scrollable only when the content really overflows", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/recipe-detail/index.js", createLayoutMock());
+    const watchStore = await import("../shared/storage/watch-store.js");
+    const longSnapshot = {
+      ...fixture.primarySnapshot,
+      description:
+        "This is a much longer tasting note intended to force the recipe detail surface into a real overflow case so the page keeps scrolling only when it genuinely needs more vertical space than the round layout can offer."
+    };
+    const longCatalogCache = {
+      ...fixture.catalogCache,
+      recipeSnapshotsById: {
+        ...fixture.catalogCache.recipeSnapshotsById,
+        [fixture.primarySummary.recipeId]: longSnapshot
+      }
+    };
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(longCatalogCache)
+    });
+
+    watchStore.getRuntimeState().selectedToolId = fixture.primaryRecord.toolId;
+    watchStore.writeSelectedRecipeId(fixture.primarySummary.recipeId);
+    buildPage(pageDefinition);
+
+    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+    expect(scrollList).toBeTruthy();
+    expect(scrollList.enable_scroll_bar).toBe(false);
+    expect(scrollList.data_count).toBeGreaterThanOrEqual(4);
   });
 
   it("renders the active-brew dock with Zepp-safe labels and ASCII step meta", async () => {
