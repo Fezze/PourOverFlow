@@ -139,6 +139,7 @@ Playwright in this repo is intentionally split in two:
 - browser module-harness coverage, through `npm run test:playwright:coverage:harness`
 
 The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `zeus dev` before trusting the simulator test result.
+Do not start the simulator smoke test in parallel with `zeus dev`. Wait for the deploy to finish first, otherwise the freshness gate may fail transiently while the simulator app folder is still being updated.
 The repo no longer exposes simulator V8 coverage as a standard npm test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts such as `mobile-main-service.js` instead of reliable PourOverFlow app-code coverage.
 The verification workflow is intentionally local-first and does not assume CI. If CI is added later, it should mirror the same commands as `Verify: all tests and coverage` instead of redefining the stack separately.
 

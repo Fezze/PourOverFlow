@@ -111,6 +111,7 @@ Current verified platform note:
 - Keep pushing coverage upward when meaningful behavior-focused tests can be added without padding the suite.
 
 Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `zeus dev` before treating the simulator result as meaningful.
+Do not kick off the simulator smoke test in parallel with `zeus dev`; wait until the deploy has finished, otherwise the freshness gate may fail while the simulator app folder timestamps are still catching up.
 Playwright coverage here is intentionally limited to the browser module harness under `coverage/playwright/harness/`. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
 `Verify: all tests and coverage` is the repo-standard local job. If CI is introduced later, it should mirror the same command list rather than reassemble the test stack in a second place.
 The current simulator smoke implementation now has a Linux baseline through `${XDG_CONFIG_HOME:-~/.config}/simulator`. Use `ZEPP_SIMULATOR_ROOT` if your simulator metadata lives elsewhere.
