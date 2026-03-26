@@ -13,12 +13,20 @@
 
 - Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.
 - Use the new `[pof-validation]` log prefix during hardware tests and write back concrete findings instead of leaving them in chat only.
+- Decide explicitly whether optional watch audio cues should come back at all; if they stay unsupported, keep the UX and docs free of sound expectations.
 
 ### Watch UI follow-up
 
 - Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, and `result-summary`.
 - Refine the custom side-by-side action dock on `brew-active` until it matches the intended Zepp-style shape more closely.
+- Replace the unclear `X` button on the `home` resume state with a clearer discard action label or icon treatment.
+- Rework `brew-active` so the main instruction body gets more vertical space, generic step-kind footer copy such as `Timed step.` disappears, and the instruction content scrolls only when it actually overflows.
 - If tighter visual matching is still desired later, store a concrete project Figma node or page link in the repo and map the watch screens to it explicitly.
+
+### Seed-library follow-up
+
+- Expand the seed library from the current 12 recipes to a larger uneven set so every supported brewer has more than 2 recipes without every brewer having the same recipe count.
+- Re-run watch browse and sync checks after that seed expansion to confirm larger per-brewer lists stay comfortable on-device.
 
 ### Tooling follow-up
 
