@@ -88,7 +88,7 @@ Current verified platform note:
 - revision-aware slice pushes from `app-side/`, so unchanged bootstrap slices are skipped and live edits no longer replay the full snapshot set,
 - baseline logic tests for validators, phone storage, sync contracts, and the session reducer,
 - mocked Zepp runtime tests for cached watch browse, full brew completion, incoming catalog sync, and pending-history replay,
-- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, and `result-summary`, including runtime-event refresh and empty or stale-state fallbacks,
+- mocked page-shell runtime tests for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `brew-active`, and `result-summary`, including runtime-event refresh and empty or stale-state fallbacks,
 - a round-screen watch UI pass that removes repeated app-name chrome, keeps populated chooser screens quieter, adds a dedicated recipe detail/start page, and uses custom lower action docks on the main action screens.
 
 ## Test loop
@@ -99,7 +99,7 @@ Current verified platform note:
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
-- Current meaningful coverage baselines after the latest test expansion are `93.67% / 84.86% / 98.28% / 93.57%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
+- Current meaningful coverage baselines after the latest test expansion are `93.30% / 83.59% / 97.51% / 93.20%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.

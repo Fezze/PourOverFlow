@@ -128,7 +128,7 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - brew metadata: `waterMl` and `targetTotalWaterMl` when present,
 - CTA:
   - a bottom side-by-side action dock,
-  - icon-first cancel and confirm actions instead of two full-width text buttons,
+  - short Zepp-safe labels or icons instead of raw decorative glyphs or two full-width text buttons,
 - physical shortcut:
   - trigger the primary action when the watch exposes Zepp's shortcut key
 

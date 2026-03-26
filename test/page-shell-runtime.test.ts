@@ -65,6 +65,10 @@ function createLayoutMock(overrides = {}) {
     DETAIL_PANEL: {},
     STATUS_PANEL: {},
     STATUS_TEXT: {},
+    ACTION_LEFT_BG: {},
+    ACTION_RIGHT_BG: {},
+    ACTION_TOP_MASK: {},
+    ACTION_DIVIDER: {},
     LIST_FRAME: {
       x: 0,
       y: 0,
@@ -102,7 +106,9 @@ async function loadPageHarness(modulePath: string, layoutMock: Record<string, un
 }
 
 function buildPage(pageDefinition: Record<string, unknown>) {
-  const pageInstance: Record<string, unknown> = {};
+  const pageInstance: Record<string, unknown> = {
+    ...pageDefinition
+  };
   (pageDefinition.build as () => void).call(pageInstance);
   return pageInstance;
 }
@@ -307,6 +313,189 @@ describe("page shell runtime coverage", () => {
     });
 
     expect(runtime.router.replace).not.toHaveBeenCalled();
+  });
+
+  it("renders the active-brew dock with Zepp-safe labels and ASCII step meta", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../shared/storage/watch-store.js");
+    const now = 250_000;
+    const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
+
+    activeSession.currentStepIndex = 1;
+    activeSession.status = "running";
+    activeSession.currentStepStartedAt = now;
+    activeSession.expectedStepEndAt = now + 15_000;
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
+    });
+
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    try {
+      const pageInstance = buildPage(pageDefinition);
+      const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
+      const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
+
+      expect(buttons.map((widget) => widget.text)).toEqual(["Skip", "Stop"]);
+      expect(buttons.every((widget) => /^[\x20-\x7E]+$/.test(String(widget.text)))).toBe(true);
+      expect(textWidgets.some((widget) => String(widget.text).includes("Target 50 ml /"))).toBe(true);
+      expect(textWidgets.some((widget) => String(widget.text).includes("Timed step."))).toBe(true);
+      expect(runtime.display.setWakeUpRelaunch).toHaveBeenCalled();
+      buttons[0].click_func();
+      expect(runtime.router.replace).toHaveBeenCalledWith({
+        url: "page/brew-active/index"
+      });
+      expect(watchStore.readActiveSession()?.currentStepIndex).toBe(2);
+
+      (pageDefinition.onDestroy as () => void).call(pageInstance);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("aborts the active brew from the dock and returns home", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../shared/storage/watch-store.js");
+    const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now: 310_000 });
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
+    });
+
+    buildPage(pageDefinition);
+    const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
+
+    buttons[1].click_func();
+
+    expect(runtime.router.replace).toHaveBeenCalledWith({
+      url: "page/home/index"
+    });
+    expect(watchStore.readActiveSession()).toBeNull();
+  });
+
+  it("replaces the active-brew page when a timed tick advances the session", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const now = 410_000;
+    const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
+
+    activeSession.currentStepIndex = 1;
+    activeSession.status = "running";
+    activeSession.currentStepStartedAt = now - 14_000;
+    activeSession.expectedStepEndAt = now + 1_000;
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
+    });
+
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    try {
+      const pageInstance = buildPage(pageDefinition);
+
+      runtime.router.replace.mockClear();
+      vi.advanceTimersByTime(1_000);
+
+      expect(runtime.router.replace).toHaveBeenCalledWith({
+        url: "page/brew-active/index"
+      });
+
+      (pageDefinition.onDestroy as () => void).call(pageInstance);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("refreshes the active-brew widgets in place while a timed step is still running", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const now = 510_000;
+    const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
+
+    activeSession.currentStepIndex = 1;
+    activeSession.status = "running";
+    activeSession.currentStepStartedAt = now;
+    activeSession.expectedStepEndAt = now + 5_000;
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
+    });
+
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    try {
+      const pageInstance = buildPage(pageDefinition);
+      const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
+      const metaWidget = textWidgets.find((widget) => String(widget.text).includes("left"));
+
+      runtime.router.replace.mockClear();
+      vi.advanceTimersByTime(1_000);
+
+      expect(runtime.router.replace).not.toHaveBeenCalled();
+      expect(String(metaWidget?.text)).toContain("0:04 left");
+
+      (pageDefinition.onDestroy as () => void).call(pageInstance);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stops the active-brew timer loop cleanly when the session disappears", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../shared/storage/watch-store.js");
+    const now = 610_000;
+    const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
+
+    activeSession.currentStepIndex = 1;
+    activeSession.status = "running";
+    activeSession.currentStepStartedAt = now;
+    activeSession.expectedStepEndAt = now + 5_000;
+
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
+    });
+
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+
+    try {
+      const pageInstance = buildPage(pageDefinition);
+
+      watchStore.clearActiveSession();
+      vi.advanceTimersByTime(1_000);
+
+      expect(pageInstance.activeTimer).toBeNull();
+      expect(runtime.router.replace).not.toHaveBeenCalled();
+
+      (pageDefinition.onDestroy as () => void).call(pageInstance);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("renders the no-active-brew fallback and keeps its home action usable", async () => {
+    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+
+    buildPage(pageDefinition);
+    const widgets = runtime.getCreatedWidgets();
+    const buttons = widgets.filter((widget) => widget.type === "BUTTON");
+
+    expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "No active brew")).toBe(true);
+    expect(widgets.some((widget) => widget.type === "TEXT" && String(widget.text).includes("recipe list"))).toBe(true);
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].text).toBe("Go home");
+
+    buttons[0].click_func();
+    expect(runtime.router.replace).toHaveBeenCalledWith({
+      url: "page/home/index"
+    });
   });
 
   it("refreshes the result summary page on latest-result events", async () => {

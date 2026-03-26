@@ -4,8 +4,7 @@ import {
   formatDurationLabel,
   getCurrentSessionStep,
   getCurrentStepRemainingMs,
-  getElapsedSessionMs,
-  getStepProgressLabel
+  getElapsedSessionMs
 } from "../../shared/engine/recipe-engine";
 import { readActiveSession } from "../../shared/storage/watch-store";
 import {
@@ -62,7 +61,7 @@ function buildStepMetaText(activeSession) {
     parts.push(`Session ${sessionElapsedLabel}`);
   }
 
-  return parts.join("  •  ");
+  return parts.join(" / ");
 }
 
 function buildFooterText(activeSession) {
@@ -80,7 +79,29 @@ function buildFooterText(activeSession) {
     return "Timed step.";
   }
 
-  return "Tap check to continue.";
+  return "Tap Next to continue.";
+}
+
+function buildPrimaryActionLabel(activeSession) {
+  const currentStep = getCurrentSessionStep(activeSession);
+
+  if (!currentStep) {
+    return "Next";
+  }
+
+  if (currentStep.kind === "finish") {
+    return "Finish";
+  }
+
+  if (activeSession.status === "waiting_for_confirm") {
+    return "Next";
+  }
+
+  if (currentStep.kind === "timed_action" || currentStep.kind === "timed_wait") {
+    return "Skip";
+  }
+
+  return "Next";
 }
 
 Page({
@@ -221,14 +242,16 @@ Page({
     }
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: "✓",
+      text: buildPrimaryActionLabel(activeSession),
+      text_size: 24,
       click_func: () => {
         advanceOrCompleteActiveSession();
       }
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: "✕",
+      text: "Stop",
+      text_size: 24,
       click_func: () => {
         abortActiveBrew();
       }
