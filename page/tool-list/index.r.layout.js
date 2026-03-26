@@ -1,6 +1,6 @@
 import * as hmUI from "@zos/ui";
 import { px } from "@zos/utils";
-import { createButtonStyle, createPanelStyle, createScaffoldLayout } from "../../shared/watch/layouts";
+import { createButtonStyle, createScaffoldLayout } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
 
@@ -8,7 +8,7 @@ export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 TITLE_TEXT.x = px(48);
-TITLE_TEXT.y = px(68);
+TITLE_TEXT.y = px(66);
 TITLE_TEXT.w = px(384);
 TITLE_TEXT.text_size = px(26);
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
@@ -16,20 +16,14 @@ SUBTITLE_TEXT.x = px(56);
 SUBTITLE_TEXT.y = px(106);
 SUBTITLE_TEXT.w = px(368);
 SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
-export const LIST_PANEL = createPanelStyle(layout, {
-  x: px(44),
-  y: px(52),
-  w: px(392),
-  h: px(354)
-});
 export const LIST_FRAME = {
-  x: LIST_PANEL.x + px(10),
-  y: px(146),
-  w: LIST_PANEL.w - px(20),
-  h: px(252),
-  itemHeight: px(104),
-  itemSpace: px(10),
-  itemRadius: px(22),
+  x: px(48),
+  y: px(112),
+  w: px(384),
+  h: px(332),
+  itemHeight: px(92),
+  itemSpace: px(12),
+  itemRadius: px(24),
   titleHeight: px(48),
   metaHeight: px(28)
 };

@@ -6,7 +6,6 @@ import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import {
   BACKGROUND,
   LIST_FRAME,
-  LIST_PANEL,
   PRIMARY_BUTTON,
   SUBTITLE_TEXT,
   TITLE_TEXT
@@ -40,10 +39,10 @@ function createToolListConfig() {
       item_press_effect: true,
       image_view: [
         {
-          x: 18,
-          y: 28,
-          w: 56,
-          h: 56,
+          x: 26,
+          y: 22,
+          w: 48,
+          h: 48,
           key: "icon",
           action: true
         }
@@ -51,9 +50,9 @@ function createToolListConfig() {
       image_view_count: 1,
       text_view: [
         {
-          x: 92,
-          y: 20,
-          w: LIST_FRAME.w - 112,
+          x: 96,
+          y: 14,
+          w: LIST_FRAME.w - 124,
           h: LIST_FRAME.titleHeight,
           key: "title",
           color: 0xf5f7fa,
@@ -63,9 +62,9 @@ function createToolListConfig() {
           align_v: hmUI.align.CENTER_V
         },
         {
-          x: 92,
-          y: 60,
-          w: LIST_FRAME.w - 112,
+          x: 96,
+          y: 50,
+          w: LIST_FRAME.w - 124,
           h: LIST_FRAME.metaHeight,
           key: "meta",
           color: 0xaab4c2,
@@ -99,10 +98,6 @@ Page({
     });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...TITLE_TEXT,
-      text: "Brewers"
-    });
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
@@ -111,7 +106,6 @@ Page({
     }
 
     if (rows.length) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, LIST_PANEL);
       hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
         x: LIST_FRAME.x,
         y: LIST_FRAME.y,
@@ -130,15 +124,23 @@ Page({
           }
         ],
         data_type_config_count: 1,
-        enable_scroll_bar: true,
+        enable_scroll_bar: false,
         item_common_focus: supportsHardwareListFocus(),
         item_click_func: (_list, index) => {
           selectTool(rows[index].toolId);
         }
       });
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...TITLE_TEXT,
+        text: "Brewers"
+      });
     }
 
     if (!rows.length) {
+      hmUI.createWidget(hmUI.widget.TEXT, {
+        ...TITLE_TEXT,
+        text: "Brewers"
+      });
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...PRIMARY_BUTTON,
         text: "Refresh library",

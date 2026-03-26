@@ -42,11 +42,15 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 - show only tools with `supported: true`,
 - sort by `sortOrder`,
 - render the brewer catalog as a native scrollable list,
-- keep the brewer header centered and let the list live inside one continuous background surface that starts above the visible list rows,
+- keep the brewer header centered and visible above the list,
+- render the header above the list surface so the title does not disappear behind the scroll region,
 - each row shows the brewer icon, brewer label, and the number of available recipes for that `toolId`,
 - keep the populated chooser visually quiet: do not show cache state, bridge state, or a redundant `Home` CTA on this screen,
-- on round screens, avoid pinning the first visible card to the very top edge; let the first visible row sit lower and scroll upward through the same panel,
+- on round screens, let the list itself extend through most of the page instead of boxing it into a short container,
+- start the first visible row lower than the header so it can scroll upward naturally without clipping the title area,
 - keep list content inside a conservative round-screen safe width instead of relying on the full black circle,
+- keep icon and text columns inset far enough from the left mask that the first visible rows do not shave off brewer icons on round hardware,
+- prefer the list itself over a separate scroll-bar affordance when the page already reads clearly as a vertical chooser,
 - support hardware-key list focus when the watch exposes compatible keys,
 - tapping a tool writes the selected `toolId` into watch runtime state and opens `recipe-list`.
 

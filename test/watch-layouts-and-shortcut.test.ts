@@ -111,15 +111,17 @@ describe("watch layouts and shortcut helpers", () => {
     const squareToolList = await import("../page/tool-list/index.s.layout.js");
 
     expect(roundToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
-    expect(roundToolList.LIST_PANEL.x).toBeLessThan(64);
-    expect(roundToolList.LIST_PANEL.w).toBeGreaterThan(352);
-    expect(roundToolList.LIST_PANEL.y).toBeLessThan(roundToolList.LIST_FRAME.y);
+    expect(roundToolList.LIST_FRAME.x).toBeGreaterThanOrEqual(48);
+    expect(roundToolList.LIST_FRAME.w).toBeGreaterThanOrEqual(384);
+    expect(roundToolList.LIST_FRAME.h).toBeGreaterThan(320);
     expect(roundToolList.LIST_FRAME.y).toBeGreaterThan(roundToolList.TITLE_TEXT.y + roundToolList.TITLE_TEXT.h);
+    expect(roundToolList.LIST_FRAME.itemHeight).toBeLessThan(100);
 
     expect(squareToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
-    expect(squareToolList.LIST_PANEL.x).toBeLessThan(28);
-    expect(squareToolList.LIST_PANEL.w).toBeGreaterThan(320);
-    expect(squareToolList.LIST_PANEL.y).toBeLessThan(squareToolList.LIST_FRAME.y);
+    expect(squareToolList.LIST_FRAME.x).toBeGreaterThanOrEqual(18);
+    expect(squareToolList.LIST_FRAME.w).toBeGreaterThanOrEqual(344);
+    expect(squareToolList.LIST_FRAME.h).toBeGreaterThan(210);
+    expect(squareToolList.LIST_FRAME.y).toBeGreaterThan(squareToolList.TITLE_TEXT.y + squareToolList.TITLE_TEXT.h);
   });
 
   it("registers the shortcut key handler and debounces repeated presses", async () => {
