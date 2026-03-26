@@ -103,6 +103,9 @@ Implementation should start from this outline:
 
 ### Rules for the implementer
 
+- In this repo, `app.json` lives under `zepp-app/`, not the repo root.
+- Zeus commands should run from `zepp-app/` or through the repo wrappers that set that working directory automatically.
+
 - `appId` is a placeholder to replace later if the project is registered under a concrete account.
 - `vender` must remain ASCII.
 - Keep `data:os.device.info` when the watch layout layer uses `getDeviceInfo()` for runtime sizing.
@@ -113,32 +116,33 @@ Implementation should start from this outline:
 
 ## File structure implied by the manifest
 
-From `app.json` and screen adaptation, the required structure is:
+From `app.json` and screen adaptation, the required structure inside `zepp-app/` is:
 
 ```text
-assets/
-  common.r/
-  common.s/
-page/home/index.js
-page/home/index.r.layout.js
-page/home/index.s.layout.js
-page/tool-list/index.js
-page/tool-list/index.r.layout.js
-page/tool-list/index.s.layout.js
-page/recipe-list/index.js
-page/recipe-list/index.r.layout.js
-page/recipe-list/index.s.layout.js
-page/recipe-detail/index.js
-page/recipe-detail/index.r.layout.js
-page/recipe-detail/index.s.layout.js
-page/brew-active/index.js
-page/brew-active/index.r.layout.js
-page/brew-active/index.s.layout.js
-page/result-summary/index.js
-page/result-summary/index.r.layout.js
-page/result-summary/index.s.layout.js
-setting/index.jsx
-app-side/index.js
+zepp-app/
+  assets/
+    common.r/
+    common.s/
+  page/home/index.js
+  page/home/index.r.layout.js
+  page/home/index.s.layout.js
+  page/tool-list/index.js
+  page/tool-list/index.r.layout.js
+  page/tool-list/index.s.layout.js
+  page/recipe-list/index.js
+  page/recipe-list/index.r.layout.js
+  page/recipe-list/index.s.layout.js
+  page/recipe-detail/index.js
+  page/recipe-detail/index.r.layout.js
+  page/recipe-detail/index.s.layout.js
+  page/brew-active/index.js
+  page/brew-active/index.r.layout.js
+  page/brew-active/index.s.layout.js
+  page/result-summary/index.js
+  page/result-summary/index.r.layout.js
+  page/result-summary/index.s.layout.js
+  setting/index.jsx
+  app-side/index.js
 ```
 
 ## Watch UI contract
@@ -167,27 +171,27 @@ The watch UI now follows these repo-level rules:
 
 ### Root app icon
 
-- `icon.png` in the project root
+- `zepp-app/icon.png`
 - for target-based Zeus scaffolding, the practical baseline is also:
-  - `assets/common.r/icon.png`
-  - `assets/common.s/icon.png`
+  - `zepp-app/assets/common.r/icon.png`
+  - `zepp-app/assets/common.s/icon.png`
 
 ### Tool icons
 
 Tool icons should be stored as round/square asset pairs:
 
-- `assets/common.r/tool-aeropress.png`
-- `assets/common.s/tool-aeropress.png`
-- `assets/common.r/tool-v60.png`
-- `assets/common.s/tool-v60.png`
-- `assets/common.r/tool-kalita-wave.png`
-- `assets/common.s/tool-kalita-wave.png`
-- `assets/common.r/tool-chemex.png`
-- `assets/common.s/tool-chemex.png`
-- `assets/common.r/tool-clever-dripper.png`
-- `assets/common.s/tool-clever-dripper.png`
-- `assets/common.r/tool-french-press.png`
-- `assets/common.s/tool-french-press.png`
+- `zepp-app/assets/common.r/tool-aeropress.png`
+- `zepp-app/assets/common.s/tool-aeropress.png`
+- `zepp-app/assets/common.r/tool-v60.png`
+- `zepp-app/assets/common.s/tool-v60.png`
+- `zepp-app/assets/common.r/tool-kalita-wave.png`
+- `zepp-app/assets/common.s/tool-kalita-wave.png`
+- `zepp-app/assets/common.r/tool-chemex.png`
+- `zepp-app/assets/common.s/tool-chemex.png`
+- `zepp-app/assets/common.r/tool-clever-dripper.png`
+- `zepp-app/assets/common.s/tool-clever-dripper.png`
+- `zepp-app/assets/common.r/tool-french-press.png`
+- `zepp-app/assets/common.s/tool-french-press.png`
 
 ### Mapping rule
 

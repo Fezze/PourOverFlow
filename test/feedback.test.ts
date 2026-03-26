@@ -5,7 +5,7 @@ function getLastItem(setLike: Set<any>) {
 }
 
 async function loadFeedbackModule() {
-  return import("../shared/engine/feedback.js");
+  return import("../zepp-app/shared/engine/feedback.js");
 }
 
 async function loadRuntimeModule() {

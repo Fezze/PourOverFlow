@@ -1,5 +1,5 @@
-import { getSupportedTools, getToolById } from "../../../shared/constants/tool-catalog.js";
-import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../../../shared/domain/seed-library.js";
+import { getSupportedTools, getToolById } from "../../../zepp-app/shared/constants/tool-catalog.js";
+import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../../../zepp-app/shared/domain/seed-library.js";
 import {
   CURRENT_SCHEMA_VERSION,
   cloneRecipeRecord,
@@ -15,7 +15,7 @@ import {
   DEFAULT_RECIPE_COLOR_TOKEN,
   FEEDBACK_CUES,
   normalizeRecipeSteps
-} from "../../../shared/domain/schema.js";
+} from "../../../zepp-app/shared/domain/schema.js";
 import {
   RECIPE_COLOR_TOKENS,
   RECIPE_SOURCES,
@@ -26,7 +26,7 @@ import {
   toOptionalNumber,
   normalizeText,
   normalizeBoolean
-} from "../../../shared/domain/schema.js";
+} from "../../../zepp-app/shared/domain/schema.js";
 import {
   isColorToken,
   isFeedbackCue,
@@ -40,7 +40,7 @@ import {
   validateRecipeSnapshot,
   validateRecipeStep,
   validateRecipeSummary
-} from "../../../shared/domain/validators.js";
+} from "../../../zepp-app/shared/domain/validators.js";
 import {
   buildScaffoldResult,
   buildHistoryEntryFromSession,
@@ -51,26 +51,26 @@ import {
   getCurrentStepRemainingMs,
   getElapsedSessionMs,
   getStepProgressLabel
-} from "../../../shared/engine/recipe-engine.js";
+} from "../../../zepp-app/shared/engine/recipe-engine.js";
 import {
   abortSession,
   advanceSession,
   resumeSession,
   tickSession
-} from "../../../shared/engine/session-reducer.js";
+} from "../../../zepp-app/shared/engine/session-reducer.js";
 import {
   PHONE_SYNC_SLICES,
   getBootstrapResponseSlices,
   getOrderedPhoneSyncSlices,
   getStorageChangeSlices
-} from "../../../shared/sync/phone-sync-plan.js";
+} from "../../../zepp-app/shared/sync/phone-sync-plan.js";
 import {
   createSyncEnvelope,
   isSyncMessageType,
   validateSyncEnvelope
-} from "../../../shared/sync/contracts.js";
-import { fromSyncEnvelopeJson } from "../../../shared/sync/decode.js";
-import { toSyncEnvelopeJson } from "../../../shared/sync/encode.js";
+} from "../../../zepp-app/shared/sync/contracts.js";
+import { fromSyncEnvelopeJson } from "../../../zepp-app/shared/sync/decode.js";
+import { toSyncEnvelopeJson } from "../../../zepp-app/shared/sync/encode.js";
 import {
   APP_BRIDGE_CONFIG,
   APP_BRIDGE_MESSAGE_TYPES,
@@ -79,28 +79,28 @@ import {
   extractAppBridgePayload,
   parseAppBridgeFrame,
   readCurrentAppSidePort
-} from "../../../shared/sync/bridge-frame.js";
+} from "../../../zepp-app/shared/sync/bridge-frame.js";
 import {
   BRIDGE_TRANSPORT_CONFIG,
   BRIDGE_TRANSPORT_STATUS,
   buildChunkedBridgeTransportPayloads,
   createBridgeTransportState,
   readBridgeTransportPayload
-} from "../../../shared/sync/bridge-transport.js";
+} from "../../../zepp-app/shared/sync/bridge-transport.js";
 import {
   decodeEnvelopeFromBlePayload,
   encodeEnvelopeForBle
-} from "../../../shared/sync/device-codec.js";
+} from "../../../zepp-app/shared/sync/device-codec.js";
 import {
   decodeEnvelopeFromPeerSocket,
   encodeEnvelopeForPeerSocket
-} from "../../../shared/sync/side-codec.js";
-import { SYNC_MESSAGE_TYPES } from "../../../shared/sync/message-types.js";
+} from "../../../zepp-app/shared/sync/side-codec.js";
+import { SYNC_MESSAGE_TYPES } from "../../../zepp-app/shared/sync/message-types.js";
 import {
   buildPhoneCatalogSnapshot,
   buildPhoneHistorySnapshot,
   buildPhoneToolCatalogSnapshot
-} from "../../../shared/sync/normalize.js";
+} from "../../../zepp-app/shared/sync/normalize.js";
 import {
   deleteRecipeRecord,
   duplicateRecipeRecord,
@@ -114,12 +114,12 @@ import {
   saveHistoryEntry,
   saveRecipeRecord,
   updateHistoryEntryFeedback
-} from "../../../shared/storage/phone-store.js";
+} from "../../../zepp-app/shared/storage/phone-store.js";
 import {
   PHONE_STORAGE_KEYS,
   getPhoneHistoryRecordKey,
   getPhoneRecipeRecordKey
-} from "../../../shared/storage/keys.js";
+} from "../../../zepp-app/shared/storage/keys.js";
 
 const statusElement = document.querySelector("#status");
 const resultsElement = document.querySelector("#results");

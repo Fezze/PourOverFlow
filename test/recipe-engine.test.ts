@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { getSeedRecipeRecordById } from "../shared/domain/seed-library.js";
-import { normalizeRecipeSteps } from "../shared/domain/schema.js";
+import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.js";
+import { normalizeRecipeSteps } from "../zepp-app/shared/domain/schema.js";
 import {
   buildScaffoldResult,
   createActiveBrewSession,
@@ -10,8 +10,8 @@ import {
   getCurrentStepRemainingMs,
   getElapsedSessionMs,
   getStepProgressLabel
-} from "../shared/engine/recipe-engine.js";
-import { abortSession, advanceSession } from "../shared/engine/session-reducer.js";
+} from "../zepp-app/shared/engine/recipe-engine.js";
+import { abortSession, advanceSession } from "../zepp-app/shared/engine/session-reducer.js";
 
 describe("recipe engine helpers", () => {
   it("builds a running session from a recipe snapshot and keeps unknown tool labels stable", () => {

@@ -1,12 +1,12 @@
 import { expect, test } from "vitest";
 
-import { getSeedRecipeRecordById } from "../shared/domain/seed-library.js";
+import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.js";
 import {
   buildHistoryEntryFromSession,
   createActiveBrewSession,
   getCurrentSessionStep
-} from "../shared/engine/recipe-engine.js";
-import { advanceSession, abortSession, resumeSession, tickSession } from "../shared/engine/session-reducer.js";
+} from "../zepp-app/shared/engine/recipe-engine.js";
+import { advanceSession, abortSession, resumeSession, tickSession } from "../zepp-app/shared/engine/session-reducer.js";
 
 test("createActiveBrewSession starts manual prep steps in waiting_for_confirm", () => {
   const recipeRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1711111111111);

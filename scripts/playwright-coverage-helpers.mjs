@@ -1,10 +1,16 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  DEFAULT_REPORTS_ROOT_ENV,
+  resolvePlaywrightCoverageDir
+} from "./report-output-paths.mjs";
+import { resolveZeppAppRoot } from "./zepp-app-root.mjs";
 
 export const DEFAULT_PLAYWRIGHT_COVERAGE_DURATION_MS = 15000;
 export const DEFAULT_PLAYWRIGHT_COVERAGE_MODE = "simulator";
-export const DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR = "coverage/playwright/simulator";
-export const DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR = "coverage/playwright/harness";
+export const DEFAULT_REPORTS_OUTPUT_ROOT_ENV = DEFAULT_REPORTS_ROOT_ENV;
+export const DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR = resolvePlaywrightCoverageDir("simulator");
+export const DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR = resolvePlaywrightCoverageDir("module-harness");
 export const DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV = "PLAYWRIGHT_COVERAGE_BROWSER";
 export const DEFAULT_ZEPP_SIMULATOR_ROOT_ENV = "ZEPP_SIMULATOR_ROOT";
 export const DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS = 2000;
@@ -216,7 +222,7 @@ export function toCoverageDisplayPath(absolutePath, { cwd, lastAppInfo }) {
 }
 
 export function getSimulatorAppSourceCandidates(cwd) {
-  const root = path.resolve(cwd);
+  const root = resolveZeppAppRoot({ cwd });
   return [
     path.join(root, "app.json"),
     path.join(root, "app.js"),
@@ -233,7 +239,7 @@ export function isSimulatorDeploymentForCurrentProject(lastAppInfo, cwd) {
     return false;
   }
 
-  return normalizeComparablePath(lastAppInfo.user_app_path) === normalizeComparablePath(cwd);
+  return normalizeComparablePath(lastAppInfo.user_app_path) === normalizeComparablePath(resolveZeppAppRoot({ cwd }));
 }
 
 function isSubPathOf(candidatePath, rootPath) {

@@ -25,89 +25,99 @@ The codebase should use `@zos/*`, not legacy `hmUI` or `hmApp`.
 This structure should be treated as the target scaffold:
 
 ```text
-app.js
-app.json
 package.json
-assets/
-  common.r/
-  common.s/
-page/
-  home/
+zepp-app/
+  app.js
+  app.json
+  assets/
+    common.r/
+    common.s/
+  page/
+    home/
+      index.js
+      index.r.layout.js
+      index.s.layout.js
+    tool-list/
+      index.js
+      index.r.layout.js
+      index.s.layout.js
+    recipe-list/
+      index.js
+      index.r.layout.js
+      index.s.layout.js
+    recipe-detail/
+      index.js
+      index.r.layout.js
+      index.s.layout.js
+    brew-active/
+      index.js
+      index.r.layout.js
+      index.s.layout.js
+    result-summary/
+      index.js
+      index.r.layout.js
+      index.s.layout.js
+  setting/
+    index.jsx
+  app-side/
     index.js
-    index.r.layout.js
-    index.s.layout.js
-  tool-list/
-    index.js
-    index.r.layout.js
-    index.s.layout.js
-  recipe-list/
-    index.js
-    index.r.layout.js
-    index.s.layout.js
-  recipe-detail/
-    index.js
-    index.r.layout.js
-    index.s.layout.js
-  brew-active/
-    index.js
-    index.r.layout.js
-    index.s.layout.js
-  result-summary/
-    index.js
-    index.r.layout.js
-    index.s.layout.js
-setting/
-  index.jsx
-app-side/
-  index.js
-shared/
-  constants/
-    tool-catalog.js
-    color-palette.js
-  domain/
-    schema.js
-    validators.js
-  storage/
-    keys.js
-    phone-store.js
-    watch-store.js
-  sync/
-    message-types.js
-    encode.js
-    decode.js
-    normalize.js
-  engine/
-    recipe-engine.js
-    session-reducer.js
-    feedback.js
-  watch/
-    router.js
-    layouts.js
+  shared/
+    constants/
+      tool-catalog.js
+      color-palette.js
+    domain/
+      schema.js
+      validators.js
+    storage/
+      keys.js
+      phone-store.js
+      watch-store.js
+    sync/
+      message-types.js
+      encode.js
+      decode.js
+      normalize.js
+    engine/
+      recipe-engine.js
+      session-reducer.js
+      feedback.js
+    watch/
+      router.js
+      layouts.js
+docs/
+scripts/
+test/
 ```
+
+## Repo split
+
+- `zepp-app/` is the Zeus working root and should contain only the mini-app package.
+- Repo root should keep docs, scripts, tests, editor tasks, and generated `coverage/`.
+- Root-level build helpers should execute Zeus from `zepp-app/` instead of asking Zeus to watch the full repo tree.
 
 ## Surface responsibilities
 
-### `app.js`
+### `zepp-app/app.js`
 
 - registers `App()` exactly once,
 - keeps minimal `globalData`,
 - does not store large catalog data,
 - may keep only short-lived bootstrap flags.
 
-### `page/home/index.js`
+### `zepp-app/page/home/index.js`
 
 - first entrypoint of the watch app,
 - loads `active_session_v1`, `catalog_cache_v1`, and `sync_meta_v1`,
 - decides whether to show resume or navigate to `tool-list`,
 - triggers `REQUEST_BOOTSTRAP`, but does not block the UI waiting for the reply.
 
-### `page/tool-list/index.js`
+### `zepp-app/page/tool-list/index.js`
 
 - shows the closed catalog of supported tools,
 - does not display recipes directly,
 - acts as the first screen of the browse flow.
 
-### `page/recipe-list/index.js`
+### `zepp-app/page/recipe-list/index.js`
 
 - shows recipes only for one `toolId`,
 - sorts by `updatedAt desc`, then `name asc`,
@@ -115,33 +125,33 @@ shared/
 - routes into a dedicated recipe detail/start screen,
 - does not show the full history or an editor.
 
-### `page/recipe-detail/index.js`
+### `zepp-app/page/recipe-detail/index.js`
 
 - shows the selected recipe snapshot before brewing starts,
 - keeps the start decision separate from list browsing,
 - acts as the lightweight review screen between recipe selection and `brew-active`.
 
-### `page/brew-active/index.js`
+### `zepp-app/page/brew-active/index.js`
 
 - renders the active session,
 - shows step timer, full-session timer, and key step metadata at the same time,
 - uses `setPageBrightTime(...)` and `setWakeUpRelaunch(true)` during active brewing,
 - writes the session to `active_session_v1` after every critical state change.
 
-### `page/result-summary/index.js`
+### `zepp-app/page/result-summary/index.js`
 
 - shows a short result summary immediately after session completion,
 - does not try to collect long free-text notes,
 - writes `last_result_v1`.
 
-### `setting/index.jsx`
+### `zepp-app/setting/index.jsx`
 
 - registers `AppSettingsPage(...)`,
 - is the only place for recipe and history CRUD,
 - uses `props.settingsStorage`,
 - keeps view routing in UI state only, not in canonical persisted storage.
 
-### `app-side/index.js`
+### `zepp-app/app-side/index.js`
 
 - seeds the tool catalog on first launch,
 - watches `settingsStorage`,
@@ -188,7 +198,7 @@ The project should use the `app.json v3+` mechanism and layout files:
 - `index.r.layout.js` for round,
 - `index.s.layout.js` for square,
 - `zosLoader:./index.[pf].layout.js` for layout selection,
-- `assets/common.r` and `assets/common.s` for assets.
+- `zepp-app/assets/common.r` and `zepp-app/assets/common.s` for assets.
 
 ### `designWidth` decision
 
@@ -306,7 +316,7 @@ Do not design v1 as if `AppService` were a guaranteed session clock. `AppService
 
 The implementation documents assume:
 
-- `zeus build` as the minimum compile gate,
+- `npm run build` from repo root or `zeus build` from `zepp-app/` as the minimum compile gate,
 - simulator validation for layout and flow,
 - real device validation for haptics, audio, and screen-sleep behavior.
 

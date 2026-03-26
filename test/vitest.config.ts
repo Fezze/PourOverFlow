@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
+import { resolveVitestCoverageDir } from "../scripts/report-output-paths.mjs";
 
 export default defineConfig({
   root: resolve(__dirname, ".."),
@@ -9,8 +10,8 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
-      reportsDirectory: "coverage",
-      exclude: ["test/**", "dist/**", "output/**", "assets/**"]
+      reportsDirectory: resolveVitestCoverageDir(),
+      exclude: ["test/**", "dist/**", "output/**", "assets/**", "zepp-app/assets/**"]
     }
   },
   resolve: {

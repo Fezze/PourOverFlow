@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getSeedRecipeRecordById } from "../shared/domain/seed-library.js";
-import { createActiveBrewSession } from "../shared/engine/recipe-engine.js";
+import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.js";
+import { createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
 import {
   ackPendingHistoryEntry,
   enqueuePendingHistoryEntry,
@@ -23,23 +23,23 @@ import {
   applyHistorySnapshot,
   writeCatalogCache,
   writeActiveSession,
-} from "../shared/storage/watch-store.js";
+} from "../zepp-app/shared/storage/watch-store.js";
 import {
   disableActiveSessionDisplayGuard,
   enableActiveSessionDisplayGuard
-} from "../shared/watch/display-guard.js";
-import { isProbablySimulatorDevice } from "../shared/watch/runtime-env.js";
+} from "../zepp-app/shared/watch/display-guard.js";
+import { isProbablySimulatorDevice } from "../zepp-app/shared/watch/runtime-env.js";
 import {
   emitRuntimeEvent,
   subscribeRuntimeEvent
-} from "../shared/watch/runtime-events.js";
+} from "../zepp-app/shared/watch/runtime-events.js";
 import {
   __zeusRuntime,
   resetZeppRuntime,
   setBatteryLevel,
   setLocalStorageState
 } from "./zeus-runtime/runtime.ts";
-import { WATCH_STORAGE_KEYS } from "../shared/storage/keys.js";
+import { WATCH_STORAGE_KEYS } from "../zepp-app/shared/storage/keys.js";
 
 beforeEach(() => {
   resetZeppRuntime();

@@ -7,6 +7,7 @@ This file is a repo-level instruction set for the next AI agent. Treat it as hig
 ## Repo status
 
 - The repo has the Zepp app scaffold, seed library, canonical phone storage using `index + records`, real CRUD in `setting/`, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, a haptics-first feedback layer, and baseline logic plus sync tests.
+- The actual Zeus package now lives under `zepp-app/`, while docs, scripts, tests, editor tasks, and coverage stay at repo root.
 - The current work scope is cleanup, remaining real-watch comfort validation, and follow-up tooling or watch UX hardening.
 - This repo is a Zepp OS project, so any task involving implementation, architecture, debugging, or validation must use the `zepp-miniapp-builder` skill as the default workflow.
 
@@ -138,8 +139,8 @@ The first implementation task from the current repo state is the nearest sensibl
 
 ## Discovered toolchain nuances
 
-- For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under `assets/<target>.<shape>/icon.png`, not only the logical `icon.png` name in `app.json`.
-- The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`.
+- For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under `assets/<target>.<shape>/icon.png`, not only the logical `icon.png` name in `app.json`. In this repo those files are under `zepp-app/assets/...`.
+- The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`. In this repo that shim lives under `zepp-app/setting/index.js`.
 - Timestamp-based resume reconciliation and active-brew display guard handling are implemented, and real-watch logs already confirmed the core wake, resume, and queue replay paths.
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
 - The phone-side Settings UI now relies on active top navigation, contextual shell headers, summary cards, and card-tap record opening; avoid regressing it back to row-heavy admin-style screens with redundant `Edit` buttons.
@@ -158,20 +159,23 @@ The first implementation task from the current repo state is the nearest sensibl
 - Zeus Bridge may prompt for explicit target selection when more than one online simulator or device is visible; picking the intended target such as `Balance 2` is expected behavior, not a failure case.
 - `zeus dev` may also prompt for explicit device selection with text such as `Which device would you like to preview?`; on this repo, `Amazfit Balance 2` was a valid target for simulator deployment.
 - A successful simulator push can be confirmed without visual inspection by checking `last_app_info.json`, the deployed app folder under the resolved simulator root (`%APPDATA%/simulator` on Windows or `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux), and recent `side-service` `status:opened` lines in `renderer.log`.
-- `shared/watch/layouts.js` now depends on `getDeviceInfo()` together with `data:os.device.info`; keep that permission in the manifest baseline, and keep the fallback path so a permission issue does not immediately crash first paint.
-- In the latest simulator debugging pass, `page/home/index.js` reached full widget render successfully; a simulator-console `ui pause` line alone is not enough evidence that the page crashed during build.
-- Current WIP state: automatic startup bootstrap is restored for real hardware, while `shared/watch/sync-bridge.js` skips simulator auto-bootstrap using a battery heuristic (`Battery().getCurrent() === 0`) until the simulator-side `@zos/ble.send` behavior is better understood.
+- `zepp-app/shared/watch/layouts.js` now depends on `getDeviceInfo()` together with `data:os.device.info`; keep that permission in the manifest baseline, and keep the fallback path so a permission issue does not immediately crash first paint.
+- In the latest simulator debugging pass, `zepp-app/page/home/index.js` reached full widget render successfully; a simulator-console `ui pause` line alone is not enough evidence that the page crashed during build.
+- Current WIP state: automatic startup bootstrap is restored for real hardware, while `zepp-app/shared/watch/sync-bridge.js` skips simulator auto-bootstrap using a battery heuristic (`Battery().getCurrent() === 0`) until the simulator-side `@zos/ble.send` behavior is better understood.
 - Real-watch feedback showed that recipe bootstrap sync works end to end; the watch can display synced recipes from the phone even when the simulator bridge remains noisy.
 - `app-side` no longer needs to replay the full bootstrap payload set on every storage change. It now classifies phone-side writes by slice and can answer `REQUEST_BOOTSTRAP` only for stale revisions.
 - Watch-side bootstrap and queue replay should fail fast when the bridge is disconnected so offline startup stays responsive instead of repeatedly attempting transport.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/`; use it for flow-level watch tests before leaning on the simulator for every regression.
 - `npm test` now runs the unified Vitest suite, and `npm run test:coverage` is the repo-standard JS coverage command.
+- Coverage reports should stay repo-local in the normal root-level `coverage/` directory, while Zeus watches only `zepp-app/`. Use `POF_REPORTS_ROOT` only when you need to override that root intentionally.
 - The current meaningful local coverage baselines are `93.30% / 83.59% / 97.51% / 93.20%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`; if a later agent pushes for literal 100%, the remaining hotspots are mostly defensive Zepp-runtime branches in `sync-bridge`, `phone-store`, `validators`, `tool-list`, `home`, `recipe-list`, `brew-active`, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 - The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks `zosLoader:./index.[pf].layout.js`, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
 - The repo includes `npm run test:playwright` and `npm run test:playwright:harness` as no-coverage Playwright smoke runs, so the simulator path and the browser module harness can both be exercised without writing coverage reports.
 - The same script supports `npm run test:playwright:coverage:harness`, which opens a local browser harness page and executes real browser-safe project modules for Playwright/V8 coverage without a simulator; keep treating it as complementary to Vitest, not as proof of Zepp-only runtime behavior.
 - The simulator smoke script now resolves simulator metadata from `%APPDATA%/simulator` on Windows, `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux, or an explicit `ZEPP_SIMULATOR_ROOT` override.
-- The repo-standard full local verification job is the VS Code compound task `Verify: all tests and coverage` in `.vscode/tasks.json`; it runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in one pass.
+- The repo-standard full local verification job is the VS Code compound task `Verify: all tests and coverage` in `.vscode/tasks.json`; it runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in one pass.
+- Root-level Zeus commands should go through the repo wrappers such as `npm run build` and `npm run zepp:dev -- ...`, or by running Zeus directly from `zepp-app/`.
+- The repo Zeus-root helper now walks upward from nested working directories too, so root wrappers still find `zepp-app/` when a command is launched from `scripts/`, `test/`, or a deeper app subfolder.
 - Prefer the task-based job over wrapper scripts, because wrapper orchestration proved less reliable than direct task execution for Vitest and Zeus on this Windows-local toolchain.
 - There is no repo-level CI assumption right now. Treat the VS Code verification task as the single source of truth for the full non-simulator verification stack, and only mirror it into CI later if CI is actually introduced.
 - On Windows shells, plain PowerShell `npm run ...` may hit `npm.ps1` execution-policy blocking. Prefer the VS Code verification task or `cmd /c npm ...` if a direct PowerShell npm call fails before the repo code even starts.

@@ -1,30 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __zeusRuntime, deliverBleMessage, resetZeppRuntime, setBleConnected, setLocalStorageState } from "../zeus-runtime/runtime.ts";
-import { getSupportedTools } from "../../shared/constants/tool-catalog.js";
+import { getSupportedTools } from "../../zepp-app/shared/constants/tool-catalog.js";
 import {
   CURRENT_SCHEMA_VERSION,
   createRecipeSnapshot,
   createRecipeSummary,
   normalizeRecipeSteps
-} from "../../shared/domain/schema.js";
+} from "../../zepp-app/shared/domain/schema.js";
 import {
   APP_BRIDGE_MESSAGE_TYPES,
   buildAppBridgeDataFrame,
   buildAppBridgeShakeFrame,
   parseAppBridgeFrame
-} from "../../shared/sync/bridge-frame.js";
+} from "../../zepp-app/shared/sync/bridge-frame.js";
 import {
   buildChunkedBridgeTransportPayloads,
   createBridgeTransportState,
   readBridgeTransportPayload
-} from "../../shared/sync/bridge-transport.js";
-import { createSyncEnvelope } from "../../shared/sync/contracts.js";
-import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../../shared/sync/device-codec.js";
-import { SYNC_MESSAGE_TYPES } from "../../shared/sync/message-types.js";
-import { WATCH_STORAGE_KEYS } from "../../shared/storage/keys.js";
-import { createActiveBrewSession } from "../../shared/engine/recipe-engine.js";
-import * as sessionReducer from "../../shared/engine/session-reducer.js";
+} from "../../zepp-app/shared/sync/bridge-transport.js";
+import { createSyncEnvelope } from "../../zepp-app/shared/sync/contracts.js";
+import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../../zepp-app/shared/sync/device-codec.js";
+import { SYNC_MESSAGE_TYPES } from "../../zepp-app/shared/sync/message-types.js";
+import { WATCH_STORAGE_KEYS } from "../../zepp-app/shared/storage/keys.js";
+import { createActiveBrewSession } from "../../zepp-app/shared/engine/recipe-engine.js";
+import * as sessionReducer from "../../zepp-app/shared/engine/session-reducer.js";
 import {
   getPendingHistoryQueue,
   getRecipesForTool,
@@ -36,7 +36,7 @@ import {
   readWatchSyncMeta,
   writeSelectedRecipeId,
   writeActiveSession
-} from "../../shared/storage/watch-store.js";
+} from "../../zepp-app/shared/storage/watch-store.js";
 import {
   abortActiveBrew,
   discardActiveSessionFromHome,
@@ -58,14 +58,14 @@ import {
   startSelectedRecipe,
   startRecipe,
   tickActiveSession
-} from "../../shared/watch/router.js";
+} from "../../zepp-app/shared/watch/router.js";
 import {
   destroyWatchSyncBridge,
   flushPendingHistoryQueue,
   initWatchSyncBridge,
   primeWatchSyncBridge,
   queueHistoryEntryForSync
-} from "../../shared/watch/sync-bridge.js";
+} from "../../zepp-app/shared/watch/sync-bridge.js";
 
 function buildFlowFixture() {
   const recipeRecord = {

@@ -23,7 +23,7 @@ describe("dependency-gated edge branches", () => {
     }));
 
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const runtimeEnv = await import("../shared/watch/runtime-env.js");
+    const runtimeEnv = await import("../zepp-app/shared/watch/runtime-env.js");
 
     expect(runtimeEnv.getDeviceRuntimeEnvironment()).toEqual({
       batteryLevel: null,
@@ -47,14 +47,14 @@ describe("dependency-gated edge branches", () => {
     const payloadView = new Uint8Array(new TextEncoder().encode(syncEnvelopeJson));
 
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const bridgeFrame = await import("../shared/sync/bridge-frame.js");
+    const bridgeFrame = await import("../zepp-app/shared/sync/bridge-frame.js");
     const extractSpy = vi
       .spyOn(bridgeFrame, "extractAppBridgePayload")
       .mockReturnValueOnce(payloadView)
       .mockReturnValueOnce({
         unsupported: true
       });
-    const sideCodec = await import("../shared/sync/side-codec.js");
+    const sideCodec = await import("../zepp-app/shared/sync/side-codec.js");
 
     const decodedEnvelope = sideCodec.decodeEnvelopeFromPeerSocket("mocked");
     expect(decodedEnvelope).toMatchObject({
@@ -78,12 +78,12 @@ describe("dependency-gated edge branches", () => {
   it("covers sync-bridge initialization failure and offline guard branches", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const bleModule = await import("@zos/ble");
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
     const setConnectionSpy = vi.spyOn(watchStore, "setConnectionStatus");
     const createConnectSpy = vi.spyOn(bleModule, "createConnect").mockImplementation(() => {
       throw new Error("connect unavailable");
     });
-    const syncBridge = await import("../shared/watch/sync-bridge.js");
+    const syncBridge = await import("../zepp-app/shared/watch/sync-bridge.js");
 
     syncBridge.initWatchSyncBridge();
     expect(syncBridge.primeWatchSyncBridge()).toBe(false);
@@ -106,7 +106,7 @@ describe("dependency-gated edge branches", () => {
     }));
 
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const syncBridge = await import("../shared/watch/sync-bridge.js");
+    const syncBridge = await import("../zepp-app/shared/watch/sync-bridge.js");
 
     syncBridge.initWatchSyncBridge();
     expect(syncBridge.primeWatchSyncBridge()).toBe(false);

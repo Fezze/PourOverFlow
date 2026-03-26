@@ -23,8 +23,10 @@ import {
   parsePlaywrightCoverageArgs,
   toCoverageDisplayPath
 } from "./playwright-coverage-helpers.mjs";
+import { resolveZeppAppRoot } from "./zepp-app-root.mjs";
 
 const PROJECT_ROOT = process.cwd();
+const ZEPP_APP_ROOT = resolveZeppAppRoot({ cwd: PROJECT_ROOT });
 const { createCoverageMap } = istanbulCoverage;
 const { createContext } = istanbulReport;
 const { create: createReport } = istanbulReports;
@@ -81,12 +83,12 @@ async function runSimulatorCoverage(options) {
   metadata.devToolsBrowserPath = devToolsInfo.browserPath;
 
   const lastAppInfo = await readJsonIfExists(lastAppInfoPath);
-  const coverageRoots = buildCoverageRoots({ cwd: PROJECT_ROOT, lastAppInfo });
+  const coverageRoots = buildCoverageRoots({ cwd: ZEPP_APP_ROOT, lastAppInfo });
   metadata.coverageRoots = coverageRoots;
   metadata.lastAppInfo = lastAppInfo;
 
   await assertFreshSimulatorDeployment({
-    projectRoot: PROJECT_ROOT,
+    projectRoot: ZEPP_APP_ROOT,
     lastAppInfo
   });
 

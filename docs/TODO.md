@@ -24,7 +24,7 @@
 
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.
 - Decide whether the Playwright module harness should stay focused on browser-safe shared modules or grow browser stubs for selected `@zos/*` modules.
-- Replace environment-specific `/home/deck/...` links in `README.md` and `docs/START-HERE.md` with repo-relative wording or platform-neutral guidance so onboarding docs stay usable from both Windows and Linux.
+- Confirm that the new `zepp-app/` subtree plus root-level `coverage/` split stays comfortable on both Windows and Linux after a few normal `zeus dev` cycles.
 - Only keep pushing toward literal `100%` local coverage if it still matters; the main remaining hotspots are defensive branches in `sync-bridge`, storage helpers, validators, router edge paths, display-guard behavior, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`.
 
 ## Verify checklist
@@ -33,7 +33,7 @@
 - `npm run test:coverage`
 - `npm run test:playwright:harness`
 - `npm run test:playwright:coverage:harness`
-- `zeus build`
+- `npm run build`
 
 ## Simulator checks
 

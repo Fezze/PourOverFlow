@@ -4,8 +4,9 @@ PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a w
 
 ## Current status
 
-The repo already includes a Zepp app scaffold with a passing `zeus build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, a cleaner phone-side Settings UX with contextual headers, color-banded sections, and a paginated recipe-step editor, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, a haptics-first feedback layer, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `brew-active`, and `result-summary`.
+The repo already includes a Zepp app scaffold with a passing `npm run build`, a seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, a cleaner phone-side Settings UX with contextual headers, color-banded sections, and a paginated recipe-step editor, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, a haptics-first feedback layer, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `brew-active`, and `result-summary`.
 The latest watch UX pass also keeps brewer and recipe chooser pages quieter on-device: populated browse screens no longer spend space on bridge/cache chatter or redundant home buttons, empty recipe lists now say recipes must be created on the phone first, real brewer method icons now render directly from the closed tool catalog assets, `recipe-detail` now stays static for normal-length recipe summaries and only falls back to scrolling when the content truly overflows, populated `result-summary` now does the same for the normal three-row summary inside calmer continuous panels, the populated result screen uses a single `Home` CTA instead of a redundant `Browse + Home` pair, and the watch flow no longer spends a separate page on manual hardware checks.
+The repo now keeps the actual Zeus package under [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) while docs, tests, scripts, VS Code tasks, and coverage reports stay at the repo root. That keeps `zeus dev` focused on app files instead of reacting to generated report output.
 
 ## Project language
 
@@ -43,7 +44,7 @@ Recommended local baseline for this repo:
 - global Zeus CLI from `@zeppos/zeus-cli`
 - a Chromium-family browser for the Playwright module harness
 
-The repo includes [`.nvmrc`](/home/deck/Projects/PourOverFlow/.nvmrc) and `package.json` engines to make that baseline explicit.
+The repo includes [`.nvmrc`](c:\Users\krzys\Projects\PourOverFlow\.nvmrc) and `package.json` engines to make that baseline explicit.
 
 Linux-first setup:
 
@@ -73,15 +74,15 @@ For the Playwright module harness on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` to
 export PLAYWRIGHT_COVERAGE_BROWSER=/usr/bin/chromium
 ```
 
-If VS Code itself is running as a Flatpak on Steam Deck or another Linux desktop, the sandbox may not expose the host Chromium launcher directly to Node. In that case use the checked-in wrapper [scripts/playwright-flatpak-host-browser.sh](/home/deck/Projects/PourOverFlow/scripts/playwright-flatpak-host-browser.sh), which launches host Chromium through `flatpak-spawn` and forwards the file descriptors Playwright needs for `--remote-debugging-pipe`.
+If VS Code itself is running as a Flatpak on Steam Deck or another Linux desktop, the sandbox may not expose the host Chromium launcher directly to Node. In that case use the checked-in wrapper [playwright-flatpak-host-browser.sh](c:\Users\krzys\Projects\PourOverFlow\scripts\playwright-flatpak-host-browser.sh), which launches host Chromium through `flatpak-spawn` and forwards the file descriptors Playwright needs for `--remote-debugging-pipe`.
 
 ```bash
-export PLAYWRIGHT_COVERAGE_BROWSER=/home/deck/Projects/PourOverFlow/scripts/playwright-flatpak-host-browser.sh
+export PLAYWRIGHT_COVERAGE_BROWSER="$PWD/scripts/playwright-flatpak-host-browser.sh"
 ```
 
 Current platform note:
 
-- `npm test`, `npm run test:coverage`, and `zeus build` should work once Node and Zeus CLI are installed.
+- `npm test`, `npm run test:coverage`, and `npm run build` should work once Node and Zeus CLI are installed.
 - `npm run test:playwright:harness` and `npm run test:playwright:coverage:harness` need the browser path above on Linux.
 - when VS Code runs as a Flatpak, prefer the repo wrapper `scripts/playwright-flatpak-host-browser.sh` so Playwright can launch host Chromium with forwarded pipe FDs.
 - `npm run test:playwright` now supports the common Linux simulator path too:
@@ -123,14 +124,15 @@ The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\doc
 ## Test commands
 
 - `npm test` runs the full Vitest suite, including the pure logic tests and the mocked Zepp runtime flow tests.
-- `npm run test:coverage` generates Vitest coverage reports in `coverage/`.
+- `npm run test:coverage` generates Vitest coverage reports in the repo-local `coverage/` directory by default.
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
-- `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness/`.
+- `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
+- set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
 - current meaningful local coverage baselines are `93.30% / 83.59% / 97.51% / 93.20%` for Vitest and `93.63% / 83.05% / 93.95% / 93.63%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
-- the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build` in sequence without relying on a wrapper script or CI.
-- `zeus build` remains the required compile gate after larger changes.
+- the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
+- `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run zepp:dev -- -t "Amazfit Balance 2"` or run `zeus dev` directly from `zepp-app/`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
 - the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.
 
@@ -138,8 +140,8 @@ Playwright in this repo is intentionally split in two:
 - simulator smoke only, through `npm run test:playwright`
 - browser module-harness coverage, through `npm run test:playwright:coverage:harness`
 
-The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `zeus dev` before trusting the simulator test result.
-Do not start the simulator smoke test in parallel with `zeus dev`. Wait for the deploy to finish first, otherwise the freshness gate may fail transiently while the simulator app folder is still being updated.
+The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo's [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) subtree and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `npm run zepp:dev -- ...` or `zeus dev` from `zepp-app/` before trusting the simulator test result.
+Do not start the simulator smoke test in parallel with `zepp:dev` or `zeus dev`. Wait for the deploy to finish first, otherwise the freshness gate may fail transiently while the simulator app folder is still being updated.
 The repo no longer exposes simulator V8 coverage as a standard npm test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts such as `mobile-main-service.js` instead of reliable PourOverFlow app-code coverage.
 The verification workflow is intentionally local-first and does not assume CI. If CI is added later, it should mirror the same commands as `Verify: all tests and coverage` instead of redefining the stack separately.
 

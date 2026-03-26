@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
-import { getSeedRecipeRecords } from "../shared/domain/seed-library.js";
-import { validateRecipeRecord } from "../shared/domain/validators.js";
+import { getSeedRecipeRecords } from "../zepp-app/shared/domain/seed-library.js";
+import { validateRecipeRecord } from "../zepp-app/shared/domain/validators.js";
 
 test("all seed recipes pass recipe validation", () => {
   const issues = getSeedRecipeRecords(1711111111111).flatMap((recipeRecord) =>

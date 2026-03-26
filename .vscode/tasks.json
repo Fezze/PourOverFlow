@@ -62,10 +62,9 @@
     {
       "label": "Verify: Zeus build",
       "type": "shell",
-      "command": "cmd",
+      "command": "node",
       "args": [
-        "/c",
-        "zeus",
+        "scripts/run-zeus-command.mjs",
         "build"
       ],
       "options": {

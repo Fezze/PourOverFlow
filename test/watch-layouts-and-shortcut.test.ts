@@ -14,7 +14,7 @@ describe("watch layouts and shortcut helpers", () => {
       })
     }));
 
-    const layouts = await import("../shared/watch/layouts.js");
+    const layouts = await import("../zepp-app/shared/watch/layouts.js");
     const roundLayout = layouts.createScaffoldLayout({ shape: "round" });
     const squareLayout = layouts.createScaffoldLayout({ shape: "square" });
     const dangerButton = layouts.createButtonStyle(squareLayout, 1, "danger");
@@ -86,7 +86,7 @@ describe("watch layouts and shortcut helpers", () => {
     }));
 
     try {
-      const layouts = await import("../shared/watch/layouts.js");
+      const layouts = await import("../zepp-app/shared/watch/layouts.js");
       const layout = layouts.createScaffoldLayout({ shape: "square" });
 
       expect(layout.background).toMatchObject({
@@ -107,8 +107,8 @@ describe("watch layouts and shortcut helpers", () => {
       })
     }));
 
-    const roundToolList = await import("../page/tool-list/index.r.layout.js");
-    const squareToolList = await import("../page/tool-list/index.s.layout.js");
+    const roundToolList = await import("../zepp-app/page/tool-list/index.r.layout.js");
+    const squareToolList = await import("../zepp-app/page/tool-list/index.s.layout.js");
 
     expect(roundToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
     expect(roundToolList.LIST_FRAME.x).toBeGreaterThanOrEqual(48);
@@ -135,7 +135,7 @@ describe("watch layouts and shortcut helpers", () => {
       }
     }));
 
-    const { registerShortcutKey } = await import("../shared/watch/shortcut-key.js");
+    const { registerShortcutKey } = await import("../zepp-app/shared/watch/shortcut-key.js");
     const handler = vi.fn();
 
     vi.useFakeTimers();
@@ -171,7 +171,7 @@ describe("watch layouts and shortcut helpers", () => {
     }));
 
     try {
-      const { registerShortcutKey } = await import("../shared/watch/shortcut-key.js");
+      const { registerShortcutKey } = await import("../zepp-app/shared/watch/shortcut-key.js");
       expect(registerShortcutKey(() => {})).toBe(false);
       expect(consoleSpy).toHaveBeenCalled();
     } finally {

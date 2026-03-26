@@ -1,12 +1,12 @@
 import { expect, test } from "vitest";
 
-import { PHONE_STORAGE_KEYS, getPhoneHistoryRecordKey, getPhoneRecipeRecordKey } from "../shared/storage/keys.js";
+import { PHONE_STORAGE_KEYS, getPhoneHistoryRecordKey, getPhoneRecipeRecordKey } from "../zepp-app/shared/storage/keys.js";
 import {
   getBootstrapResponseSlices,
   getOrderedPhoneSyncSlices,
   getStorageChangeSlices,
   PHONE_SYNC_SLICES
-} from "../shared/sync/phone-sync-plan.js";
+} from "../zepp-app/shared/sync/phone-sync-plan.js";
 
 test("bootstrap response slices only include revisions the watch does not already know", () => {
   const phoneSyncMeta = {

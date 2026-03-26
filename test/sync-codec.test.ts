@@ -1,23 +1,23 @@
 import { expect, test } from "vitest";
 
-import { createRecipeSnapshot } from "../shared/domain/schema.js";
-import { createSyncEnvelope, validateSyncEnvelope } from "../shared/sync/contracts.js";
-import { buildAppBridgeDataFrame } from "../shared/sync/bridge-frame.js";
+import { createRecipeSnapshot } from "../zepp-app/shared/domain/schema.js";
+import { createSyncEnvelope, validateSyncEnvelope } from "../zepp-app/shared/sync/contracts.js";
+import { buildAppBridgeDataFrame } from "../zepp-app/shared/sync/bridge-frame.js";
 import {
   BRIDGE_TRANSPORT_CONFIG,
   buildChunkedBridgeTransportPayloads,
   createBridgeTransportState,
   readBridgeTransportPayload
-} from "../shared/sync/bridge-transport.js";
-import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../shared/sync/device-codec.js";
-import { decodeEnvelopeFromPeerSocket, encodeEnvelopeForPeerSocket } from "../shared/sync/side-codec.js";
-import { SYNC_MESSAGE_TYPES } from "../shared/sync/message-types.js";
+} from "../zepp-app/shared/sync/bridge-transport.js";
+import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../zepp-app/shared/sync/device-codec.js";
+import { decodeEnvelopeFromPeerSocket, encodeEnvelopeForPeerSocket } from "../zepp-app/shared/sync/side-codec.js";
+import { SYNC_MESSAGE_TYPES } from "../zepp-app/shared/sync/message-types.js";
 import {
   buildPhoneCatalogSnapshot,
   buildPhoneHistorySnapshot,
   buildPhoneToolCatalogSnapshot
-} from "../shared/sync/normalize.js";
-import { ensurePhoneStorage, readRecipeRecord, saveHistoryEntry } from "../shared/storage/phone-store.js";
+} from "../zepp-app/shared/sync/normalize.js";
+import { ensurePhoneStorage, readRecipeRecord, saveHistoryEntry } from "../zepp-app/shared/storage/phone-store.js";
 
 function createMockSettingsStorage() {
   const values = new Map();

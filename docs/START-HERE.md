@@ -29,7 +29,7 @@ Recommended local toolchain baseline for this repo:
 - global Zeus CLI from `@zeppos/zeus-cli`
 - a Chromium-family browser for the Playwright module harness
 
-The repo now pins the Node baseline through [`.nvmrc`](/home/deck/Projects/PourOverFlow/.nvmrc) and `package.json` engines.
+The repo now pins the Node baseline through [`.nvmrc`](c:\Users\krzys\Projects\PourOverFlow\.nvmrc) and `package.json` engines.
 
 Linux setup path:
 
@@ -46,11 +46,13 @@ npm install
 
 For the browser-module harness on Linux, export `PLAYWRIGHT_COVERAGE_BROWSER` to a Chromium-family browser path before running the Playwright harness commands. Common examples are `/usr/bin/chromium`, `/snap/bin/chromium`, `/usr/bin/google-chrome`, or `/usr/bin/microsoft-edge`.
 
-If VS Code or Codex is itself running inside a Flatpak sandbox, use [scripts/playwright-flatpak-host-browser.sh](/home/deck/Projects/PourOverFlow/scripts/playwright-flatpak-host-browser.sh) instead of a raw host path. The wrapper calls `flatpak-spawn --host` and forwards the file descriptors Playwright needs for `--remote-debugging-pipe`.
+If VS Code or Codex is itself running inside a Flatpak sandbox, use [playwright-flatpak-host-browser.sh](c:\Users\krzys\Projects\PourOverFlow\scripts\playwright-flatpak-host-browser.sh) instead of a raw host path. The wrapper calls `flatpak-spawn --host` and forwards the file descriptors Playwright needs for `--remote-debugging-pipe`.
 
 Current verified platform note:
 
-- the Vitest commands and `zeus build` are expected to work once Node and Zeus CLI are installed,
+- the Vitest commands and `npm run build` are expected to work once Node and Zeus CLI are installed,
+- the actual Zeus package now lives under `zepp-app/`, so root-level Zeus work should go through the repo wrappers or by running Zeus from that subtree directly,
+- the Zeus-root helper now walks upward from nested folders too, so root wrappers still resolve `zepp-app/` when launched from `scripts/`, `test/`, or deeper app subfolders,
 - the Playwright harness commands on Linux require `PLAYWRIGHT_COVERAGE_BROWSER`,
 - Flatpak-hosted VS Code sessions should prefer `scripts/playwright-flatpak-host-browser.sh` for Playwright harness runs,
 - the simulator smoke command now resolves simulator metadata from:
@@ -68,7 +70,8 @@ Current verified platform note:
 - implementation backlog and verify guidance,
 - seed library,
 - manifest and Settings UI contract,
-- Zepp app scaffold with passing `zeus build`,
+- Zepp app scaffold with passing `npm run build`,
+- a dedicated `zepp-app/` subtree so Zeus only watches the mini-app package and not root-level coverage output,
 - seed data in `settingsStorage`,
 - real CRUD for recipes and history notes in `setting/`,
 - a cleaner phone-side Settings UX with active top navigation, contextual shell headers, color-banded sections, and a paginated recipe-step editor,
@@ -103,16 +106,19 @@ Current verified platform note:
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
 - Current meaningful coverage baselines after the latest test expansion are `93.30% / 83.59% / 97.51% / 93.20%` for `npm run test:coverage` and `93.63% / 83.05% / 93.95% / 93.63%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
-- The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and `zeus build`.
+- The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
-- Run `zeus build` after larger changes to keep the device package healthy.
+- Run `npm run build` after larger changes to keep the device package healthy from the repo root. It executes Zeus inside `zepp-app/`.
 - Before every commit, run the repo-standard verify stack and make sure it is green.
 - After finishing a meaningful chunk of work, commit it unless the user explicitly asked you not to commit yet.
 - Keep pushing coverage upward when meaningful behavior-focused tests can be added without padding the suite.
 
-Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `zeus dev` before treating the simulator result as meaningful.
-Do not kick off the simulator smoke test in parallel with `zeus dev`; wait until the deploy has finished, otherwise the freshness gate may fail while the simulator app folder timestamps are still catching up.
-Playwright coverage here is intentionally limited to the browser module harness under `coverage/playwright/harness/`. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
+Important validation rule: the simulator-side Playwright commands now check that the deployed simulator app belongs to this repo's `zepp-app/` subtree and is not older than the latest app-facing source files. If that freshness gate fails, redeploy with `npm run zepp:dev -- ...` or `zeus dev` from `zepp-app/` before treating the simulator result as meaningful.
+Do not kick off the simulator smoke test in parallel with `zepp:dev` or `zeus dev`; wait until the deploy has finished, otherwise the freshness gate may fail while the simulator app folder timestamps are still catching up.
+Coverage output now stays repo-local by default in the normal root `coverage/` directory, while Zeus only watches the app subtree:
+- default root: `coverage`
+- optional override: `POF_REPORTS_ROOT`
+Playwright coverage here is intentionally limited to the browser module harness under that repo-local reports root. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
 `Verify: all tests and coverage` is the repo-standard local job. If CI is introduced later, it should mirror the same command list rather than reassemble the test stack in a second place.
 The current simulator smoke implementation now has a Linux baseline through `${XDG_CONFIG_HOME:-~/.config}/simulator`. Use `ZEPP_SIMULATOR_ROOT` if your simulator metadata lives elsewhere.
 
@@ -216,11 +222,12 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - `brew-active` shows both the step timer and session timer,
 - the feedback layer is best-effort and capability-gated,
 - baseline session reducer tests exist,
-- `npm test` and `zeus build` pass.
+- `npm test` and `npm run build` pass.
 
 ## Important repo discoveries
 
 - The Zeus v4 scaffold builds target-based icons correctly from `assets/common.r/icon.png` and `assets/common.s/icon.png`.
+- The actual Zeus package now lives under `zepp-app/`, so docs, tests, scripts, and root `coverage/` can change without making `zeus dev` react.
 - `setting/index.js` is a practical toolchain entrypoint even when the main Settings App code lives in `.jsx`.
 - The current watch flow is no longer a local seed preview, and `active_session_v1` is already storage-backed; the remaining follow-up is resume hardening, not session persistence itself.
 - The session reducer is already much closer to the target model, but real resume and screen-sleep behavior still need hardware confirmation.

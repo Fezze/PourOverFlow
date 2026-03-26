@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 
-import { createRecipeSnapshot } from "../shared/domain/schema.js";
+import { createRecipeSnapshot } from "../zepp-app/shared/domain/schema.js";
 import {
   duplicateRecipeRecord,
   deleteRecipeRecord,
@@ -13,8 +13,8 @@ import {
   saveHistoryEntry,
   saveRecipeRecord,
   updateHistoryEntryFeedback
-} from "../shared/storage/phone-store.js";
-import { getPhoneRecipeRecordKey } from "../shared/storage/keys.js";
+} from "../zepp-app/shared/storage/phone-store.js";
+import { getPhoneRecipeRecordKey } from "../zepp-app/shared/storage/keys.js";
 
 function createMockSettingsStorage() {
   const values = new Map();

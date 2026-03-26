@@ -6,6 +6,7 @@ import {
   DEFAULT_PLAYWRIGHT_COVERAGE_OUTPUT_DIR,
   DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV,
   DEFAULT_PLAYWRIGHT_HARNESS_COVERAGE_OUTPUT_DIR,
+  DEFAULT_REPORTS_OUTPUT_ROOT_ENV,
   DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS,
   DEFAULT_ZEPP_SIMULATOR_ROOT_ENV,
   buildCoverageRoots,
@@ -23,6 +24,12 @@ import {
   resolveSimulatorRoot,
   toCoverageDisplayPath
 } from "../scripts/playwright-coverage-helpers.mjs";
+import {
+  DEFAULT_REPORTS_ROOT_ENV,
+  resolvePlaywrightCoverageDir,
+  resolveReportsRoot,
+  resolveVitestCoverageDir
+} from "../scripts/report-output-paths.mjs";
 
 describe("playwright coverage helpers", () => {
   it("parses default simulator smoke args", () => {
@@ -42,13 +49,13 @@ describe("playwright coverage helpers", () => {
         "--duration-ms",
         "5000",
         "--output-dir",
-        "coverage/custom",
+        "D:/reports/custom",
         "--verbose"
       ])
     ).toEqual({
       mode: "simulator",
       durationMs: 5000,
-      outputDir: "coverage/custom",
+      outputDir: "D:/reports/custom",
       collectCoverage: false,
       verbose: true
     });
@@ -99,7 +106,7 @@ describe("playwright coverage helpers", () => {
   });
 
   it("normalizes coverage file paths from file urls and raw paths", () => {
-    const absoluteFile = path.resolve("page/home/index.js");
+    const absoluteFile = path.resolve("zepp-app/page/home/index.js");
     expect(
       normalizePathForExpect(normalizeCoverageFilePath(`file:///${absoluteFile.replace(/\\/g, "/")}`) ?? "")
     ).toContain(
@@ -115,7 +122,7 @@ describe("playwright coverage helpers", () => {
     const roots = buildCoverageRoots({
       cwd,
       lastAppInfo: {
-        user_app_path: cwd,
+        user_app_path: path.resolve(cwd, "zepp-app"),
         sim_app_path: simAppPath
       }
     });
@@ -139,13 +146,13 @@ describe("playwright coverage helpers", () => {
 
   it("lists the app-facing source paths used for simulator deployment freshness", () => {
     expect(getSimulatorAppSourceCandidates("C:/Users/krzys/Projects/PourOverFlow")).toEqual([
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/app.json"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/app.js"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/page"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/app-side"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/setting"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/shared"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/assets")
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app.json"),
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app.js"),
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/page"),
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app-side"),
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/setting"),
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/shared"),
+      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/assets")
     ]);
     expect(DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS).toBe(2000);
   });
@@ -154,7 +161,7 @@ describe("playwright coverage helpers", () => {
     expect(
       isSimulatorDeploymentForCurrentProject(
         {
-          user_app_path: "C:/Users/krzys/Projects/PourOverFlow"
+          user_app_path: "C:/Users/krzys/Projects/PourOverFlow/zepp-app"
         },
         "C:/Users/krzys/Projects/PourOverFlow"
       )
@@ -176,7 +183,7 @@ describe("playwright coverage helpers", () => {
     const roots = buildCoverageRoots({
       cwd,
       lastAppInfo: {
-        user_app_path: cwd,
+        user_app_path: path.resolve(cwd, "zepp-app"),
         sim_app_path: simAppPath
       }
     });
@@ -189,7 +196,7 @@ describe("playwright coverage helpers", () => {
   it("maps local harness http urls back to repo files", () => {
     const localRoot = "C:/Users/krzys/Projects/PourOverFlow";
     const mappedPath = normalizeCoverageFilePathWithOptions(
-      "http://127.0.0.1:42000/shared/engine/recipe-engine.js",
+      "http://127.0.0.1:42000/zepp-app/shared/engine/recipe-engine.js",
       {
         httpUrlRoots: [
           {
@@ -201,11 +208,11 @@ describe("playwright coverage helpers", () => {
     );
 
     expect(normalizePathForExpect(mappedPath ?? "")).toContain(
-      normalizePathForExpect(path.resolve(localRoot, "shared/engine/recipe-engine.js"))
+      normalizePathForExpect(path.resolve(localRoot, "zepp-app/shared/engine/recipe-engine.js"))
     );
     expect(
       isRelevantCoveragePathWithOptions(
-        "http://127.0.0.1:42000/shared/engine/recipe-engine.js",
+        "http://127.0.0.1:42000/zepp-app/shared/engine/recipe-engine.js",
         [normalizePathForExpect(path.resolve(localRoot))],
         {
           httpUrlRoots: [
@@ -221,11 +228,11 @@ describe("playwright coverage helpers", () => {
 
   it("maps repo and simulator files to report-friendly display paths", () => {
     expect(
-      toCoverageDisplayPath("C:/Users/krzys/Projects/PourOverFlow/shared/watch/sync-bridge.js", {
+      toCoverageDisplayPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/shared/watch/sync-bridge.js", {
         cwd: "C:/Users/krzys/Projects/PourOverFlow",
         lastAppInfo: null
       })
-    ).toBe("shared/watch/sync-bridge.js");
+    ).toBe("zepp-app/shared/watch/sync-bridge.js");
 
     expect(
       toCoverageDisplayPath("C:/Users/krzys/AppData/Roaming/simulator/apps/PourOverFlow20001/page/home/index.js", {
@@ -338,6 +345,34 @@ describe("playwright coverage helpers", () => {
     ).toThrow(
       `Could not resolve the Zepp simulator root. Set ${DEFAULT_ZEPP_SIMULATOR_ROOT_ENV}, XDG_CONFIG_HOME, or HOME.`
     );
+  });
+
+  it("resolves report output roots inside the repo coverage folder by default", () => {
+    expect(DEFAULT_REPORTS_OUTPUT_ROOT_ENV).toBe(DEFAULT_REPORTS_ROOT_ENV);
+
+    expect(
+      normalizePathForExpect(
+        resolveReportsRoot({
+          cwd: process.cwd()
+        })
+      )
+    ).toBe(normalizePathForExpect(path.resolve(process.cwd(), "coverage")));
+  });
+
+  it("supports explicit report-root overrides for vitest and playwright coverage", () => {
+    const env = {
+      [DEFAULT_REPORTS_ROOT_ENV]: "D:/tmp/pof-reports"
+    } as NodeJS.ProcessEnv;
+
+    expect(normalizePathForExpect(resolveVitestCoverageDir({ env }))).toBe(
+      normalizePathForExpect("D:/tmp/pof-reports")
+    );
+    expect(
+      normalizePathForExpect(resolvePlaywrightCoverageDir("module-harness", { env }))
+    ).toBe(normalizePathForExpect("D:/tmp/pof-reports/playwright/harness"));
+    expect(
+      normalizePathForExpect(resolvePlaywrightCoverageDir("simulator", { env }))
+    ).toBe(normalizePathForExpect("D:/tmp/pof-reports/playwright/simulator"));
   });
 });
 

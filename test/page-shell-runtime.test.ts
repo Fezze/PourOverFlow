@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getSupportedTools } from "../shared/constants/tool-catalog.js";
-import { getSeedRecipeRecordById } from "../shared/domain/seed-library.js";
-import { CURRENT_SCHEMA_VERSION, createRecipeSnapshot, createRecipeSummary } from "../shared/domain/schema.js";
-import { createActiveBrewSession } from "../shared/engine/recipe-engine.js";
-import { WATCH_STORAGE_KEYS } from "../shared/storage/keys.js";
+import { getSupportedTools } from "../zepp-app/shared/constants/tool-catalog.js";
+import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.js";
+import { CURRENT_SCHEMA_VERSION, createRecipeSnapshot, createRecipeSummary } from "../zepp-app/shared/domain/schema.js";
+import { createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
+import { WATCH_STORAGE_KEYS } from "../zepp-app/shared/storage/keys.js";
 
 function createCatalogFixture() {
   const primaryRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
@@ -170,7 +170,7 @@ beforeEach(() => {
 describe("page shell runtime coverage", () => {
   it("rebuilds the home shell on runtime events and unsubscribes on destroy", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/home/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/home/index.js", createLayoutMock());
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache),
@@ -201,7 +201,7 @@ describe("page shell runtime coverage", () => {
       url: "page/result-summary/index"
     });
 
-    const runtimeEvents = await import("../shared/watch/runtime-events.js");
+    const runtimeEvents = await import("../zepp-app/shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
     runtimeEvents.emitRuntimeEvent({
       type: "catalog",
@@ -224,7 +224,7 @@ describe("page shell runtime coverage", () => {
 
   it("renders the tool list as a scroll list and routes into recipe selection", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/tool-list/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/tool-list/index.js", createLayoutMock());
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
@@ -253,7 +253,7 @@ describe("page shell runtime coverage", () => {
       url: "page/recipe-list/index"
     });
 
-    const runtimeEvents = await import("../shared/watch/runtime-events.js");
+    const runtimeEvents = await import("../zepp-app/shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
     runtimeEvents.emitRuntimeEvent({
       type: "catalog",
@@ -276,8 +276,8 @@ describe("page shell runtime coverage", () => {
 
   it("renders recipe rows from watch state and routes into recipe detail", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/recipe-list/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-list/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
@@ -299,7 +299,7 @@ describe("page shell runtime coverage", () => {
     });
     expect(watchStore.readSelectedRecipeId()).toBe(fixture.primarySummary.recipeId);
 
-    const runtimeEvents = await import("../shared/watch/runtime-events.js");
+    const runtimeEvents = await import("../zepp-app/shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
     runtimeEvents.emitRuntimeEvent({
       type: "catalog",
@@ -322,8 +322,8 @@ describe("page shell runtime coverage", () => {
 
   it("starts a selected recipe from the detail page and refreshes on catalog updates", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/recipe-detail/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-detail/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
@@ -354,7 +354,7 @@ describe("page shell runtime coverage", () => {
       recipeId: fixture.primarySummary.recipeId
     });
 
-    const runtimeEvents = await import("../shared/watch/runtime-events.js");
+    const runtimeEvents = await import("../zepp-app/shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
     runtimeEvents.emitRuntimeEvent({
       type: "catalog",
@@ -377,8 +377,8 @@ describe("page shell runtime coverage", () => {
 
   it("keeps recipe-detail scrollable only when the content really overflows", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/recipe-detail/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-detail/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
     const longSnapshot = {
       ...fixture.primarySnapshot,
       description:
@@ -408,8 +408,8 @@ describe("page shell runtime coverage", () => {
 
   it("renders the active-brew dock with Zepp-safe labels and ASCII step meta", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
     const now = 250_000;
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
 
@@ -449,8 +449,8 @@ describe("page shell runtime coverage", () => {
 
   it("aborts the active brew from the dock and returns home", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now: 310_000 });
 
     runtime.setLocalStorageState({
@@ -470,7 +470,7 @@ describe("page shell runtime coverage", () => {
 
   it("replaces the active-brew page when a timed tick advances the session", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
     const now = 410_000;
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
 
@@ -504,7 +504,7 @@ describe("page shell runtime coverage", () => {
 
   it("refreshes the active-brew widgets in place while a timed step is still running", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
     const now = 510_000;
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
 
@@ -539,8 +539,8 @@ describe("page shell runtime coverage", () => {
 
   it("stops the active-brew timer loop cleanly when the session disappears", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
     const now = 610_000;
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now });
 
@@ -572,7 +572,7 @@ describe("page shell runtime coverage", () => {
   });
 
   it("renders the no-active-brew fallback and keeps its home action usable", async () => {
-    const { runtime, pageDefinition } = await loadPageHarness("../page/brew-active/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
 
     buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();
@@ -591,7 +591,7 @@ describe("page shell runtime coverage", () => {
 
   it("refreshes the result summary page on latest-result events", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/result-summary/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/result-summary/index.js", createLayoutMock());
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify(fixture.lastResult)
@@ -619,7 +619,7 @@ describe("page shell runtime coverage", () => {
       url: "page/home/index"
     });
 
-    const runtimeEvents = await import("../shared/watch/runtime-events.js");
+    const runtimeEvents = await import("../zepp-app/shared/watch/runtime-events.js");
     runtime.router.replace.mockClear();
     runtimeEvents.emitRuntimeEvent({
       type: "last_result",
@@ -642,7 +642,7 @@ describe("page shell runtime coverage", () => {
 
   it("keeps result-summary scrollable only when future content really overflows", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/result-summary/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/result-summary/index.js", createLayoutMock());
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify({
@@ -664,7 +664,7 @@ describe("page shell runtime coverage", () => {
 
   it("covers the home resume, discard, and latest-result button paths", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/home/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/home/index.js", createLayoutMock());
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now: 1_000 });
 
     runtime.setLocalStorageState({
@@ -698,7 +698,7 @@ describe("page shell runtime coverage", () => {
 
   it("keeps the tool list usable when device-info lookup fails", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/tool-list/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/tool-list/index.js", createLayoutMock());
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
@@ -715,8 +715,8 @@ describe("page shell runtime coverage", () => {
 
   it("renders the recipe list empty state and lets the user request sync", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/recipe-list/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-list/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
@@ -738,8 +738,8 @@ describe("page shell runtime coverage", () => {
 
   it("shows fallback controls when the selected recipe snapshot is missing", async () => {
     const fixture = createCatalogFixture();
-    const { runtime, pageDefinition } = await loadPageHarness("../page/recipe-detail/index.js", createLayoutMock());
-    const watchStore = await import("../shared/storage/watch-store.js");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-detail/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
 
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
@@ -760,7 +760,7 @@ describe("page shell runtime coverage", () => {
   });
 
   it("renders the no-result summary state and keeps both exit paths usable", async () => {
-    const { runtime, pageDefinition } = await loadPageHarness("../page/result-summary/index.js", createLayoutMock());
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/result-summary/index.js", createLayoutMock());
 
     buildPage(pageDefinition);
     const widgets = runtime.getCreatedWidgets();

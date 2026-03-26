@@ -9,7 +9,8 @@
     "npm": ">=10 <11"
   },
   "scripts": {
-    "build": "zeus build",
+    "build": "node scripts/run-zeus-command.mjs build",
+    "zepp:dev": "node scripts/run-zeus-command.mjs dev",
     "test": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts --coverage",
     "test:playwright": "node scripts/playwright-simulator-coverage.mjs",
