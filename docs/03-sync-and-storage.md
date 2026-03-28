@@ -77,6 +77,7 @@ interface PhoneSyncMeta {
   recipeCatalogRevision: number
   historyRevision: number
   seedCatalogVersion: number
+  seedLocale: string
   seededAt: number
   lastBootstrapAt?: number
   lastWatchSeenAt?: number
@@ -139,6 +140,12 @@ That migration path is additive:
 - edited or deleted older seeds must not be overwritten or silently resurrected,
 - a migration should therefore add only newer seed records, not re-run the whole original seed set.
 
+The same sync-meta record now also carries `seedLocale`:
+
+- new installs seed starter recipes in the chosen supported locale,
+- older installs that predate `seedLocale` keep the legacy English starter baseline instead of inferring a new locale midstream,
+- later seed-library migrations keep using that stored locale unless product scope explicitly adds locale switching for starter content.
+
 `pof_settings_ui_state_v1` is not part of domain seeding. It is phone UI state only.
 
 ## Bootstrap flow
@@ -186,6 +193,7 @@ interface RequestBootstrapPayload {
   knownToolCatalogRevision: number
   knownRecipeCatalogRevision: number
   knownHistoryRevision: number
+  preferredLocale?: string
 }
 ```
 

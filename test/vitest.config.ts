@@ -21,6 +21,7 @@ export default defineConfig({
       "@zos/display": resolve(__dirname, "zeus-runtime/zos-display.ts"),
       "@zos/interaction": resolve(__dirname, "zeus-runtime/zos-interaction.ts"),
       "@zos/router": resolve(__dirname, "zeus-runtime/zos-router.ts"),
+      "@zos/settings": resolve(__dirname, "zeus-runtime/zos-settings.ts"),
       "@zos/sensor": resolve(__dirname, "zeus-runtime/zos-sensor.ts"),
       "@zos/storage": resolve(__dirname, "zeus-runtime/zos-storage.ts"),
       "@zos/ui": resolve(__dirname, "zeus-runtime/zos-ui.ts"),

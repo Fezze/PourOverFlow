@@ -182,6 +182,9 @@ function ensureAppSideRuntime(service) {
       }
 
       if (syncEnvelope.messageType === SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP) {
+        ensurePhoneStorage(settingsStorage, {
+          preferredLocale: syncEnvelope.payload?.preferredLocale || null
+        });
         const phoneSnapshot = readPhoneSnapshot(settingsStorage);
         const responseSlices = getBootstrapResponseSlices(syncEnvelope.payload, phoneSnapshot.syncMeta);
 

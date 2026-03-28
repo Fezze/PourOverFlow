@@ -68,7 +68,19 @@ zepp-app/
       color-palette.js
     domain/
       schema.js
+      seed-library/
+        en-US.js
+        pl-PL.js
+      seed-library.js
       validators.js
+    i18n/
+      index.js
+      phone-locale.js
+      watch-locale.js
+      runtime-locale.js
+      locales/
+        en-US.js
+        pl-PL.js
     storage/
       keys.js
       phone-store.js
@@ -261,7 +273,14 @@ Do not add at the start:
 ### `shared/domain/*`
 
 - stores record schemas and validators,
+- stores locale-aware starter recipe definitions and the seed-library wrapper,
 - is shared by `setting/`, `app-side/`, and the watch app.
+
+### `shared/i18n/*`
+
+- stores shared translation dictionaries,
+- keeps browser-safe phone locale resolution separate from Zepp-only watch locale resolution,
+- should stay import-safe for browser harness tests and Playwright coverage runs.
 
 ### `shared/storage/*`
 

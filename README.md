@@ -9,6 +9,7 @@ The latest watch UX pass also keeps brewer and recipe chooser pages quieter on-d
 The shared round layout layer now also applies a conservative compact tuning below the `480x480` baseline so Balance 1-class screens stay closer to the main composition without adding a second round target or a separate page set.
 The repo now keeps the actual Zeus package under [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) while docs, tests, scripts, VS Code tasks, and coverage reports stay at the repo root. That keeps `zeus dev` focused on app files instead of reacting to generated report output.
 The starter library now ships as an uneven 24-recipe catalog, and the phone-side seed flow tracks `seedCatalogVersion` so older installs can append only newly introduced seed recipes instead of replaying the whole seed set.
+The repo now also includes a first localization baseline: shared watch and phone copy supports `en-US` and `pl-PL`, starter recipes are split into locale-aware seed modules instead of one giant file, and phone-side seed state now records `seedLocale` so brand-new installs can choose a supported starter locale while older installs keep the legacy English baseline without replaying the full library.
 
 ## Project language
 
@@ -23,6 +24,7 @@ This project is to be run in English.
 - On the watch: `tool list -> recipe list -> recipe detail -> active brew`, with native scrolling and a hardware shortcut on the active brew screen when the device exposes one
 - During a session: step timer, total session timer, manual `Next` steps, and haptic feedback
 - On the phone: full recipe CRUD and history note editing with a selector-first library, compact brewer badges, and a paginated step editor
+- Localization: shared UI copy starts with `en-US` and `pl-PL`, and starter recipes stay split by locale file rather than collapsing back into one monolith
 - Sync: `setting/ -> app-side/ -> messaging.peerSocket -> Device App`
 - Resume: best-effort `resume`, not a guaranteed full background engine
 
@@ -133,7 +135,7 @@ The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\doc
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
-- current meaningful local coverage baselines are `93.79% / 83.81% / 97.98% / 93.69%` for Vitest and `93.36% / 82.40% / 92.76% / 93.36%` for the Playwright module harness.
+- current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
 - `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run zepp:dev -- -t "Amazfit Balance 2"` or run `zeus dev` directly from `zepp-app/`.

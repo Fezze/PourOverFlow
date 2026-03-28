@@ -74,6 +74,9 @@ Current verified platform note:
 - a dedicated `zepp-app/` subtree so Zeus only watches the mini-app package and not root-level coverage output,
 - seed data in `settingsStorage`,
 - a versioned seed catalog that can append newly introduced seed recipes without replaying the whole library on existing installs,
+- shared localization support for `en-US` and `pl-PL` across watch, phone, and starter recipes,
+- locale-aware starter recipe modules under `shared/domain/seed-library/` instead of one giant seed-definition file,
+- a browser-safe `shared/i18n/phone-locale.js` path and a Zepp-only `shared/i18n/watch-locale.js` path so browser harnesses do not pull in `@zos/settings`,
 - real CRUD for recipes and history notes in `setting/`,
 - a cleaner phone-side Settings UX with active top navigation, contextual shell headers, a selector-first library browse, the same brewer PNG icons as the watch, right-aligned numeric count badges, quieter `History` and `Sync` surfaces, and a paginated recipe-step editor,
 - runtime sync with `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
@@ -109,7 +112,7 @@ Current verified platform note:
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
-- Current meaningful coverage baselines after the latest test expansion are `93.79% / 83.81% / 97.98% / 93.69%` for `npm run test:coverage` and `93.36% / 82.40% / 92.76% / 93.36%` for `npm run test:playwright:coverage:harness`.
+- Current meaningful coverage baselines after the latest test expansion are `90.79% / 82.11% / 85.55% / 90.67%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
@@ -210,7 +213,7 @@ Helper phone key, non-canonical for sync:
 
 ## Nearest goal
 
-Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live source of open work. Right now that mainly means comfort validation for haptics and final watch-screen comfort on real hardware.
+Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live source of open work. Right now that mainly means real-device comfort validation plus confirming that the new Polish copy fits comfortably on both watch and phone surfaces.
 
 ## TODO and document maintenance
 

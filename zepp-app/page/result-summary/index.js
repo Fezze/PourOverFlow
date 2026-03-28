@@ -1,9 +1,10 @@
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
-import { getToolById } from "../../shared/constants/tool-catalog";
+import { getToolById, getLocalizedToolLabel } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
 import { goHome, goToToolList, PAGE_URLS } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
+import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import {
   ACTION_DOCK,
   BACKGROUND,
@@ -33,23 +34,27 @@ const createResultListFrame = (panel) => ({
   itemRadius: 18
 });
 
-function buildResultRows(lastResult) {
+function buildResultRows(lastResult, i18n) {
   if (!lastResult) {
     return [];
   }
 
   return [
     {
-      title: "Status",
-      meta: lastResult.status
+      title: i18n.t("watch.resultSummary.rows.status"),
+      meta: i18n.getHistoryStatus(lastResult.status)
     },
     {
-      title: "Total time",
-      meta: `${Math.round(lastResult.elapsedMs / 1000)}s total`
+      title: i18n.t("watch.resultSummary.rows.totalTime"),
+      meta: i18n.t("watch.resultSummary.rows.totalTimeValue", {
+        seconds: Math.round(lastResult.elapsedMs / 1000)
+      })
     },
     {
-      title: "Timing delta",
-      meta: `${lastResult.totalDeltaMs} ms`
+      title: i18n.t("watch.resultSummary.rows.timingDelta"),
+      meta: i18n.t("watch.resultSummary.rows.timingDeltaValue", {
+        totalDeltaMs: lastResult.totalDeltaMs
+      })
     }
   ];
 }
@@ -164,9 +169,10 @@ Page({
     }
   },
   build() {
+    const i18n = createWatchTranslator();
     const lastResult = readLastResult();
     const tool = lastResult ? getToolById(lastResult.toolId) : null;
-    const resultRows = buildResultRows(lastResult);
+    const resultRows = buildResultRows(lastResult, i18n);
     const resultPanel = RESULT_PANEL(lastResult);
     const resultListFrame = createResultListFrame(resultPanel);
 
@@ -179,12 +185,12 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: lastResult ? lastResult.recipeName : "No result yet"
+      text: lastResult ? lastResult.recipeName : i18n.t("watch.resultSummary.noResultYet")
     });
     if (lastResult) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
-        text: tool ? tool.label : lastResult.toolId
+        text: tool ? getLocalizedToolLabel(tool, i18n) : lastResult.toolId
       });
     }
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
@@ -227,7 +233,7 @@ Page({
         w: BODY_TEXT.w - 28,
         y: BODY_TEXT.y + 10,
         h: BODY_TEXT.h + 24,
-        text: "No completed brew summary is stored on the watch yet."
+        text: i18n.t("watch.resultSummary.noSummary")
       });
     }
     if (ACTION_DOCK) {
@@ -236,7 +242,7 @@ Page({
     if (lastResult) {
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...BUTTONS[0],
-        text: "Home",
+        text: i18n.t("watch.resultSummary.actions.home"),
         click_func: () => {
           goHome();
         }
@@ -244,14 +250,14 @@ Page({
     } else {
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...BUTTONS[0],
-        text: "Browse",
+        text: i18n.t("watch.resultSummary.actions.browse"),
         click_func: () => {
           goToToolList();
         }
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...BUTTONS[1],
-        text: "Home",
+        text: i18n.t("watch.resultSummary.actions.home"),
         click_func: () => {
           goHome();
         }

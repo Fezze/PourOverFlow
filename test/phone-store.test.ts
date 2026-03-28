@@ -105,6 +105,56 @@ test("ensurePhoneStorage seeds tool catalog, seed recipes and sync meta", () => 
   expect(settingsStorage.getItem(getPhoneRecipeRecordKey("seed_v60_high_sweet"))).toBeTruthy();
 });
 
+test("ensurePhoneStorage can seed starter recipes in Polish and records the seed locale", () => {
+  const settingsStorage = createMockSettingsStorage();
+  const snapshot = ensurePhoneStorage(settingsStorage, {
+    preferredLocale: "pl-PL"
+  });
+
+  expect(snapshot.syncMeta.seedLocale).toBe("pl-PL");
+  expect(readRecipeRecord(settingsStorage, "seed_ap_daily_clean")).toMatchObject({
+    name: "AeroPress Daily Clean",
+    filterLabel: "Papier",
+    grindLabel: "Srednio-drobne"
+  });
+  expect(readRecipeRecord(settingsStorage, "seed_v60_high_sweet")).toMatchObject({
+    name: "V60 High Sweet",
+    notes: "Trzymaj wyzszy, stabilny centralny strumien."
+  });
+});
+
+test("ensurePhoneStorage backfills missing seedLocale for legacy installs with the legacy English baseline", () => {
+  const settingsStorage = createMockSettingsStorage();
+  const oldSeedTimestamp = 3_000;
+  const versionOneSeeds = getSeedRecipeRecordsForVersion(1, oldSeedTimestamp);
+
+  versionOneSeeds.forEach((recipeRecord) => {
+    settingsStorage.setItem(getPhoneRecipeRecordKey(recipeRecord.recipeId), JSON.stringify(recipeRecord));
+  });
+  settingsStorage.setItem(
+    PHONE_STORAGE_KEYS.recipeIndex,
+    JSON.stringify(versionOneSeeds.map((recipeRecord) => createRecipeSummary(recipeRecord)))
+  );
+  settingsStorage.setItem(PHONE_STORAGE_KEYS.historyIndex, JSON.stringify([]));
+  settingsStorage.setItem(
+    PHONE_STORAGE_KEYS.syncMeta,
+    JSON.stringify({
+      schemaVersion: 1,
+      toolCatalogRevision: 4,
+      recipeCatalogRevision: 7,
+      historyRevision: 2,
+      seedCatalogVersion: 1,
+      seededAt: oldSeedTimestamp
+    })
+  );
+
+  const snapshot = ensurePhoneStorage(settingsStorage, {
+    preferredLocale: "pl-PL"
+  });
+
+  expect(snapshot.syncMeta.seedLocale).toBe("en-US");
+});
+
 test("ensurePhoneStorage seeds an uneven library where every brewer has more than two recipes", () => {
   const settingsStorage = createMockSettingsStorage();
   const snapshot = ensurePhoneStorage(settingsStorage);

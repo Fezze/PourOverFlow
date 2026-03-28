@@ -9,6 +9,7 @@ import {
   selectRecipe
 } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
+import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import {
   BACKGROUND,
   EMPTY_BUTTON,
@@ -28,14 +29,16 @@ function supportsHardwareListFocus() {
   }
 }
 
-function buildRecipeRows(recipes) {
+function buildRecipeRows(recipes, i18n) {
   return recipes.map((recipe) => {
     const snapshot = recipe.recipeSnapshot;
     const totalSeconds = snapshot ? Math.round(snapshot.estimatedTotalDurationMs / 1000) : 0;
 
     return {
       title: recipe.name,
-      meta: snapshot ? `${snapshot.coffeeDoseG}g / ${snapshot.totalWaterMl}ml / ${totalSeconds}s` : "Snapshot missing",
+      meta: snapshot
+        ? `${snapshot.coffeeDoseG}g / ${snapshot.totalWaterMl}ml / ${totalSeconds}s`
+        : i18n.t("watch.recipeList.snapshotMissing"),
       recipeId: recipe.recipeId
     };
   });
@@ -94,9 +97,10 @@ Page({
     }
   },
   build() {
+    const i18n = createWatchTranslator();
     const selectedTool = getSelectedTool();
     const recipes = getRecipeListForSelectedTool();
-    const rows = buildRecipeRows(recipes);
+    const rows = buildRecipeRows(recipes, i18n);
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "catalog") {
@@ -107,12 +111,12 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: selectedTool ? selectedTool.label : "Recipes"
+      text: selectedTool ? i18n.getToolLabel(selectedTool) : i18n.t("watch.recipeList.titleFallback")
     });
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
-        text: "No recipes yet"
+        text: i18n.t("watch.recipeList.empty")
       });
     }
 
@@ -147,7 +151,7 @@ Page({
 
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...EMPTY_BUTTON,
-      text: "Refresh from phone",
+      text: i18n.t("watch.recipeList.refresh"),
       click_func: () => {
         refreshPhoneSnapshot();
       }

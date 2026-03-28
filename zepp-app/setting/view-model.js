@@ -1,3 +1,6 @@
+import { getLocalizedToolLabel } from "../shared/constants/tool-catalog";
+import { createTranslator, DEFAULT_LOCALE } from "../shared/i18n/index.js";
+import { createPhoneTranslator } from "../shared/i18n/phone-locale.js";
 import { TOOL_CATALOG } from "../shared/constants/tool-catalog";
 
 const TOOL_BADGE_LABELS = {
@@ -20,31 +23,56 @@ export function getSnapshotCounts(snapshot) {
   };
 }
 
-export function buildLibraryOverview(snapshot, options = {}) {
-  const counts = getSnapshotCounts(snapshot);
-  const parts = [`${counts.toolCount} brewers`, `${counts.recipeCount} recipes`];
-
-  if (options.includeHistory) {
-    parts.push(`${counts.historyCount} history entries`);
+function resolveTranslator(localeOrTranslator = null) {
+  if (localeOrTranslator && typeof localeOrTranslator.t === "function") {
+    return localeOrTranslator;
   }
 
-  return parts.join(" - ");
+  if (typeof localeOrTranslator === "string") {
+    return createTranslator(localeOrTranslator);
+  }
+
+  return createPhoneTranslator(DEFAULT_LOCALE);
 }
 
-export function buildRecipeShelfCountLabel(recipeCount) {
-  return recipeCount === 1 ? "1 recipe" : `${recipeCount} recipes`;
+export function buildLibraryOverview(snapshot, localeOrTranslator, options = {}) {
+  const normalizedOptions =
+    localeOrTranslator && typeof localeOrTranslator === "object" && !("t" in localeOrTranslator)
+      ? localeOrTranslator
+      : options;
+  const translator = resolveTranslator(
+    localeOrTranslator && typeof localeOrTranslator === "object" && !("t" in localeOrTranslator)
+      ? null
+      : localeOrTranslator
+  );
+  const counts = getSnapshotCounts(snapshot);
+  return translator.t("settings.overview.library", {
+    toolCount: counts.toolCount,
+    recipeCount: counts.recipeCount,
+    historyCount: counts.historyCount,
+    includeHistory: Boolean(normalizedOptions.includeHistory)
+  });
 }
 
-export function buildToolBadgeLabel(tool) {
+export function buildRecipeShelfCountLabel(recipeCount, localeOrTranslator = null) {
+  const translator = resolveTranslator(localeOrTranslator);
+  return translator.t("common.counts.recipes", {
+    count: Math.max(0, Number(recipeCount) || 0)
+  });
+}
+
+export function buildToolBadgeLabel(tool, localeOrTranslator = null) {
+  const localizedLabel = getLocalizedToolLabel(tool, resolveTranslator(localeOrTranslator));
+
   if (!tool) {
     return "--";
   }
 
-  return TOOL_BADGE_LABELS[tool.toolId] || tool.label.slice(0, 2).toUpperCase();
+  return TOOL_BADGE_LABELS[tool.toolId] || localizedLabel.slice(0, 2).toUpperCase();
 }
 
-export function buildToolCardLabel(tool, recipeCount) {
-  return tool.label;
+export function buildToolCardLabel(tool, recipeCount, localeOrTranslator = null) {
+  return getLocalizedToolLabel(tool, resolveTranslator(localeOrTranslator));
 }
 
 export function buildToolCountBadgeLabel(recipeCount) {
@@ -55,17 +83,21 @@ export function buildToolSettingsIconPath(tool) {
   return tool ? `../assets/common.s/${tool.iconStem}.png` : "";
 }
 
-export function buildHistoryOverview(snapshot) {
+export function buildHistoryOverview(snapshot, localeOrTranslator = null) {
+  const translator = resolveTranslator(localeOrTranslator);
   const counts = getSnapshotCounts(snapshot);
-  return counts.historyCount === 1
-    ? "1 archived brew on the phone."
-    : `${counts.historyCount} archived brews on the phone.`;
+  return translator.t("common.counts.archivedBrews", {
+    count: counts.historyCount
+  });
 }
 
-export function buildSyncOverview(syncMeta) {
+export function buildSyncOverview(syncMeta, localeOrTranslator = null) {
+  const translator = resolveTranslator(localeOrTranslator);
   const meta = syncMeta || {};
 
-  return `Tools revision: ${meta.toolCatalogRevision || 0}\nRecipes revision: ${
-    meta.recipeCatalogRevision || 0
-  }\nHistory revision: ${meta.historyRevision || 0}`;
+  return translator.t("settings.overview.sync", {
+    toolRevision: meta.toolCatalogRevision || 0,
+    recipeRevision: meta.recipeCatalogRevision || 0,
+    historyRevision: meta.historyRevision || 0
+  });
 }

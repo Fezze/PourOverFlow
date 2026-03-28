@@ -13,6 +13,7 @@ import {
 } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import { primeWatchSyncBridge } from "../../shared/watch/sync-bridge";
+import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import {
   ACTION_DOCK,
   BACKGROUND,
@@ -26,42 +27,48 @@ import {
 const PANEL_COLOR = 0x171d26;
 const MUTED_TEXT = 0xaab4c2;
 
-function buildHomeTitle(state) {
+function buildHomeTitle(state, i18n) {
   if (state.activeSession) {
     return state.activeSession.recipeName;
   }
 
   if (state.selectedTool) {
-    return state.selectedTool.label;
+    return i18n.getToolLabel(state.selectedTool);
   }
 
-  return "Brewers";
+  return i18n.t("watch.home.title.default");
 }
 
-function buildHomeSubtitle(state) {
+function buildHomeSubtitle(state, i18n) {
   if (state.activeSession) {
-    return "Resume";
+    return i18n.t("watch.home.subtitle.resume");
   }
 
   if (state.lastResult) {
-    return "Next cup";
+    return i18n.t("watch.home.subtitle.nextCup");
   }
 
-  return "Choose a brewer";
+  return i18n.t("watch.home.subtitle.chooseBrewer");
 }
 
-function buildHomeBody(state) {
+function buildHomeBody(state, i18n) {
   if (state.activeSession) {
-    return `Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`;
+    return i18n.t("watch.home.body.stepProgress", {
+      current: state.activeSession.currentStepIndex + 1,
+      total: state.activeSession.recipeSnapshot.steps.length
+    });
   }
 
   if (state.lastResult) {
-    return ["Last brew", state.lastResult.recipeName].join("\n");
+    return [
+      i18n.t("watch.home.body.lastBrewLabel"),
+      state.lastResult.recipeName
+    ].join("\n");
   }
 
   return state.selectedTool
-    ? `${state.recipeCount} recipes ready`
-    : "Ready";
+    ? i18n.t("watch.home.body.recipesReady", { count: state.recipeCount })
+    : i18n.t("watch.home.body.ready");
 }
 
 Page({
@@ -72,6 +79,7 @@ Page({
     }
   },
   build() {
+    const i18n = createWatchTranslator();
     primeWatchSyncBridge();
     const reconcileResult = reconcileActiveSessionOnEntry();
 
@@ -90,11 +98,11 @@ Page({
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text: buildHomeTitle(scaffoldState)
+      text: buildHomeTitle(scaffoldState, i18n)
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...SUBTITLE_TEXT,
-      text: buildHomeSubtitle(scaffoldState)
+      text: buildHomeSubtitle(scaffoldState, i18n)
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: BUTTONS[0].x,
@@ -110,14 +118,16 @@ Page({
       w: BODY_TEXT.w - 28,
       y: BODY_TEXT.y + 10,
       h: BODY_TEXT.h + 24,
-      text: buildHomeBody(scaffoldState)
+      text: buildHomeBody(scaffoldState, i18n)
     });
     if (ACTION_DOCK) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
     }
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: scaffoldState.activeSession ? "Resume" : "Browse",
+      text: scaffoldState.activeSession
+        ? i18n.t("watch.home.actions.resume")
+        : i18n.t("watch.home.actions.browse"),
       click_func: () => {
         if (scaffoldState.activeSession) {
           resumeActiveSession();
@@ -129,7 +139,9 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: scaffoldState.activeSession ? "Discard" : "Sync",
+      text: scaffoldState.activeSession
+        ? i18n.t("watch.home.actions.discard")
+        : i18n.t("watch.home.actions.sync"),
       click_func: () => {
         if (scaffoldState.activeSession) {
           discardActiveSessionFromHome();
@@ -142,7 +154,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[2],
-      text: "Last",
+      text: i18n.t("watch.home.actions.last"),
       click_func: () => {
         goToResultSummary();
       }

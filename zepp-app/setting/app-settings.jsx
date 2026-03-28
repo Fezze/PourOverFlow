@@ -1,4 +1,6 @@
-import { TOOL_CATALOG } from "../shared/constants/tool-catalog";
+import { TOOL_CATALOG, getLocalizedToolLabel } from "../shared/constants/tool-catalog";
+import { DEFAULT_LOCALE } from "../shared/i18n/index.js";
+import { createPhoneTranslator, resolvePhoneLocale } from "../shared/i18n/phone-locale.js";
 import {
   FEEDBACK_CUES,
   RECIPE_COLOR_TOKENS,
@@ -351,48 +353,59 @@ const PANEL_TITLE_LIGHT_STYLE = {
   color: "#234050"
 };
 
-const TOOL_OPTIONS = TOOL_CATALOG.map((tool) => ({
-  name: tool.label,
-  value: tool.toolId
-}));
-
 const COLOR_OPTIONS = RECIPE_COLOR_TOKENS.map((colorToken) => ({
   name: colorToken,
   value: colorToken
 }));
 
-const STEP_KIND_OPTIONS = RECIPE_STEP_KINDS.map((stepKind) => ({
-  name: stepKind,
-  value: stepKind
-}));
-
-const FEEDBACK_LABELS = {
-  none: "none",
-  vibrate_short: "short haptic",
-  vibrate_long: "long haptic",
-  combo_short: "finish haptic"
-};
-
-const FEEDBACK_OPTIONS = FEEDBACK_CUES.map((feedbackCue) => ({
-  name: FEEDBACK_LABELS[feedbackCue] || feedbackCue,
-  value: feedbackCue
-}));
-
-const BOOLEAN_OPTIONS = [
-  { name: "true", value: "true" },
-  { name: "false", value: "false" }
-];
-
-const RATING_OPTIONS = [
-  { name: "none", value: "" },
-  { name: "1", value: "1" },
-  { name: "2", value: "2" },
-  { name: "3", value: "3" },
-  { name: "4", value: "4" },
-  { name: "5", value: "5" }
-];
-
 const NOOP = () => {};
+
+function resolveSettingsTranslator(pageInstance = null) {
+  if (pageInstance && pageInstance.i18n && typeof pageInstance.i18n.t === "function") {
+    return pageInstance.i18n;
+  }
+
+  return createPhoneTranslator(resolvePhoneLocale(DEFAULT_LOCALE));
+}
+
+function buildToolOptions(i18n) {
+  return TOOL_CATALOG.map((tool) => ({
+    name: getLocalizedToolLabel(tool, i18n),
+    value: tool.toolId
+  }));
+}
+
+function buildStepKindOptions(i18n) {
+  return RECIPE_STEP_KINDS.map((stepKind) => ({
+    name: i18n.getStepKindLabel(stepKind),
+    value: stepKind
+  }));
+}
+
+function buildFeedbackOptions(i18n) {
+  return FEEDBACK_CUES.map((feedbackCue) => ({
+    name: i18n.t(`settings.options.feedbackCue.${feedbackCue}`, {}, feedbackCue),
+    value: feedbackCue
+  }));
+}
+
+function buildBooleanOptions(i18n) {
+  return [
+    { name: i18n.t("common.bool.true"), value: "true" },
+    { name: i18n.t("common.bool.false"), value: "false" }
+  ];
+}
+
+function buildRatingOptions(i18n) {
+  return [
+    { name: i18n.t("common.rating.none"), value: "" },
+    { name: "1", value: "1" },
+    { name: "2", value: "2" },
+    { name: "3", value: "3" },
+    { name: "4", value: "4" },
+    { name: "5", value: "5" }
+  ];
+}
 
 function createDefaultUiState(selectedToolId) {
   return {
@@ -426,11 +439,14 @@ function createDraftFromRecipe(recipeRecord) {
   };
 }
 
-function createFreshDraft(toolId) {
+function createFreshDraft(toolId, i18n) {
   return createDraftFromRecipe(
     createUserRecipeRecord({
       toolId,
-      steps: createDefaultRecipeSteps()
+      locale: i18n ? i18n.locale : DEFAULT_LOCALE,
+      steps: createDefaultRecipeSteps({
+        locale: i18n ? i18n.locale : DEFAULT_LOCALE
+      })
     })
   );
 }
@@ -563,12 +579,12 @@ function formatDurationLabel(durationMs) {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
 
-function formatDateLabel(timestamp) {
+function formatDateLabel(timestamp, i18n) {
   if (!Number.isFinite(timestamp) || timestamp <= 0) {
-    return "Unknown date";
+    return i18n.t("common.unknownDate");
   }
 
-  return new Date(timestamp).toLocaleDateString("en-GB", {
+  return new Date(timestamp).toLocaleDateString(i18n.locale, {
     day: "2-digit",
     month: "short",
     year: "numeric"
@@ -587,7 +603,7 @@ function createToolIconStyle(tool) {
   };
 }
 
-function createToolBrowseCard(tool, recipeCount, onClick) {
+function createToolBrowseCard(tool, recipeCount, onClick, i18n) {
   return View({ style: TOOL_ROW_STYLE }, [
     View(
       {
@@ -596,7 +612,7 @@ function createToolBrowseCard(tool, recipeCount, onClick) {
       []
     ),
     Button({
-      label: buildToolCardLabel(tool, recipeCount),
+      label: buildToolCardLabel(tool, recipeCount, i18n),
       style: LIST_CARD_BUTTON_STYLE,
       onClick
     }),
@@ -608,47 +624,44 @@ function createToolBrowseCard(tool, recipeCount, onClick) {
   ]);
 }
 
-function buildRecipeCardLabel(recipeSummary, recipeRecord) {
+function buildRecipeCardLabel(recipeSummary, recipeRecord, i18n) {
   const metrics = recipeRecord
     ? `${recipeRecord.coffeeDoseG}g - ${recipeRecord.totalWaterMl}ml - ${formatDurationLabel(
         recipeRecord.estimatedTotalDurationMs
       )}`
-    : "Metrics unavailable";
-  const sourceLabel = recipeSummary.source === "seed" ? "Starter recipe" : "Custom recipe";
+    : i18n.t("common.unknownMetrics");
+  const sourceLabel = i18n.t(`settings.library.recipeSource.${recipeSummary.source}`, {}, recipeSummary.source);
 
-  return `${recipeSummary.name}\n${metrics}\n${sourceLabel} - Updated ${formatDateLabel(recipeSummary.updatedAt)}`;
+  return `${recipeSummary.name}\n${metrics}\n${sourceLabel} - ${i18n.t("settings.library.updatedAt", {
+    dateLabel: formatDateLabel(recipeSummary.updatedAt, i18n)
+  })}`;
 }
 
-function buildDraftOverview(draftRecipe) {
-  return `${draftRecipe.name || "Untitled recipe"}\n${getToolMeta(draftRecipe.toolId)?.label || "No brewer"} - ${
-    draftRecipe.steps.length
-  } steps - ${formatDurationLabel(draftRecipe.estimatedTotalDurationMs)}`;
+function buildDraftOverview(draftRecipe, i18n) {
+  return `${draftRecipe.name || i18n.t("settings.editor.untitledRecipe")}\n${
+    getLocalizedToolLabel(getToolMeta(draftRecipe.toolId), i18n) || i18n.t("settings.editor.noBrewer")
+  } - ${i18n.t("settings.editor.guidedStepsSubtitle", { stepCount: draftRecipe.steps.length })} - ${formatDurationLabel(
+    draftRecipe.estimatedTotalDurationMs
+  )}`;
 }
 
-function buildRecipeStatCards(draftRecipe) {
+function buildRecipeStatCards(draftRecipe, i18n) {
   return [
-    `Dose\n${draftRecipe.coffeeDoseG || "-"} g`,
-    `Water\n${draftRecipe.totalWaterMl || "-"} ml`,
-    `Temp\n${draftRecipe.waterTempC || "-"} C`,
-    `Time\n${formatDurationLabel(draftRecipe.estimatedTotalDurationMs)}`,
-    `Steps\n${draftRecipe.steps.length}`,
-    `Color\n${draftRecipe.colorToken || "-"}`
+    i18n.t("settings.stats.dose", { value: draftRecipe.coffeeDoseG || "-" }),
+    i18n.t("settings.stats.water", { value: draftRecipe.totalWaterMl || "-" }),
+    i18n.t("settings.stats.temp", { value: draftRecipe.waterTempC || "-" }),
+    i18n.t("settings.stats.time", { value: formatDurationLabel(draftRecipe.estimatedTotalDurationMs) }),
+    i18n.t("settings.stats.steps", { value: draftRecipe.steps.length }),
+    i18n.t("settings.stats.color", { value: draftRecipe.colorToken || "-" })
   ];
 }
 
-function humanizeStepKind(stepKind) {
-  switch (stepKind) {
-    case "timed_action":
-      return "Timed action";
-    case "timed_wait":
-      return "Timed wait";
-    default:
-      return stepKind ? `${stepKind.charAt(0).toUpperCase()}${stepKind.slice(1)}` : "Step";
-  }
+function humanizeStepKind(stepKind, i18n) {
+  return i18n.getStepKindLabel(stepKind || "instruction");
 }
 
-function buildStepSummaryLabel(step, index, totalSteps) {
-  const detailParts = [humanizeStepKind(step.kind)];
+function buildStepSummaryLabel(step, index, totalSteps, i18n) {
+  const detailParts = [humanizeStepKind(step.kind, i18n)];
 
   if (step.durationMs) {
     detailParts.push(formatDurationLabel(step.durationMs));
@@ -659,10 +672,15 @@ function buildStepSummaryLabel(step, index, totalSteps) {
   }
 
   if (step.requiresConfirm === "true" || step.requiresConfirm === true) {
-    detailParts.push("Confirm");
+    detailParts.push(i18n.t("schema.fallbackSteps.confirm"));
   }
 
-  return `Step ${index + 1}/${totalSteps}: ${step.title || step.kind}\n${detailParts.join(" - ")}`;
+  return i18n.t("settings.editor.stepSummary", {
+    index: index + 1,
+    total: totalSteps,
+    title: step.title || step.kind,
+    detail: detailParts.join(" - ")
+  });
 }
 
 function chunkItems(items, size) {
@@ -675,14 +693,16 @@ function chunkItems(items, size) {
   return rows;
 }
 
-function buildHistoryCardLabel(historyEntry) {
-  const ratingLabel = historyEntry.userRating ? ` - Rated ${historyEntry.userRating}/5` : "";
-  return `${historyEntry.recipeSnapshot.name}\n${historyEntry.status} - ${formatDurationLabel(
+function buildHistoryCardLabel(historyEntry, i18n) {
+  const ratingLabel = historyEntry.userRating
+    ? ` - ${i18n.t("settings.history.rated", { rating: historyEntry.userRating })}`
+    : "";
+  return `${historyEntry.recipeSnapshot.name}\n${i18n.getHistoryStatus(historyEntry.status)} - ${formatDurationLabel(
     historyEntry.elapsedMs
-  )} - ${formatDateLabel(historyEntry.endedAt)}${ratingLabel}`;
+  )} - ${formatDateLabel(historyEntry.endedAt, i18n)}${ratingLabel}`;
 }
 
-function buildShellHeader(viewName, snapshot, selectedToolId) {
+function buildShellHeader(viewName, snapshot, selectedToolId, i18n) {
   const selectedTool = getToolMeta(selectedToolId);
   const selectedRecipeCount = selectedTool
     ? (((snapshot && snapshot.recipesByTool) || {})[selectedTool.toolId] || []).length
@@ -691,35 +711,39 @@ function buildShellHeader(viewName, snapshot, selectedToolId) {
   switch (viewName) {
     case "recipe-list":
       return {
-        title: selectedTool ? `${selectedTool.label} recipes` : "Recipes",
+        title: selectedTool
+          ? i18n.t("settings.shell.recipeListTitle", {
+            toolLabel: getLocalizedToolLabel(selectedTool, i18n)
+          })
+          : i18n.t("watch.recipeList.titleFallback"),
         subtitle: selectedTool
-          ? buildRecipeShelfCountLabel(selectedRecipeCount)
-          : "Manage recipes for the selected brewer."
+          ? buildRecipeShelfCountLabel(selectedRecipeCount, i18n)
+          : i18n.t("settings.library.recipeListSubtitle")
       };
     case "recipe-editor":
       return {
-        title: "Recipe editor",
-        subtitle: "Shape the brew profile and the guided watch steps."
+        title: i18n.t("settings.editor.recipeEditorTitle"),
+        subtitle: i18n.t("settings.editor.recipeEditorSubtitle")
       };
     case "history-list":
       return {
-        title: "Brew history",
-        subtitle: buildHistoryOverview(snapshot)
+        title: i18n.t("settings.shell.historyTitle"),
+        subtitle: buildHistoryOverview(snapshot, i18n)
       };
     case "history-detail":
       return {
-        title: "History detail",
-        subtitle: "Phone notes and ratings stay attached to the archived snapshot."
+        title: i18n.t("settings.shell.historyDetailTitle"),
+        subtitle: i18n.t("settings.shell.historyDetailSubtitle")
       };
     case "about-sync":
       return {
-        title: "Sync status",
-        subtitle: "Phone stays canonical. The watch mirrors only what it needs."
+        title: i18n.t("settings.shell.syncTitle"),
+        subtitle: i18n.t("settings.shell.syncSubtitle")
       };
     default:
       return {
-        title: "PourOverFlow",
-        subtitle: buildLibraryOverview(snapshot)
+        title: i18n.t("settings.shell.homeTitle"),
+        subtitle: buildLibraryOverview(snapshot, i18n)
       };
   }
 }
@@ -731,7 +755,10 @@ AppSettingsPage({
     ui: null
   },
   hydrateFromStorage(props) {
-    ensurePhoneStorage(props.settingsStorage);
+    this.i18n = createPhoneTranslator(resolvePhoneLocale());
+    ensurePhoneStorage(props.settingsStorage, {
+      preferredLocale: this.i18n.locale
+    });
     this.state.snapshot = readPhoneSnapshot(props.settingsStorage);
     this.state.syncMeta = this.state.snapshot.syncMeta;
 
@@ -787,7 +814,7 @@ AppSettingsPage({
     const selectedToolId = recipeRecord ? recipeRecord.toolId : this.state.ui.selectedToolId;
     const draftRecipe = recipeRecord
       ? createDraftFromRecipe(recipeRecord)
-      : createFreshDraft(selectedToolId);
+      : createFreshDraft(selectedToolId, resolveSettingsTranslator(this));
 
     this.setView(props, "recipe-editor", {
       selectedToolId: selectedToolId || this.state.ui.selectedToolId,
@@ -832,6 +859,7 @@ AppSettingsPage({
     this.updateDraftField(props, "steps", nextSteps);
   },
   addDraftStep(props) {
+    const i18n = resolveSettingsTranslator(this);
     const nextSteps = [...(this.state.ui.draftRecipe.steps || [])];
     const insertIndex = Math.max(0, nextSteps.length - 1);
 
@@ -839,8 +867,8 @@ AppSettingsPage({
       stepId: "",
       order: insertIndex,
       kind: "instruction",
-      title: `Step ${insertIndex + 1}`,
-      body: "Describe the action.",
+      title: `${i18n.t("schema.fallbackSteps.step")} ${insertIndex + 1}`,
+      body: i18n.t("schema.fallbackSteps.continueBody"),
       durationMs: "",
       waterMl: "",
       targetTotalWaterMl: "",
@@ -890,13 +918,14 @@ AppSettingsPage({
     });
   },
   deleteDraftStep(props, index) {
+    const i18n = resolveSettingsTranslator(this);
     const currentSteps = [...(this.state.ui.draftRecipe.steps || [])];
 
     if (currentSteps.length <= 1) {
       this.persistUiState(props, {
         draftRecipe: {
           ...this.state.ui.draftRecipe,
-          steps: createFreshDraft(this.state.ui.selectedToolId).steps
+          steps: createFreshDraft(this.state.ui.selectedToolId, i18n).steps
         },
         stepPageIndex: 0,
         flashMessage: "",
@@ -917,6 +946,7 @@ AppSettingsPage({
     });
   },
   saveDraftRecipe(props) {
+    const i18n = resolveSettingsTranslator(this);
     const result = saveRecipeRecord(props.settingsStorage, this.state.ui.draftRecipe);
 
     if (!result.ok) {
@@ -931,11 +961,14 @@ AppSettingsPage({
       selectedToolId: result.recipeRecord.toolId,
       editingRecipeId: null,
       draftRecipe: null,
-      flashMessage: `Saved recipe: ${result.recipeRecord.name}`,
+      flashMessage: i18n.t("settings.messages.recipeSaved", {
+        name: result.recipeRecord.name
+      }),
       errorMessage: ""
     });
   },
   duplicateRecipe(props, recipeId) {
+    const i18n = resolveSettingsTranslator(this);
     const result = duplicateRecipeRecord(props.settingsStorage, recipeId);
 
     if (!result.ok) {
@@ -947,15 +980,18 @@ AppSettingsPage({
 
     this.openRecipeList(props, result.recipeRecord.toolId);
     this.persistUiState(props, {
-      flashMessage: `Duplicated recipe: ${result.recipeRecord.name}`
+      flashMessage: i18n.t("settings.messages.recipeDuplicated", {
+        name: result.recipeRecord.name
+      })
     });
   },
   deleteRecipe(props, recipeId) {
+    const i18n = resolveSettingsTranslator(this);
     const deleted = deleteRecipeRecord(props.settingsStorage, recipeId);
 
     this.persistUiState(props, {
-      flashMessage: deleted ? "Recipe deleted. History was preserved." : "",
-      errorMessage: deleted ? "" : "Recipe record not found."
+      flashMessage: deleted ? i18n.t("settings.messages.recipeDeleted") : "",
+      errorMessage: deleted ? "" : i18n.t("settings.messages.recipeRecordNotFound")
     });
   },
   updateHistoryDraftField(props, fieldName, value) {
@@ -969,6 +1005,7 @@ AppSettingsPage({
     });
   },
   saveHistoryDraft(props) {
+    const i18n = resolveSettingsTranslator(this);
     const result = updateHistoryEntryFeedback(
       props.settingsStorage,
       this.state.ui.selectedHistoryId,
@@ -983,12 +1020,13 @@ AppSettingsPage({
     }
 
     this.persistUiState(props, {
-      flashMessage: "History note saved.",
+      flashMessage: i18n.t("settings.messages.historyNoteSaved"),
       errorMessage: ""
     });
   },
   renderNav(props) {
     const activeNavKey = getActiveNavKey(this.state.ui.view);
+    const i18n = resolveSettingsTranslator(this);
 
     return View(
       {
@@ -1001,21 +1039,21 @@ AppSettingsPage({
       },
       [
         Button({
-          label: "Library",
+          label: i18n.t("settings.nav.library"),
           style: createNavButtonStyle(activeNavKey === "library"),
           onClick: () => {
             this.openLibraryHome(props);
           }
         }),
         Button({
-          label: "History",
+          label: i18n.t("settings.nav.history"),
           style: createNavButtonStyle(activeNavKey === "history"),
           onClick: () => {
             this.openHistoryList(props);
           }
         }),
         Button({
-          label: "Sync",
+          label: i18n.t("settings.nav.sync"),
           style: createNavButtonStyle(activeNavKey === "sync"),
           onClick: () => {
             this.openSyncInfo(props);
@@ -1037,21 +1075,28 @@ AppSettingsPage({
     return messageViews.length ? Section({}, messageViews) : null;
   },
   renderLibraryHome(props) {
+    const i18n = resolveSettingsTranslator(this);
     const recipesByTool = this.state.snapshot ? this.state.snapshot.recipesByTool : {};
 
     return View({ style: TOOL_LIST_STYLE }, TOOL_CATALOG.map((tool) =>
-      createToolBrowseCard(tool, (recipesByTool[tool.toolId] || []).length, () => {
-        this.openRecipeList(props, tool.toolId);
-      })
+      createToolBrowseCard(
+        tool,
+        (recipesByTool[tool.toolId] || []).length,
+        () => {
+          this.openRecipeList(props, tool.toolId);
+        },
+        i18n
+      )
     ));
   },
   renderRecipeCards(props) {
+    const i18n = resolveSettingsTranslator(this);
     const recipes = this.state.snapshot.recipesByTool[this.state.ui.selectedToolId] || [];
 
     if (!recipes.length) {
       return [
         createStaticCard(
-          "No recipes yet for this brewer.\nCreate the first one here.",
+          i18n.t("settings.messages.noRecipesYet"),
           CARD_BUTTON_STYLE
         )
       ];
@@ -1071,7 +1116,7 @@ AppSettingsPage({
         },
         [
           Button({
-            label: buildRecipeCardLabel(recipeSummary, recipeRecord),
+            label: buildRecipeCardLabel(recipeSummary, recipeRecord, i18n),
             style: CARD_BUTTON_STYLE,
             onClick: () => {
               this.openRecipeEditor(props, recipeSummary.recipeId);
@@ -1079,14 +1124,14 @@ AppSettingsPage({
           }),
           createButtonRow([
             Button({
-              label: "Duplicate",
+              label: i18n.t("settings.library.duplicate"),
               style: SOFT_ACTION_BUTTON_STYLE,
               onClick: () => {
                 this.duplicateRecipe(props, recipeSummary.recipeId);
               }
             }),
             Button({
-              label: "Delete",
+              label: i18n.t("settings.library.delete"),
               style: DANGER_BUTTON_STYLE,
               onClick: () => {
                 this.deleteRecipe(props, recipeSummary.recipeId);
@@ -1098,21 +1143,23 @@ AppSettingsPage({
     });
   },
   renderRecipeList(props) {
+    const i18n = resolveSettingsTranslator(this);
     const selectedTool =
       TOOL_CATALOG.find((tool) => tool.toolId === this.state.ui.selectedToolId) || TOOL_CATALOG[0];
     const recipeCount = ((this.state.snapshot.recipesByTool || {})[selectedTool.toolId] || []).length;
+    const toolLabel = getLocalizedToolLabel(selectedTool, i18n);
 
     return View({ style: CARD_STACK_STYLE }, [
       createButtonRow([
         Button({
-          label: "New recipe",
+          label: i18n.t("settings.library.newRecipe"),
           style: PRIMARY_BUTTON_STYLE,
           onClick: () => {
             this.openRecipeEditor(props, null);
           }
         }),
         Button({
-          label: "Brewers",
+          label: i18n.t("settings.library.brewers"),
           style: SOFT_ACTION_BUTTON_STYLE,
           onClick: () => {
             this.openLibraryHome(props);
@@ -1121,22 +1168,24 @@ AppSettingsPage({
       ]),
       createPanel(
         "sand",
-        recipeCount ? "Recipes" : "Empty shelf",
+        recipeCount ? i18n.t("settings.library.recipesTitle") : i18n.t("settings.library.emptyShelfTitle"),
         recipeCount
-          ? "Tap a recipe card to edit it. Duplicate or delete from the action row."
-          : `Add the first ${selectedTool.label} recipe here.`,
+          ? i18n.t("settings.library.recipeListSubtitle")
+          : i18n.t("settings.library.recipeListEmptySubtitle", { toolLabel }),
         this.renderRecipeCards(props)
       )
     ]);
   },
   renderStepEditor(props, step, index, totalSteps) {
+    const i18n = resolveSettingsTranslator(this);
+
     return createPanel(
       "white",
-      `Step ${index + 1} of ${totalSteps}`,
-      buildStepSummaryLabel(step, index, totalSteps).split("\n")[1] || "Guided watch instruction",
+      i18n.t("settings.editor.stepOf", { current: index + 1, total: totalSteps }),
+      buildStepSummaryLabel(step, index, totalSteps, i18n).split("\n")[1] || i18n.t("settings.editor.stepEditorSubtitle"),
       [
         createStaticCard(
-          `${humanizeStepKind(step.kind)}\n${step.title || "Untitled step"}`,
+          `${humanizeStepKind(step.kind, i18n)}\n${step.title || i18n.t("settings.editor.untitledStep")}`,
           {
             ...CARD_BUTTON_STYLE,
             background: "#F4F8FB",
@@ -1144,59 +1193,59 @@ AppSettingsPage({
           }
         ),
         Select({
-          label: "Kind",
-          options: STEP_KIND_OPTIONS,
+          label: i18n.t("settings.labels.kind"),
+          options: buildStepKindOptions(i18n),
           value: step.kind,
           onChange: (value) => {
             this.updateDraftStepField(props, index, "kind", value);
           }
         }),
         TextInput({
-          label: "Title",
+          label: i18n.t("settings.labels.title"),
           value: step.title || "",
           onChange: (value) => {
             this.updateDraftStepField(props, index, "title", value);
           }
         }),
         TextInput({
-          label: "Body",
+          label: i18n.t("settings.labels.body"),
           value: step.body || "",
           onChange: (value) => {
             this.updateDraftStepField(props, index, "body", value);
           }
         }),
         TextInput({
-          label: "Duration ms",
+          label: i18n.t("settings.labels.durationMs"),
           value: step.durationMs || "",
           onChange: (value) => {
             this.updateDraftStepField(props, index, "durationMs", value);
           }
         }),
         TextInput({
-          label: "Water ml",
+          label: i18n.t("settings.labels.waterMl"),
           value: step.waterMl || "",
           onChange: (value) => {
             this.updateDraftStepField(props, index, "waterMl", value);
           }
         }),
         TextInput({
-          label: "Target total ml",
+          label: i18n.t("settings.labels.targetTotalMl"),
           value: step.targetTotalWaterMl || "",
           onChange: (value) => {
             this.updateDraftStepField(props, index, "targetTotalWaterMl", value);
           }
         }),
         Select({
-          label: "Requires confirm",
-          options: BOOLEAN_OPTIONS,
+          label: i18n.t("settings.labels.requiresConfirm"),
+          options: buildBooleanOptions(i18n),
           value: step.requiresConfirm,
           onChange: (value) => {
             this.updateDraftStepField(props, index, "requiresConfirm", value);
           }
         }),
         Select({
-          label: "Feedback cue",
-          options: FEEDBACK_OPTIONS,
+          label: i18n.t("settings.labels.feedbackCue"),
+          options: buildFeedbackOptions(i18n),
           value: step.feedbackCue,
           onChange: (value) => {
             this.updateDraftStepField(props, index, "feedbackCue", value);
@@ -1204,21 +1253,21 @@ AppSettingsPage({
         }),
         createButtonRow([
           Button({
-            label: "Up",
+            label: i18n.t("settings.editor.up"),
             style: SOFT_ACTION_BUTTON_STYLE,
             onClick: () => {
               this.moveDraftStep(props, index, -1);
             }
           }),
           Button({
-            label: "Down",
+            label: i18n.t("settings.editor.down"),
             style: SOFT_ACTION_BUTTON_STYLE,
             onClick: () => {
               this.moveDraftStep(props, index, 1);
             }
           }),
           Button({
-            label: totalSteps > 1 ? "Delete" : "Reset",
+            label: totalSteps > 1 ? i18n.t("settings.editor.delete") : i18n.t("settings.editor.reset"),
             style: DANGER_BUTTON_STYLE,
             onClick: () => {
               this.deleteDraftStep(props, index);
@@ -1229,11 +1278,12 @@ AppSettingsPage({
     );
   },
   renderRecipeEditor(props) {
+    const i18n = resolveSettingsTranslator(this);
     const draftRecipe = this.state.ui.draftRecipe;
 
     if (!draftRecipe) {
       return Section({}, [
-        createStaticCard("Recipe draft is missing.", ERROR_CARD_STYLE)
+        createStaticCard(i18n.t("settings.messages.recipeDraftMissing"), ERROR_CARD_STYLE)
       ]);
     }
 
@@ -1262,16 +1312,16 @@ AppSettingsPage({
     return View({ style: CARD_STACK_STYLE }, [
       createPanel(
         "slate",
-        draftRecipe.name || "Untitled recipe",
-        draftRecipe.recipeId ? "Editing an existing recipe." : "Creating a new recipe.",
+        draftRecipe.name || i18n.t("settings.editor.untitledRecipe"),
+        draftRecipe.recipeId ? i18n.t("settings.editor.editingExisting") : i18n.t("settings.editor.creatingNew"),
         [
-          createStaticCard(buildDraftOverview(draftRecipe), {
+          createStaticCard(buildDraftOverview(draftRecipe, i18n), {
             ...SUCCESS_CARD_STYLE,
             background: "#314352",
             color: "#D7F3EA"
           }),
           createWrapRow(
-            buildRecipeStatCards(draftRecipe).map((label) =>
+            buildRecipeStatCards(draftRecipe, i18n).map((label) =>
               createStaticCard(label, MINI_STAT_STYLE)
             )
           )
@@ -1279,26 +1329,26 @@ AppSettingsPage({
       ),
       createPanel(
         "mint",
-        "Recipe basics",
-        "Identity, brewer and quick description.",
+        i18n.t("settings.editor.recipeBasicsTitle"),
+        i18n.t("settings.editor.recipeBasicsSubtitle"),
         [
           TextInput({
-            label: "Name",
+            label: i18n.t("settings.labels.name"),
             value: draftRecipe.name || "",
             onChange: (value) => {
               this.updateDraftField(props, "name", value);
             }
           }),
           Select({
-            label: "Tool",
-            options: TOOL_OPTIONS,
+            label: i18n.t("settings.labels.tool"),
+            options: buildToolOptions(i18n),
             value: draftRecipe.toolId,
             onChange: (value) => {
               this.updateDraftField(props, "toolId", value);
             }
           }),
           Select({
-            label: "Color",
+            label: i18n.t("settings.labels.color"),
             options: COLOR_OPTIONS,
             value: draftRecipe.colorToken,
             onChange: (value) => {
@@ -1306,7 +1356,7 @@ AppSettingsPage({
             }
           }),
           TextInput({
-            label: "Description",
+            label: i18n.t("settings.labels.description"),
             value: draftRecipe.description || "",
             onChange: (value) => {
               this.updateDraftField(props, "description", value);
@@ -1316,46 +1366,46 @@ AppSettingsPage({
       ),
       createPanel(
         "sky",
-        "Brew profile",
-        "Numbers shown in the library, on the watch, and in history.",
+        i18n.t("settings.editor.brewProfileTitle"),
+        i18n.t("settings.editor.brewProfileSubtitle"),
         [
           TextInput({
-            label: "Dose g",
+            label: i18n.t("settings.labels.doseG"),
             value: draftRecipe.coffeeDoseG || "",
             onChange: (value) => {
               this.updateDraftField(props, "coffeeDoseG", value);
             }
           }),
           TextInput({
-            label: "Water ml",
+            label: i18n.t("settings.labels.waterMl"),
             value: draftRecipe.totalWaterMl || "",
             onChange: (value) => {
               this.updateDraftField(props, "totalWaterMl", value);
             }
           }),
           TextInput({
-            label: "Temp C",
+            label: i18n.t("settings.labels.tempC"),
             value: draftRecipe.waterTempC || "",
             onChange: (value) => {
               this.updateDraftField(props, "waterTempC", value);
             }
           }),
           TextInput({
-            label: "Filter",
+            label: i18n.t("settings.labels.filter"),
             value: draftRecipe.filterLabel || "",
             onChange: (value) => {
               this.updateDraftField(props, "filterLabel", value);
             }
           }),
           TextInput({
-            label: "Grind",
+            label: i18n.t("settings.labels.grind"),
             value: draftRecipe.grindLabel || "",
             onChange: (value) => {
               this.updateDraftField(props, "grindLabel", value);
             }
           }),
           TextInput({
-            label: "Estimated ms",
+            label: i18n.t("settings.labels.estimatedMs"),
             value: draftRecipe.estimatedTotalDurationMs || "",
             onChange: (value) => {
               this.updateDraftField(props, "estimatedTotalDurationMs", value);
@@ -1365,24 +1415,27 @@ AppSettingsPage({
       ),
       createPanel(
         "sand",
-        "Guided steps",
-        `${draftRecipe.steps.length} steps currently define the watch-side brew guidance.`,
+        i18n.t("settings.editor.guidedStepsTitle"),
+        i18n.t("settings.editor.guidedStepsSubtitle", { stepCount: draftRecipe.steps.length }),
         [
           createButtonRow([
             Button({
-              label: "Previous",
+              label: i18n.t("settings.editor.previous"),
               style: currentStepIndex > 0 ? SOFT_ACTION_BUTTON_STYLE : INFO_BUTTON_STYLE,
               onClick: () => {
                 this.setStepPage(props, currentStepIndex - 1);
               }
             }),
             Button({
-              label: `${currentStepIndex + 1} / ${draftRecipe.steps.length}`,
+              label: i18n.t("settings.editor.stepLabel", {
+                index: currentStepIndex + 1,
+                total: draftRecipe.steps.length
+              }),
               style: STEPPER_PAGER_STYLE,
               onClick: NOOP
             }),
             Button({
-              label: "Next",
+              label: i18n.t("settings.editor.next"),
               style:
                 currentStepIndex < draftRecipe.steps.length - 1
                   ? SOFT_ACTION_BUTTON_STYLE
@@ -1393,13 +1446,13 @@ AppSettingsPage({
             })
           ]),
           Button({
-            label: buildStepSummaryLabel(currentStep, currentStepIndex, draftRecipe.steps.length),
+            label: buildStepSummaryLabel(currentStep, currentStepIndex, draftRecipe.steps.length, i18n),
             style: STEP_BADGE_STYLE,
             onClick: NOOP
           }),
           ...stepJumpButtons.map((buttonRow) => createWrapRow(buttonRow)),
           Button({
-            label: "Add step",
+            label: i18n.t("settings.editor.addStep"),
             style: PRIMARY_BUTTON_STYLE,
             onClick: () => {
               this.addDraftStep(props);
@@ -1410,11 +1463,11 @@ AppSettingsPage({
       this.renderStepEditor(props, currentStep, currentStepIndex, draftRecipe.steps.length),
       createPanel(
         "white",
-        "Notes and save",
-        "Recipe notes stay on the phone record and help future edits.",
+        i18n.t("settings.editor.notesAndSaveTitle"),
+        i18n.t("settings.editor.notesAndSaveSubtitle"),
         [
           TextInput({
-            label: "Notes",
+            label: i18n.t("settings.labels.notes"),
             value: draftRecipe.notes || "",
             onChange: (value) => {
               this.updateDraftField(props, "notes", value);
@@ -1422,14 +1475,14 @@ AppSettingsPage({
           }),
           createButtonRow([
             Button({
-              label: "Save recipe",
+              label: i18n.t("settings.editor.saveRecipe"),
               style: PRIMARY_BUTTON_STYLE,
               onClick: () => {
                 this.saveDraftRecipe(props);
               }
             }),
             Button({
-              label: "Cancel",
+              label: i18n.t("settings.editor.cancel"),
               style: SOFT_ACTION_BUTTON_STYLE,
               onClick: () => {
                 this.openRecipeList(props, draftRecipe.toolId || this.state.ui.selectedToolId);
@@ -1441,12 +1494,13 @@ AppSettingsPage({
     ]);
   },
   renderHistoryList(props) {
+    const i18n = resolveSettingsTranslator(this);
     const historyIndex = this.state.snapshot ? this.state.snapshot.historyIndex : [];
 
     if (!historyIndex.length) {
       return Section({}, [
         createStaticCard(
-          "No history entries yet.\nThey will appear here after the watch sends completed or aborted brews back to the phone.",
+          i18n.t("settings.messages.noHistoryYet"),
           CARD_BUTTON_STYLE
         )
       ]);
@@ -1455,15 +1509,15 @@ AppSettingsPage({
     return View({ style: CARD_STACK_STYLE }, [
       createPanel(
         "white",
-        "Recent brews",
-        "Open an entry to review timing, rating, and phone notes.",
+        i18n.t("settings.history.recentBrews"),
+        i18n.t("settings.history.recentBrewsSubtitle"),
         historyIndex.map((historyIndexEntry) => {
           const historyEntry = readHistoryEntry(props.settingsStorage, historyIndexEntry.historyId);
 
           return Button({
             label: historyEntry
-              ? buildHistoryCardLabel(historyEntry)
-              : `${historyIndexEntry.recipeName}\n${historyIndexEntry.status} - ${formatDurationLabel(
+              ? buildHistoryCardLabel(historyEntry, i18n)
+              : `${historyIndexEntry.recipeName}\n${i18n.getHistoryStatus(historyIndexEntry.status)} - ${formatDurationLabel(
                   historyIndexEntry.elapsedMs
                 )}`,
             style: CARD_BUTTON_STYLE,
@@ -1476,11 +1530,12 @@ AppSettingsPage({
     ]);
   },
   renderHistoryDetail(props) {
+    const i18n = resolveSettingsTranslator(this);
     const historyEntry = readHistoryEntry(props.settingsStorage, this.state.ui.selectedHistoryId);
 
     if (!historyEntry) {
       return Section({}, [
-        createStaticCard("History entry not found.", ERROR_CARD_STYLE)
+        createStaticCard(i18n.t("settings.messages.historyEntryNotFound"), ERROR_CARD_STYLE)
       ]);
     }
 
@@ -1488,7 +1543,7 @@ AppSettingsPage({
     const snapshotTool = getToolMeta(historyEntry.recipeSnapshot.toolId);
     const stepSummaries = (historyEntry.stepRunResults || []).map((stepRunResult) =>
       createStaticCard(
-        `${stepRunResult.order + 1}. ${stepRunResult.title || stepRunResult.kind}\n${stepRunResult.kind} - ${formatDurationLabel(
+        `${stepRunResult.order + 1}. ${stepRunResult.title || i18n.t("settings.editor.untitledStep")}\n${humanizeStepKind(stepRunResult.kind, i18n)} - ${formatDurationLabel(
           stepRunResult.actualDurationMs || 0
         )}`,
         CARD_BUTTON_STYLE
@@ -1496,46 +1551,50 @@ AppSettingsPage({
     );
 
     return View({ style: CARD_STACK_STYLE }, [
-      createPanel("slate", "History detail", "Archived snapshot, timing and phone notes.", [
-        createStaticCard(buildHistoryCardLabel(historyEntry), {
+      createPanel("slate", i18n.t("settings.history.detailTitle"), i18n.t("settings.history.detailSubtitle"), [
+        createStaticCard(buildHistoryCardLabel(historyEntry, i18n), {
           ...SUCCESS_CARD_STYLE,
           background: "#314352",
           color: "#D7F3EA"
         }),
         createStaticCard(
-          `${snapshotTool ? snapshotTool.label : historyEntry.recipeSnapshot.toolId}\nFilter: ${
-            historyEntry.recipeSnapshot.filterLabel || "Not specified"
-          }\nDelta: ${formatDurationLabel(Math.abs(historyEntry.deviationSummary.totalDeltaMs || 0))} ${
-            (historyEntry.deviationSummary.totalDeltaMs || 0) >= 0 ? "over" : "under"
-          } planned`,
+          `${snapshotTool ? getLocalizedToolLabel(snapshotTool, i18n) : historyEntry.recipeSnapshot.toolId}\n${i18n.t("settings.history.filter", {
+            filterLabel: historyEntry.recipeSnapshot.filterLabel || i18n.t("settings.misc.notSpecified")
+          })}\n${(historyEntry.deviationSummary.totalDeltaMs || 0) >= 0
+            ? i18n.t("settings.history.deltaOver", {
+              duration: formatDurationLabel(Math.abs(historyEntry.deviationSummary.totalDeltaMs || 0))
+            })
+            : i18n.t("settings.history.deltaUnder", {
+              duration: formatDurationLabel(Math.abs(historyEntry.deviationSummary.totalDeltaMs || 0))
+            })}`,
           CARD_BUTTON_STYLE
         )
       ]),
       createPanel(
         "sky",
-        "Step timing",
-        "Run results attached to the archived recipe snapshot.",
+        i18n.t("settings.history.stepTimingTitle"),
+        i18n.t("settings.history.stepTimingSubtitle"),
         (
           stepSummaries.length
             ? stepSummaries
-            : [createStaticCard("No step run results were recorded for this brew.", CARD_BUTTON_STYLE)]
+            : [createStaticCard(i18n.t("settings.history.noStepResults"), CARD_BUTTON_STYLE)]
         )
       ),
       createPanel(
         "mint",
-        "Phone feedback",
-        "Notes and rating stay attached to this archived session.",
+        i18n.t("settings.history.feedbackTitle"),
+        i18n.t("settings.history.feedbackSubtitle"),
         [
           Select({
-            label: "Rating",
-            options: RATING_OPTIONS,
+            label: i18n.t("settings.labels.rating"),
+            options: buildRatingOptions(i18n),
             value: historyDraft.userRating || "",
             onChange: (value) => {
               this.updateHistoryDraftField(props, "userRating", value);
             }
           }),
           TextInput({
-            label: "Note",
+            label: i18n.t("settings.labels.note"),
             value: historyDraft.userNote || "",
             onChange: (value) => {
               this.updateHistoryDraftField(props, "userNote", value);
@@ -1543,14 +1602,14 @@ AppSettingsPage({
           }),
           createButtonRow([
             Button({
-              label: "Save notes",
+              label: i18n.t("settings.history.saveNotes"),
               style: PRIMARY_BUTTON_STYLE,
               onClick: () => {
                 this.saveHistoryDraft(props);
               }
             }),
             Button({
-              label: "Back to history",
+              label: i18n.t("settings.history.backToHistory"),
               style: SOFT_ACTION_BUTTON_STYLE,
               onClick: () => {
                 this.openHistoryList(props);
@@ -1562,12 +1621,13 @@ AppSettingsPage({
     ]);
   },
   renderSyncInfo() {
+    const i18n = resolveSettingsTranslator(this);
     const syncMeta = this.state.syncMeta || {};
 
     return View({ style: CARD_STACK_STYLE }, [
-      createPanel("white", "Sync overview", "The watch mirrors recipes, cache state, and the latest result only.", [
+      createPanel("white", i18n.t("settings.sync.overviewTitle"), i18n.t("settings.sync.overviewSubtitle"), [
         createStaticCard(
-          buildSyncOverview(syncMeta),
+          buildSyncOverview(syncMeta, i18n),
           CARD_BUTTON_STYLE
         )
       ])
@@ -1598,10 +1658,12 @@ AppSettingsPage({
   },
   build(props) {
     this.hydrateFromStorage(props);
+    const i18n = resolveSettingsTranslator(this);
     const shellHeader = buildShellHeader(
       this.state.ui.view,
       this.state.snapshot,
-      this.state.ui.selectedToolId
+      this.state.ui.selectedToolId,
+      i18n
     );
 
     return View(

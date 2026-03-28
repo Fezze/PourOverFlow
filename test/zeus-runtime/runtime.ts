@@ -36,6 +36,10 @@ const interactionState = {
   keyHandler: null as null | ((key: string, action?: number) => boolean)
 };
 
+const settingsState = {
+  languageCode: 2
+};
+
 const uiState = {
   widgets: [] as Array<Record<string, unknown>>
 };
@@ -103,6 +107,10 @@ const interaction = {
     interactionState.keyHandler = typeof callback === "function" ? callback : null;
     return true;
   })
+};
+
+const settings = {
+  getLanguage: vi.fn(() => settingsState.languageCode)
 };
 
 const ble = {
@@ -223,6 +231,10 @@ export function setBleConnected(connected) {
   }
 }
 
+export function setLanguageCode(languageCode: number) {
+  settingsState.languageCode = languageCode;
+}
+
 export function deliverBleMessage(data, size = data?.byteLength ?? 0) {
   if (bleState.messageListener) {
     bleState.messageListener(0, data, size);
@@ -275,6 +287,7 @@ export function resetZeppRuntime() {
   batteryState.level = 75;
   deviceState.info = { ...defaultDeviceInfo };
   interactionState.keyHandler = null;
+  settingsState.languageCode = 2;
   uiState.widgets = [];
   setLocalStorageState();
 
@@ -287,6 +300,7 @@ export function resetZeppRuntime() {
   ui.createWidget.mockClear();
   device.getDeviceInfo.mockClear();
   interaction.onKey.mockClear();
+  settings.getLanguage.mockClear();
   ble.createConnect.mockClear();
   ble.disConnect.mockClear();
   ble.send.mockClear();
@@ -330,6 +344,8 @@ export const __zeusRuntime = {
   display,
   interaction,
   interactionState,
+  settings,
+  settingsState,
   localStorageApi,
   router,
   routerState,
@@ -352,6 +368,7 @@ export {
   device,
   display,
   interaction,
+  settings,
   router,
   ui
 };

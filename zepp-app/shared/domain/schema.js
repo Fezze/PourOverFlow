@@ -1,3 +1,5 @@
+import { createTranslator, DEFAULT_LOCALE } from "../i18n/index.js";
+
 export const CURRENT_SCHEMA_VERSION = 1;
 
 export const RECIPE_STEP_KINDS = [
@@ -95,7 +97,25 @@ export function createStepId(order, existingStepId) {
   return `step_${String(order).padStart(2, "0")}_${createRandomSuffix()}`;
 }
 
-export function normalizeRecipeSteps(steps = []) {
+function resolveSchemaTranslator(localeOrOptions = null) {
+  if (localeOrOptions && typeof localeOrOptions.t === "function") {
+    return localeOrOptions;
+  }
+
+  if (localeOrOptions && typeof localeOrOptions === "object" && typeof localeOrOptions.i18n?.t === "function") {
+    return localeOrOptions.i18n;
+  }
+
+  const locale =
+    localeOrOptions && typeof localeOrOptions === "object"
+      ? localeOrOptions.locale
+      : localeOrOptions;
+
+  return createTranslator(locale || DEFAULT_LOCALE);
+}
+
+export function normalizeRecipeSteps(steps = [], localeOrOptions = null) {
+  const i18n = resolveSchemaTranslator(localeOrOptions);
   return steps.map((step, index) => {
     const kind =
       RECIPE_STEP_KINDS.find((supportedKind) => supportedKind === step.kind) ||
@@ -104,10 +124,17 @@ export function normalizeRecipeSteps(steps = []) {
     const waterMl = toOptionalNumber(step.waterMl);
     const targetTotalWaterMl = toOptionalNumber(step.targetTotalWaterMl);
     const title =
-      normalizeText(step.title) || (kind === "finish" ? "Done" : kind === "confirm" ? "Confirm" : "Step");
+      normalizeText(step.title) ||
+      (kind === "finish"
+        ? i18n.t("schema.fallbackSteps.finish")
+        : kind === "confirm"
+          ? i18n.t("schema.fallbackSteps.confirm")
+          : i18n.t("schema.fallbackSteps.step"));
     const body =
       normalizeText(step.body) ||
-      (kind === "finish" ? "Finish the brew." : "Complete the step and continue.");
+      (kind === "finish"
+        ? i18n.t("schema.fallbackSteps.finishBody")
+        : i18n.t("schema.fallbackSteps.continueBody"));
 
     return {
       stepId: createStepId(index, step.stepId),
@@ -125,27 +152,29 @@ export function normalizeRecipeSteps(steps = []) {
   });
 }
 
-export function createDefaultRecipeSteps() {
+export function createDefaultRecipeSteps(localeOrOptions = null) {
+  const i18n = resolveSchemaTranslator(localeOrOptions);
   return normalizeRecipeSteps([
     {
       kind: "instruction",
-      title: "Prep",
-      body: "Set up the brewer and add coffee.",
+      title: i18n.t("schema.defaultSteps.prep.title"),
+      body: i18n.t("schema.defaultSteps.prep.body"),
       requiresConfirm: true,
       feedbackCue: "none"
     },
     {
       kind: "finish",
-      title: "Done",
-      body: "Finish the brew.",
+      title: i18n.t("schema.defaultSteps.done.title"),
+      body: i18n.t("schema.defaultSteps.done.body"),
       requiresConfirm: false,
       feedbackCue: "combo_short"
     }
-  ]);
+  ], { i18n });
 }
 
 export function createEmptyRecipeRecord(options = {}) {
   const now = options.now || Date.now();
+  const i18n = resolveSchemaTranslator(options);
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -157,11 +186,11 @@ export function createEmptyRecipeRecord(options = {}) {
     coffeeDoseG: options.coffeeDoseG || 15,
     totalWaterMl: options.totalWaterMl || 250,
     waterTempC: options.waterTempC || 93,
-    filterLabel: options.filterLabel || "Paper",
-    grindLabel: options.grindLabel || "Medium",
+    filterLabel: options.filterLabel || i18n.t("schema.defaultRecipe.filterLabel"),
+    grindLabel: options.grindLabel || i18n.t("schema.defaultRecipe.grindLabel"),
     estimatedTotalDurationMs: options.estimatedTotalDurationMs || 120000,
     notes: options.notes || "",
-    steps: cloneRecipeSteps(options.steps || createDefaultRecipeSteps()),
+    steps: cloneRecipeSteps(options.steps || createDefaultRecipeSteps({ i18n })),
     createdAt: options.createdAt || now,
     updatedAt: options.updatedAt || now,
     source: options.source || "user",

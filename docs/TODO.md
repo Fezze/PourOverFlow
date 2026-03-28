@@ -14,6 +14,7 @@
 - Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.
 - Use `npm run validation:logs` against the captured log file during hardware tests and write back concrete findings instead of leaving raw `[pof-validation]` lines in chat only.
 - Re-run the real-device smoke path on `Amazfit Balance` after the runtime floor change to `3.6`, and confirm that bootstrap sync, resume, and `brew-active` still behave correctly on Balance 1 hardware.
+- Re-run the watch smoke path in Polish on real hardware and confirm that localized copy still fits on `home`, chooser pages, `recipe-detail`, `brew-active`, and `result-summary`.
 
 ### Watch UI follow-up
 
@@ -39,6 +40,12 @@
 
 - Confirm on a real phone that the simplified `Library` screen reads clearly with only brewer and recipe counts in the shell header, compact left badges, and no secondary dashboard panel.
 - Confirm on a real phone that the shared brewer PNG icons render correctly in `setting/` and that the separate right-side count badges stay aligned across short and long brewer names.
+- Confirm on a real phone that the new Polish Settings copy still fits cleanly across `Library`, `History`, `Sync`, and the paginated recipe editor.
+
+### Localization follow-up
+
+- Decide whether starter recipe localization should remain sticky per phone install through `seedLocale` or whether a later product decision should support explicit reseeding after the user changes language.
+- If more locales are added later, keep them as separate `shared/i18n/locales/<locale>.js` and `shared/domain/seed-library/<locale>.js` modules instead of folding everything back into one file.
 
 ## Verify checklist
 

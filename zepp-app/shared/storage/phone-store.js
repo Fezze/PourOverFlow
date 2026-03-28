@@ -21,6 +21,8 @@ import {
   getSeedRecipeRecords,
   getSeedRecipeRecordsAddedAfterVersion
 } from "../domain/seed-library.js";
+import { DEFAULT_LOCALE, resolveSupportedLocale } from "../i18n/index.js";
+import { resolvePhoneLocale } from "../i18n/phone-locale.js";
 import { validateHistoryEntry, validateRecipeRecord } from "../domain/validators.js";
 import {
   getPhoneHistoryRecordKey,
@@ -56,13 +58,18 @@ export function removeSettingsItem(settingsStorage, key) {
   }
 }
 
-export function createDefaultPhoneSyncMeta() {
+function resolveSeedLocale(preferredLocale = null, fallbackLocale = DEFAULT_LOCALE) {
+  return resolveSupportedLocale(resolvePhoneLocale(preferredLocale), fallbackLocale);
+}
+
+export function createDefaultPhoneSyncMeta(options = {}) {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     toolCatalogRevision: 1,
     recipeCatalogRevision: 1,
     historyRevision: 0,
     seedCatalogVersion: 1,
+    seedLocale: resolveSeedLocale(options.preferredLocale, options.seedLocale || DEFAULT_LOCALE),
     seededAt: Date.now()
   };
 }
@@ -105,16 +112,22 @@ function writeRecipeRecords(settingsStorage, recipeRecords) {
   });
 }
 
-export function ensurePhoneStorage(settingsStorage) {
+export function ensurePhoneStorage(settingsStorage, options = {}) {
   const seedTimestamp = Date.now();
+  const preferredLocale = options.preferredLocale || null;
   const hasRecipeIndex = Boolean(settingsStorage.getItem(PHONE_STORAGE_KEYS.recipeIndex));
+  const resolvedSeedLocale = resolveSeedLocale(preferredLocale);
+  const storedSyncMeta = readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, null);
+  const hasExplicitSeedLocale = Boolean(
+    storedSyncMeta && Object.prototype.hasOwnProperty.call(storedSyncMeta, "seedLocale")
+  );
 
   if (!settingsStorage.getItem(PHONE_STORAGE_KEYS.tools)) {
     writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.tools, TOOL_CATALOG);
   }
 
   if (!settingsStorage.getItem(PHONE_STORAGE_KEYS.recipeIndex)) {
-    const seedRecipeRecords = getSeedRecipeRecords(seedTimestamp);
+    const seedRecipeRecords = getSeedRecipeRecords(seedTimestamp, resolvedSeedLocale);
     writeRecipeRecords(settingsStorage, seedRecipeRecords);
     writeRecipeIndex(
       settingsStorage,
@@ -128,13 +141,28 @@ export function ensurePhoneStorage(settingsStorage) {
 
   if (!settingsStorage.getItem(PHONE_STORAGE_KEYS.syncMeta)) {
     writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, {
-      ...createDefaultPhoneSyncMeta(),
+      ...createDefaultPhoneSyncMeta({
+        preferredLocale: resolvedSeedLocale,
+        seedLocale: resolvedSeedLocale
+      }),
       seedCatalogVersion: hasRecipeIndex ? 1 : SEED_LIBRARY_VERSION,
       seededAt: seedTimestamp
     });
   }
 
-  migrateSeedRecipeLibrary(settingsStorage, seedTimestamp);
+  const currentSyncMeta = readPhoneSyncMeta(settingsStorage);
+  const nextSeedLocale = hasExplicitSeedLocale
+    ? currentSyncMeta.seedLocale
+    : (hasRecipeIndex ? DEFAULT_LOCALE : resolvedSeedLocale);
+
+  if (currentSyncMeta.seedLocale !== nextSeedLocale) {
+    writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, {
+      ...currentSyncMeta,
+      seedLocale: nextSeedLocale
+    });
+  }
+
+  migrateSeedRecipeLibrary(settingsStorage, seedTimestamp, nextSeedLocale);
 
   return readPhoneSnapshot(settingsStorage);
 }
@@ -152,20 +180,28 @@ export function readHistoryIndex(settingsStorage) {
 }
 
 export function readPhoneSyncMeta(settingsStorage) {
-  const syncMeta = readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, createDefaultPhoneSyncMeta());
+  const syncMeta = readSettingsJson(
+    settingsStorage,
+    PHONE_STORAGE_KEYS.syncMeta,
+    createDefaultPhoneSyncMeta()
+  );
 
   return {
-    ...createDefaultPhoneSyncMeta(),
+    ...createDefaultPhoneSyncMeta({
+      seedLocale: syncMeta?.seedLocale
+    }),
     ...syncMeta,
     seedCatalogVersion: Number.isFinite(syncMeta?.seedCatalogVersion)
       ? syncMeta.seedCatalogVersion
-      : 1
+      : 1,
+    seedLocale: resolveSupportedLocale(syncMeta?.seedLocale, DEFAULT_LOCALE)
   };
 }
 
-function migrateSeedRecipeLibrary(settingsStorage, seedTimestamp) {
+function migrateSeedRecipeLibrary(settingsStorage, seedTimestamp, preferredLocale = DEFAULT_LOCALE) {
   const currentSyncMeta = readPhoneSyncMeta(settingsStorage);
   const currentSeedCatalogVersion = currentSyncMeta.seedCatalogVersion || 1;
+  const seedLocale = resolveSupportedLocale(currentSyncMeta.seedLocale || preferredLocale, DEFAULT_LOCALE);
 
   if (currentSeedCatalogVersion >= SEED_LIBRARY_VERSION) {
     return currentSyncMeta;
@@ -173,7 +209,11 @@ function migrateSeedRecipeLibrary(settingsStorage, seedTimestamp) {
 
   const recipeIndex = readRecipeIndex(settingsStorage);
   const existingRecipeIds = new Set(recipeIndex.map((recipeSummary) => recipeSummary.recipeId));
-  const missingSeedRecipes = getSeedRecipeRecordsAddedAfterVersion(currentSeedCatalogVersion, seedTimestamp)
+  const missingSeedRecipes = getSeedRecipeRecordsAddedAfterVersion(
+    currentSeedCatalogVersion,
+    seedTimestamp,
+    seedLocale
+  )
     .filter((recipeRecord) => !existingRecipeIds.has(recipeRecord.recipeId));
 
   if (missingSeedRecipes.length) {
@@ -187,6 +227,7 @@ function migrateSeedRecipeLibrary(settingsStorage, seedTimestamp) {
   const nextSyncMeta = {
     ...currentSyncMeta,
     seedCatalogVersion: SEED_LIBRARY_VERSION,
+    seedLocale,
     recipeCatalogRevision: missingSeedRecipes.length
       ? currentSyncMeta.recipeCatalogRevision + 1
       : currentSyncMeta.recipeCatalogRevision

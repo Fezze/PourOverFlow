@@ -248,6 +248,25 @@ describe("page shell runtime coverage", () => {
     expect(runtime.router.replace).not.toHaveBeenCalled();
   });
 
+  it("renders watch home copy in Polish when the runtime language is set to Polish", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/home/index.js", createLayoutMock());
+
+    runtime.setLanguageCode(9);
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache),
+      [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify(fixture.lastResult)
+    });
+
+    buildPage(pageDefinition);
+    const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
+    const buttonWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
+
+    expect(textWidgets.some((widget) => widget.text === "Nastepna kawa")).toBe(true);
+    expect(buttonWidgets.some((widget) => widget.text === "Przegladaj")).toBe(true);
+    expect(buttonWidgets.some((widget) => widget.text === "Ostatni")).toBe(true);
+  });
+
   it("renders the tool list as a scroll list and routes into recipe selection", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/tool-list/index.js", createLayoutMock());

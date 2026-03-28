@@ -7,6 +7,8 @@ This document freezes the starter recipe library for v1. The seed library is a c
 The repo source of truth for the exact seeded records is:
 
 - [seed-library.js](c:\Users\krzys\Projects\PourOverFlow\zepp-app\shared\domain\seed-library.js)
+- [seed-library/en-US.js](c:\Users\krzys\Projects\PourOverFlow\zepp-app\shared\domain\seed-library\en-US.js)
+- [seed-library/pl-PL.js](c:\Users\krzys\Projects\PourOverFlow\zepp-app\shared\domain\seed-library\pl-PL.js)
 
 ## Seed library rules
 
@@ -80,9 +82,16 @@ The repo source of truth for the exact seeded records is:
 2. migrate older installs by appending only newer seed recipes,
 3. avoid overwriting edited seed recipes or re-adding deleted older seeds.
 
+`pof_sync_meta_v1` also carries `seedLocale` so the phone can:
+
+1. seed starter recipes in a supported locale on a new install,
+2. keep older installs on the legacy English starter baseline when they predate this field,
+3. keep later additive seed migrations consistent with the locale that was originally chosen for starter data.
+
 ## Implementation notes
 
 - Seed timestamps still come from phone-side first-run or migration time.
 - `createdAt` and `updatedAt` for newly introduced seed records should use the migration timestamp.
 - `RecipeSummary` records should always be derived from the full `RecipeRecord`.
-- The implementation should keep seed definitions grouped by `toolId` inside [seed-library.js](c:\Users\krzys\Projects\PourOverFlow\zepp-app\shared\domain\seed-library.js).
+- The implementation should keep locale-neutral seed definitions and locale overrides split into separate files instead of recreating one mega seed module.
+- The wrapper [seed-library.js](c:\Users\krzys\Projects\PourOverFlow\zepp-app\shared\domain\seed-library.js) should localize from the locale-specific modules instead of duplicating the full seed graph inline.

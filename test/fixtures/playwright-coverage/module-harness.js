@@ -116,6 +116,14 @@ import {
   updateHistoryEntryFeedback
 } from "../../../zepp-app/shared/storage/phone-store.js";
 import {
+  createTranslator,
+  resolveSupportedLocale
+} from "../../../zepp-app/shared/i18n/index.js";
+import {
+  createPhoneTranslator,
+  resolvePhoneLocale
+} from "../../../zepp-app/shared/i18n/phone-locale.js";
+import {
   PHONE_STORAGE_KEYS,
   getPhoneHistoryRecordKey,
   getPhoneRecipeRecordKey
@@ -349,6 +357,21 @@ async function runHarness() {
         "Seed records should be cloned per lookup.",
         state
       );
+    });
+
+    runFlow(state, "i18n-and-localized-seeds", () => {
+      const polishTranslator = createTranslator("pl-PL");
+      const phoneTranslator = createPhoneTranslator("pl-PL");
+      const polishSeed = getSeedRecipeRecordById("seed_ap_daily_clean", 9_000, "pl-PL");
+      const englishSeed = getSeedRecipeRecordById("seed_ap_daily_clean", 9_000, "en-US");
+
+      assert(resolveSupportedLocale("pl") === "pl-PL", "Locale resolver should normalize Polish language tags.", state);
+      assert(resolvePhoneLocale("pl-PL") === "pl-PL", "Phone locale resolver should honor explicit locale preference.", state);
+      assert(polishTranslator.t("settings.nav.library") === "Biblioteka", "Translator should expose Polish settings copy.", state);
+      assert(phoneTranslator.t("watch.toolList.title") === "Zaparzacze", "Phone translator should reuse shared watch translations.", state);
+      assert(polishSeed.filterLabel === "Papier", "Localized starter recipes should override filter labels.", state);
+      assert(polishSeed.steps[0].title === "Przygotuj", "Localized starter recipes should override step titles.", state);
+      assert(englishSeed.steps[0].title === "Prep", "English starter recipes should remain unchanged.", state);
     });
 
     runFlow(state, "validator-shape-guards", () => {

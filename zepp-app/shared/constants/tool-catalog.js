@@ -1,3 +1,5 @@
+import { createTranslator, DEFAULT_LOCALE } from "../i18n/index.js";
+
 export const TOOL_CATALOG = [
   {
     schemaVersion: 1,
@@ -63,4 +65,26 @@ export function getSupportedTools() {
 
 export function getToolById(toolId) {
   return TOOL_CATALOG.find((tool) => tool.toolId === toolId) || null;
+}
+
+function resolveTranslator(localeOrTranslator) {
+  if (localeOrTranslator && typeof localeOrTranslator.t === "function") {
+    return localeOrTranslator;
+  }
+
+  return createTranslator(localeOrTranslator || DEFAULT_LOCALE);
+}
+
+export function getLocalizedToolLabel(toolOrId, localeOrTranslator = DEFAULT_LOCALE) {
+  const tool = typeof toolOrId === "string" ? getToolById(toolOrId) : toolOrId;
+  const translator = resolveTranslator(localeOrTranslator);
+  const fallbackValue = tool ? tool.label : typeof toolOrId === "string" ? toolOrId : "";
+  return translator.getToolLabel(tool || toolOrId, fallbackValue);
+}
+
+export function getLocalizedToolDescription(toolOrId, localeOrTranslator = DEFAULT_LOCALE) {
+  const tool = typeof toolOrId === "string" ? getToolById(toolOrId) : toolOrId;
+  const translator = resolveTranslator(localeOrTranslator);
+  const fallbackValue = tool ? tool.description : "";
+  return translator.getToolDescription(tool || toolOrId, fallbackValue);
 }

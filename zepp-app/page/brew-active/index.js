@@ -20,6 +20,7 @@ import {
   enableActiveSessionDisplayGuard
 } from "../../shared/watch/display-guard";
 import { registerShortcutKey } from "../../shared/watch/shortcut-key";
+import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import { SHARED_COLORS, createPanelStyle } from "../../shared/watch/layouts";
 import {
   ACTION_DOCK,
@@ -46,32 +47,43 @@ const CONTENT_FRAME = {
   itemRadius: 22
 };
 
-function buildProgressText(activeSession) {
-  return `Step ${activeSession.currentStepIndex + 1}/${activeSession.recipeSnapshot.steps.length}`;
+function buildProgressText(activeSession, i18n) {
+  return i18n.t("watch.brewActive.progress", {
+    current: activeSession.currentStepIndex + 1,
+    total: activeSession.recipeSnapshot.steps.length
+  });
 }
 
-function buildDescriptionText(activeSession) {
+function buildDescriptionText(activeSession, i18n) {
   const currentStep = getCurrentSessionStep(activeSession);
 
-  return currentStep ? currentStep.body : "No step payload";
+  return currentStep ? currentStep.body : i18n.t("watch.brewActive.noStepPayload");
 }
 
-function buildStepMetaText(activeSession) {
+function buildStepMetaText(activeSession, i18n) {
   const currentStep = getCurrentSessionStep(activeSession);
   const sessionElapsedLabel = formatDurationLabel(getElapsedSessionMs(activeSession));
   const stepRemainingMs = getCurrentStepRemainingMs(activeSession);
   const parts = [];
 
   if (currentStep && currentStep.targetTotalWaterMl !== undefined) {
-    parts.push(`Target ${currentStep.targetTotalWaterMl} ml`);
+    parts.push(i18n.t("watch.brewActive.meta.targetMl", {
+      value: currentStep.targetTotalWaterMl
+    }));
   } else if (currentStep && currentStep.waterMl !== undefined) {
-    parts.push(`Pour ${currentStep.waterMl} ml`);
+    parts.push(i18n.t("watch.brewActive.meta.pourMl", {
+      value: currentStep.waterMl
+    }));
   }
 
   if (stepRemainingMs !== null) {
-    parts.push(`${formatDurationLabel(stepRemainingMs)} left`);
+    parts.push(i18n.t("watch.brewActive.meta.left", {
+      duration: formatDurationLabel(stepRemainingMs)
+    }));
   } else {
-    parts.push(`Session ${sessionElapsedLabel}`);
+    parts.push(i18n.t("watch.brewActive.meta.session", {
+      duration: sessionElapsedLabel
+    }));
   }
 
   return parts.join(" / ");
@@ -174,18 +186,19 @@ Page({
       return;
     }
 
-    this.progressWidget.text = buildProgressText(activeSession);
+    this.progressWidget.text = buildProgressText(activeSession, this.i18n);
     const currentStep = getCurrentSessionStep(activeSession);
-    this.stepTitleWidget.text = currentStep ? currentStep.title : "Unknown step";
-    this.metaWidget.text = buildStepMetaText(activeSession);
+    this.stepTitleWidget.text = currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep");
+    this.metaWidget.text = buildStepMetaText(activeSession, this.i18n);
     if (this.descriptionWidget) {
-      this.descriptionWidget.text = buildDescriptionText(activeSession);
+      this.descriptionWidget.text = buildDescriptionText(activeSession, this.i18n);
     }
     if (this.footerWidget) {
       this.footerWidget.text = buildAssistText(activeSession);
     }
   },
   build() {
+    this.i18n = createWatchTranslator();
     const reconcileResult = reconcileActiveSessionOnEntry();
 
     if (reconcileResult.finalized) {
@@ -200,15 +213,15 @@ Page({
       disableActiveSessionDisplayGuard();
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...TITLE_TEXT,
-        text: "No active brew"
+        text: this.i18n.t("watch.brewActive.noActiveBrew")
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
-        text: "No session is stored on the watch."
+        text: this.i18n.t("watch.brewActive.noSessionStored")
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...BUTTONS[0],
-        text: "Go home",
+        text: this.i18n.t("watch.brewActive.goHome"),
         click_func: () => {
           goHome();
         }
@@ -235,7 +248,7 @@ Page({
       h: 24,
       color: SHARED_COLORS.muted,
       text_size: BODY_TEXT.text_size,
-      text: buildProgressText(activeSession)
+      text: buildProgressText(activeSession, this.i18n)
     });
     this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -245,7 +258,7 @@ Page({
       h: 36,
       text_size: BODY_TEXT.text_size + 8,
       color: SHARED_COLORS.text,
-      text: currentStep ? currentStep.title : "Unknown step"
+      text: currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep")
     });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
@@ -255,14 +268,14 @@ Page({
       h: 24,
       color: SHARED_COLORS.muted,
       text_size: BODY_TEXT.text_size - 2,
-      text: buildStepMetaText(activeSession)
+      text: buildStepMetaText(activeSession, this.i18n)
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, createPanelStyle({
       buttonX: BODY_TEXT.x,
       buttonW: BODY_TEXT.w
     }, CONTENT_PANEL));
 
-    const descriptionText = buildDescriptionText(activeSession);
+    const descriptionText = buildDescriptionText(activeSession, this.i18n);
     if (canRenderStaticInstruction(descriptionText)) {
       const staticInstructionFrame = buildStaticInstructionFrame(descriptionText);
       this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
@@ -307,7 +320,27 @@ Page({
     }
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: buildPrimaryActionLabel(activeSession),
+      text: (() => {
+        const currentStep = getCurrentSessionStep(activeSession);
+
+        if (!currentStep) {
+          return this.i18n.t("watch.brewActive.actions.next");
+        }
+
+        if (currentStep.kind === "finish") {
+          return this.i18n.t("watch.brewActive.actions.finish");
+        }
+
+        if (activeSession.status === "waiting_for_confirm") {
+          return this.i18n.t("watch.brewActive.actions.next");
+        }
+
+        if (currentStep.kind === "timed_action" || currentStep.kind === "timed_wait") {
+          return this.i18n.t("watch.brewActive.actions.skip");
+        }
+
+        return this.i18n.t("watch.brewActive.actions.next");
+      })(),
       text_size: 24,
       click_func: () => {
         advanceOrCompleteActiveSession();
@@ -315,7 +348,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      text: "Stop",
+      text: this.i18n.t("watch.brewActive.actions.stop"),
       text_size: 24,
       click_func: () => {
         abortActiveBrew();

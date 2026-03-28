@@ -8,6 +8,7 @@ import {
   startSelectedRecipe
 } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
+import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import {
   ACTION_DOCK,
   BACKGROUND,
@@ -28,7 +29,7 @@ const DETAIL_LIST_FRAME = {
   itemRadius: 18
 };
 
-function buildRecipeRows(recipe) {
+function buildRecipeRows(recipe, i18n) {
   const snapshot = recipe.recipeSnapshot;
 
   if (!snapshot) {
@@ -37,20 +38,30 @@ function buildRecipeRows(recipe) {
 
   return [
     {
-      title: "Dose and water",
-      meta: `${snapshot.coffeeDoseG}g coffee / ${snapshot.totalWaterMl}ml water`
+      title: i18n.t("watch.recipeDetail.rows.doseWater"),
+      meta: i18n.t("watch.recipeDetail.detail.doseWater", {
+        coffeeDoseG: snapshot.coffeeDoseG,
+        totalWaterMl: snapshot.totalWaterMl
+      })
     },
     {
-      title: "Brew profile",
-      meta: `${snapshot.waterTempC}C / ${snapshot.grindLabel} / ${snapshot.filterLabel} filter`
+      title: i18n.t("watch.recipeDetail.rows.brewProfile"),
+      meta: i18n.t("watch.recipeDetail.detail.brewProfile", {
+        waterTempC: snapshot.waterTempC,
+        grindLabel: snapshot.grindLabel,
+        filterLabel: snapshot.filterLabel
+      })
     },
     {
-      title: "Time and steps",
-      meta: `${Math.round(snapshot.estimatedTotalDurationMs / 1000)}s / ${snapshot.steps.length} steps`
+      title: i18n.t("watch.recipeDetail.rows.timeAndSteps"),
+      meta: i18n.t("watch.recipeDetail.detail.timeAndSteps", {
+        totalSeconds: Math.round(snapshot.estimatedTotalDurationMs / 1000),
+        stepCount: snapshot.steps.length
+      })
     },
     {
-      title: "Notes",
-      meta: snapshot.description || "Start when ready."
+      title: i18n.t("watch.recipeDetail.rows.notes"),
+      meta: snapshot.description || i18n.t("watch.recipeDetail.rows.startWhenReady")
     }
   ];
 }
@@ -165,9 +176,10 @@ Page({
     }
   },
   build() {
+    const i18n = createWatchTranslator();
     const selectedRecipe = getSelectedRecipe();
     const snapshot = selectedRecipe ? selectedRecipe.recipeSnapshot : null;
-    const detailRows = selectedRecipe ? buildRecipeRows(selectedRecipe) : [];
+    const detailRows = selectedRecipe ? buildRecipeRows(selectedRecipe, i18n) : [];
     const accentColor = snapshot ? getColorNumber(snapshot.colorToken) : 0x2d8c82;
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
@@ -181,7 +193,7 @@ Page({
       ...TITLE_TEXT,
       text_size: TITLE_TEXT.text_size - 2,
       h: TITLE_TEXT.h + 4,
-      text: selectedRecipe ? selectedRecipe.name : "Recipe unavailable"
+      text: selectedRecipe ? selectedRecipe.name : i18n.t("watch.recipeDetail.unavailableTitle")
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, DETAIL_PANEL);
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
@@ -228,7 +240,7 @@ Page({
         w: BODY_TEXT.w - 28,
         y: BODY_TEXT.y + 6,
         h: BODY_TEXT.h + 14,
-        text: "Open the recipe list again or refresh the phone sync."
+        text: i18n.t("watch.recipeDetail.unavailableBody")
       });
     }
     if (ACTION_DOCK) {
@@ -236,7 +248,9 @@ Page({
     }
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: selectedRecipe ? "Start brew" : "Back to recipes",
+      text: selectedRecipe
+        ? i18n.t("watch.recipeDetail.actions.start")
+        : i18n.t("watch.recipeDetail.actions.back"),
       click_func: () => {
         if (selectedRecipe) {
           startSelectedRecipe();
@@ -250,7 +264,7 @@ Page({
     if (!selectedRecipe) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
-        text: "The local snapshot is unavailable right now."
+        text: i18n.t("watch.recipeDetail.unavailableBody")
       });
     }
 

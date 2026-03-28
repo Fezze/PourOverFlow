@@ -6,6 +6,7 @@ The product has two primary runtimes:
 
 - watch runtime: session execution and resume,
 - phone runtime: editing and archiving.
+- Both runtimes now also share the same translation dictionaries, with watch locale resolution isolated from browser-safe phone locale resolution.
 
 ## Watch flow 1 - app start
 
@@ -20,6 +21,7 @@ Start quickly even when the phone is unavailable.
 3. If an active session exists with status `running` or `waiting_for_confirm`, show the resume gate.
 4. If there is no active session, navigate to `tool-list`.
 5. Independently from the above, send `REQUEST_BOOTSTRAP`.
+6. Include the current watch locale in `REQUEST_BOOTSTRAP` so first-run phone seeding can pick a supported starter locale if the phone store is still empty.
 
 ### Resume gate
 

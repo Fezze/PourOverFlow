@@ -3,6 +3,7 @@ import { getDeviceInfo } from "@zos/device";
 import { replace } from "@zos/router";
 import { PAGE_URLS, refreshPhoneSnapshot, selectTool, getToolList } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
+import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import {
   BACKGROUND,
   LIST_FRAME,
@@ -21,11 +22,13 @@ function supportsHardwareListFocus() {
   }
 }
 
-function buildToolRows(tools) {
+function buildToolRows(tools, i18n) {
   return tools.map((tool) => ({
     icon: `${tool.iconStem}.png`,
-    title: tool.label,
-    meta: tool.recipeCount === 1 ? "1 recipe" : `${tool.recipeCount || 0} recipes`,
+    title: i18n.getToolLabel(tool),
+    meta: i18n.t("common.counts.recipes", {
+      count: tool.recipeCount || 0
+    }),
     toolId: tool.toolId
   }));
 }
@@ -98,8 +101,9 @@ Page({
     }
   },
   build() {
+    const i18n = createWatchTranslator();
     const tools = getToolList();
-    const rows = buildToolRows(tools);
+    const rows = buildToolRows(tools, i18n);
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
       if (event.type === "catalog") {
@@ -111,7 +115,7 @@ Page({
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
-        text: "No synced brewers yet"
+        text: i18n.t("watch.toolList.empty")
       });
     }
 
@@ -142,18 +146,18 @@ Page({
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...TITLE_TEXT,
-        text: "Brewers"
+        text: i18n.t("watch.toolList.title")
       });
     }
 
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...TITLE_TEXT,
-        text: "Brewers"
+        text: i18n.t("watch.toolList.title")
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...PRIMARY_BUTTON,
-        text: "Refresh library",
+        text: i18n.t("watch.toolList.refresh"),
         click_func: () => {
           refreshPhoneSnapshot();
         }

@@ -9,6 +9,12 @@ This document freezes two areas that need to be decision-complete before impleme
 
 The document follows official Zepp assumptions for `app.json v3+`, screen adaptation, and `AppSettingsPage`.
 
+Current implementation note:
+
+- manifest-level `i18n` covers Zepp package metadata,
+- runtime copy for watch and phone lives in `zepp-app/shared/i18n/`,
+- browser-safe phone locale helpers and Zepp-only watch locale helpers are split so shared modules remain usable in the Playwright harness.
+
 ## Official reference points
 
 - `app.json v3+` requires at least `configVersion`, `app`, `runtime`, `permissions`, `targets`, `i18n`, and `defaultLanguage`.

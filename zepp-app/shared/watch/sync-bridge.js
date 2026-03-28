@@ -30,6 +30,7 @@ import {
   readBridgeTransportPayload
 } from "../sync/bridge-transport.js";
 import { SYNC_MESSAGE_TYPES } from "../sync/message-types";
+import { resolveWatchLocale } from "../i18n/watch-locale.js";
 import { logValidation } from "./validation-log";
 
 let isInitialized = false;
@@ -295,14 +296,16 @@ export function requestBootstrap() {
   logValidation("bootstrap_request", {
     knownToolCatalogRevision: syncMeta.toolCatalogRevision,
     knownRecipeCatalogRevision: syncMeta.recipeCatalogRevision,
-    knownHistoryRevision: syncMeta.historyRevision
+    knownHistoryRevision: syncMeta.historyRevision,
+    preferredLocale: resolveWatchLocale()
   });
 
   return safeSendEnvelope(
     createSyncEnvelope(SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP, {
       knownToolCatalogRevision: syncMeta.toolCatalogRevision,
       knownRecipeCatalogRevision: syncMeta.recipeCatalogRevision,
-      knownHistoryRevision: syncMeta.historyRevision
+      knownHistoryRevision: syncMeta.historyRevision,
+      preferredLocale: resolveWatchLocale()
     })
   );
 }

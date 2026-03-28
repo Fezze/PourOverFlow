@@ -12,6 +12,7 @@ import {
   getSnapshotCounts
 } from "../zepp-app/setting/view-model.js";
 import { TOOL_CATALOG } from "../zepp-app/shared/constants/tool-catalog.js";
+import { createTranslator } from "../zepp-app/shared/i18n/index.js";
 
 describe("settings view model", () => {
   const snapshot = {
@@ -45,6 +46,14 @@ describe("settings view model", () => {
     expect(buildToolCardLabel(TOOL_CATALOG[2], 5)).toBe("Kalita Wave");
     expect(buildToolCountBadgeLabel(5)).toBe("5");
     expect(buildToolSettingsIconPath(TOOL_CATALOG[3])).toBe("../assets/common.s/tool-chemex.png");
+  });
+
+  it("can localize summaries and brewer labels for Polish settings UI", () => {
+    const i18n = createTranslator("pl-PL");
+
+    expect(buildLibraryOverview(snapshot as never, i18n)).toBe("6 brewerow - 3 przepisow");
+    expect(buildRecipeShelfCountLabel(4, i18n)).toBe("4 przepisy");
+    expect(buildToolCardLabel(TOOL_CATALOG[5], 5, i18n)).toBe("French Press");
   });
 
   it("formats history and sync summaries for simpler secondary screens", () => {
