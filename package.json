@@ -15,7 +15,8 @@
     "test:coverage": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts --coverage",
     "test:playwright": "node scripts/playwright-simulator-coverage.mjs",
     "test:playwright:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness",
-    "test:playwright:coverage:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness --coverage"
+    "test:playwright:coverage:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness --coverage",
+    "validation:logs": "node scripts/validation-log-report.mjs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.1",

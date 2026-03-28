@@ -281,6 +281,9 @@ This is intentional. V1 should stay simple, readable, and aligned with Zepp docu
 - Prefer card-like read-only summary buttons for counts, latest result summaries, recipe cards, and history cards.
 - A card tap may be the primary "open/edit" action. Do not keep a second redundant `Edit` button next to the same card if the card already opens the record.
 - Prefer a few grouped sections with clear subtitles over many short utility rows.
+- `library-home` should stay selector-first: let the shell header carry the high-level brewer and recipe counts instead of adding a second dashboard panel with repeated numbers.
+- Brewer rows on `library-home` should be visually compact, with a left badge and only the brewer label plus recipe count in the main card body.
+- `history-list` and `about-sync` should avoid redundant top summary dashboards when the shell header already explains the context.
 
 ### Save policy
 
@@ -297,6 +300,13 @@ Must contain:
 - a `Section` with the supported tools and recipe counts,
 - a high-level library summary,
 - every supported `toolId` visible even if it has 0 recipes.
+
+Implementation baseline:
+
+- use the shell header as the only high-level summary,
+- keep the main body focused on the brewer list itself,
+- do not repeat history totals or latest mirrored-result cards here,
+- do not repeat long brewer descriptions on every library row.
 
 History and sync remain reachable from the persistent top navigation, so they do not need extra duplicate buttons on `library-home`.
 

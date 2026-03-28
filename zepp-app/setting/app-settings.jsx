@@ -19,6 +19,15 @@ import {
   writeSettingsJson
 } from "../shared/storage/phone-store";
 import { SETTINGS_UI_STORAGE_KEY } from "../shared/storage/keys";
+import {
+  buildHistoryOverview,
+  buildLibraryOverview,
+  buildRecipeShelfCountLabel,
+  buildSyncOverview,
+  buildToolBadgeLabel,
+  buildToolCardLabel,
+  getSnapshotCounts
+} from "./view-model";
 
 const NAV_BUTTON_STYLE = {
   fontSize: "12px",
@@ -125,6 +134,12 @@ const CARD_BUTTON_STYLE = {
   color: "#21303D",
   textAlign: "left",
   padding: "14px 16px"
+};
+
+const LIST_CARD_BUTTON_STYLE = {
+  ...CARD_BUTTON_STYLE,
+  flex: "1",
+  padding: "16px 18px"
 };
 
 const SOFT_ACTION_BUTTON_STYLE = {
@@ -258,6 +273,52 @@ const STATIC_NOTE_STYLE = {
 const STATIC_NOTE_DARK_STYLE = {
   ...STATIC_NOTE_STYLE,
   color: "#C5D5E1"
+};
+
+const TOOL_LIST_STYLE = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px"
+};
+
+const TOOL_ROW_STYLE = {
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  gap: "10px"
+};
+
+const TOOL_BADGE_STYLE = {
+  width: "54px",
+  minWidth: "54px",
+  fontSize: "12px",
+  fontWeight: "700",
+  lineHeight: "54px",
+  borderRadius: "20px",
+  color: "#FFFFFF",
+  textAlign: "center",
+  padding: "0"
+};
+
+const TOOL_BADGE_TONES = {
+  tool_aeropress: {
+    background: "#2E8C7B"
+  },
+  tool_v60: {
+    background: "#4B74D4"
+  },
+  tool_kalita_wave: {
+    background: "#3FA589"
+  },
+  tool_chemex: {
+    background: "#5C6FD6"
+  },
+  tool_clever_dripper: {
+    background: "#6A9C58"
+  },
+  tool_french_press: {
+    background: "#C06B3D"
+  }
 };
 
 const PANEL_TITLE_RIBBON_STYLE = {
@@ -505,24 +566,24 @@ function getToolMeta(toolId) {
   return TOOL_CATALOG.find((tool) => tool.toolId === toolId) || null;
 }
 
-function getSnapshotCounts(snapshot) {
-  const recipeCount = snapshot && Array.isArray(snapshot.recipeIndex) ? snapshot.recipeIndex.length : 0;
-  const historyCount = snapshot && Array.isArray(snapshot.historyIndex) ? snapshot.historyIndex.length : 0;
+function createToolBadgeStyle(toolId) {
   return {
-    toolCount: TOOL_CATALOG.length,
-    recipeCount,
-    historyCount
+    ...TOOL_BADGE_STYLE,
+    ...(TOOL_BADGE_TONES[toolId] || {
+      background: "#5E6773"
+    })
   };
 }
 
-function buildLibraryOverview(snapshot) {
-  const counts = getSnapshotCounts(snapshot);
-  return `${counts.toolCount} brewers - ${counts.recipeCount} recipes - ${counts.historyCount} history entries`;
-}
-
-function buildToolCardLabel(tool, recipeCount) {
-  const countLabel = recipeCount === 1 ? "1 recipe ready" : `${recipeCount} recipes ready`;
-  return `${tool.label}\n${tool.description}\n${countLabel}`;
+function createToolBrowseCard(tool, recipeCount, onClick) {
+  return View({ style: TOOL_ROW_STYLE }, [
+    createStaticCard(buildToolBadgeLabel(tool), createToolBadgeStyle(tool.toolId)),
+    Button({
+      label: buildToolCardLabel(tool, recipeCount),
+      style: LIST_CARD_BUTTON_STYLE,
+      onClick
+    })
+  ]);
 }
 
 function buildRecipeCardLabel(recipeSummary, recipeRecord) {
@@ -600,14 +661,18 @@ function buildHistoryCardLabel(historyEntry) {
 }
 
 function buildShellHeader(viewName, snapshot, selectedToolId) {
-  const counts = getSnapshotCounts(snapshot);
   const selectedTool = getToolMeta(selectedToolId);
+  const selectedRecipeCount = selectedTool
+    ? (((snapshot && snapshot.recipesByTool) || {})[selectedTool.toolId] || []).length
+    : 0;
 
   switch (viewName) {
     case "recipe-list":
       return {
         title: selectedTool ? `${selectedTool.label} recipes` : "Recipes",
-        subtitle: selectedTool ? selectedTool.description : "Manage recipes for the selected brewer."
+        subtitle: selectedTool
+          ? buildRecipeShelfCountLabel(selectedRecipeCount)
+          : "Manage recipes for the selected brewer."
       };
     case "recipe-editor":
       return {
@@ -617,7 +682,7 @@ function buildShellHeader(viewName, snapshot, selectedToolId) {
     case "history-list":
       return {
         title: "Brew history",
-        subtitle: `${counts.historyCount} archived brews stored on the phone.`
+        subtitle: buildHistoryOverview(snapshot)
       };
     case "history-detail":
       return {
@@ -627,7 +692,7 @@ function buildShellHeader(viewName, snapshot, selectedToolId) {
     case "about-sync":
       return {
         title: "Sync status",
-        subtitle: "Phone stays canonical. The watch keeps cache, latest result, and active session."
+        subtitle: "Phone stays canonical. The watch mirrors only what it needs."
       };
     default:
       return {
@@ -951,42 +1016,12 @@ AppSettingsPage({
   },
   renderLibraryHome(props) {
     const recipesByTool = this.state.snapshot ? this.state.snapshot.recipesByTool : {};
-    const latestResult = this.state.snapshot ? this.state.snapshot.latestResult : null;
 
-    return View({ style: CARD_STACK_STYLE }, [
-      createPanel("slate", "Recipe library", "Choose a brewer and shape what syncs to the watch.", [
-        createStaticCard(buildLibraryOverview(this.state.snapshot), {
-          ...SUCCESS_CARD_STYLE,
-          background: "#314352",
-          color: "#D7F3EA"
-        }),
-        latestResult
-          ? createStaticCard(
-              `Latest watch result\n${latestResult.recipeName} - ${latestResult.status} - ${formatDurationLabel(
-                latestResult.elapsedMs
-              )}`,
-              {
-                ...CARD_BUTTON_STYLE,
-                background: "#314352",
-                color: "#F4FAFC"
-              }
-            )
-          : createStaticCard("No watch result mirrored yet. The next brew result will show up here.", {
-              ...CARD_BUTTON_STYLE,
-              background: "#314352",
-              color: "#F4FAFC"
-            })
-      ]),
-      createPanel("mint", "Brewers", "Each brewer has its own recipe shelf.", TOOL_CATALOG.map((tool) =>
-        Button({
-          label: buildToolCardLabel(tool, (recipesByTool[tool.toolId] || []).length),
-          style: CARD_BUTTON_STYLE,
-          onClick: () => {
-            this.openRecipeList(props, tool.toolId);
-          }
-        })
-      ))
-    ]);
+    return View({ style: TOOL_LIST_STYLE }, TOOL_CATALOG.map((tool) =>
+      createToolBrowseCard(tool, (recipesByTool[tool.toolId] || []).length, () => {
+        this.openRecipeList(props, tool.toolId);
+      })
+    ));
   },
   renderRecipeCards(props) {
     const recipes = this.state.snapshot.recipesByTool[this.state.ui.selectedToolId] || [];
@@ -994,7 +1029,7 @@ AppSettingsPage({
     if (!recipes.length) {
       return [
         createStaticCard(
-          "No recipes yet for this brewer.\nCreate the first one and it will be available on the watch after sync.",
+          "No recipes yet for this brewer.\nCreate the first one here.",
           CARD_BUTTON_STYLE
         )
       ];
@@ -1046,38 +1081,28 @@ AppSettingsPage({
     const recipeCount = ((this.state.snapshot.recipesByTool || {})[selectedTool.toolId] || []).length;
 
     return View({ style: CARD_STACK_STYLE }, [
-      createPanel("slate", selectedTool ? selectedTool.label : "Recipes", selectedTool
-        ? selectedTool.description
-        : "Select a brewer from the library home.", [
-        createStaticCard(
-          recipeCount === 1 ? "1 recipe in this shelf." : `${recipeCount} recipes in this shelf.`,
-          {
-            ...SUCCESS_CARD_STYLE,
-            background: "#314352",
-            color: "#D7F3EA"
+      createButtonRow([
+        Button({
+          label: "New recipe",
+          style: PRIMARY_BUTTON_STYLE,
+          onClick: () => {
+            this.openRecipeEditor(props, null);
           }
-        ),
-        createButtonRow([
-          Button({
-            label: "New recipe",
-            style: PRIMARY_BUTTON_STYLE,
-            onClick: () => {
-              this.openRecipeEditor(props, null);
-            }
-          }),
-          Button({
-            label: "Back to brewers",
-            style: SOFT_ACTION_BUTTON_STYLE,
-            onClick: () => {
-              this.openLibraryHome(props);
-            }
-          })
-        ])
+        }),
+        Button({
+          label: "Brewers",
+          style: SOFT_ACTION_BUTTON_STYLE,
+          onClick: () => {
+            this.openLibraryHome(props);
+          }
+        })
       ]),
       createPanel(
         "sand",
-        "Recipes",
-        "Tap a card to edit it. Duplicate or delete from the action row.",
+        recipeCount ? "Recipes" : "Empty shelf",
+        recipeCount
+          ? "Tap a recipe card to edit it. Duplicate or delete from the action row."
+          : `Add the first ${selectedTool.label} recipe here.`,
         this.renderRecipeCards(props)
       )
     ]);
@@ -1406,20 +1431,10 @@ AppSettingsPage({
     }
 
     return View({ style: CARD_STACK_STYLE }, [
-      createPanel("slate", "History", "Archived brews stay on the phone even if the recipe later changes.", [
-        createStaticCard(
-          `${historyIndex.length} archived brews ready to review.`,
-          {
-            ...SUCCESS_CARD_STYLE,
-            background: "#314352",
-            color: "#D7F3EA"
-          }
-        )
-      ]),
       createPanel(
         "white",
         "Recent brews",
-        "Open an entry to review timing, rating, and notes.",
+        "Open an entry to review timing, rating, and phone notes.",
         historyIndex.map((historyIndexEntry) => {
           const historyEntry = readHistoryEntry(props.settingsStorage, historyIndexEntry.historyId);
 
@@ -1526,32 +1541,13 @@ AppSettingsPage({
   },
   renderSyncInfo() {
     const syncMeta = this.state.syncMeta || {};
-    const latestResult = this.state.snapshot ? this.state.snapshot.latestResult : null;
 
     return View({ style: CARD_STACK_STYLE }, [
-      createPanel("slate", "Sync overview", "The phone stays canonical. The watch only mirrors what it needs.", [
+      createPanel("white", "Sync overview", "The watch mirrors recipes, cache state, and the latest result only.", [
         createStaticCard(
-          `Tools revision: ${syncMeta.toolCatalogRevision || 0}\nRecipes revision: ${
-            syncMeta.recipeCatalogRevision || 0
-          }\nHistory revision: ${syncMeta.historyRevision || 0}`,
+          buildSyncOverview(syncMeta),
           CARD_BUTTON_STYLE
-        ),
-        latestResult
-          ? createStaticCard(
-              `Latest mirrored result\n${latestResult.recipeName} - ${latestResult.status} - ${formatDurationLabel(
-                latestResult.elapsedMs
-              )}`,
-              {
-                ...SUCCESS_CARD_STYLE,
-                background: "#314352",
-                color: "#D7F3EA"
-              }
-            )
-          : createStaticCard("No watch result has been mirrored back yet.", {
-              ...SUCCESS_CARD_STYLE,
-              background: "#314352",
-              color: "#D7F3EA"
-            })
+        )
       ])
     ]);
   },

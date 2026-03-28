@@ -281,15 +281,18 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 
 - persistent top navigation for `Library`, `History`, and `Sync`,
 - contextual shell header,
-- library summary card,
-- supported tools section,
+- library shell summary with brewer and recipe counts only,
 - recipe count per tool,
-- optional latest-result summary card.
+- direct brewer list as the main content.
 
 ### Behavior
 
 - `setting/` uses `settingsStorage` directly,
 - every change writes the record and index, and `app-side/` picks it up reactively.
+- `library-home` should read as a selector, not a dashboard.
+- Do not repeat the same counts inside a second `Recipe library` panel when the shell header already carries them.
+- Brewer rows should stay visually compact: left badge, brewer label, recipe count.
+- Do not spend library-home space on history totals, latest mirrored-result cards, or long brewer descriptions.
 
 ## Phone flow 2 - recipe list
 
@@ -300,7 +303,7 @@ From `library-home` after tapping a tool.
 ### View
 
 - recipe list for one `toolId`,
-- tool summary card,
+- compact action row,
 - button `New recipe`,
 - card-tap entry into editing,
 - secondary actions `Duplicate` and `Delete`.
@@ -353,7 +356,6 @@ Each step has its own sub-form:
 ### `history-list`
 
 - `HistoryIndexEntry` list,
-- archived-brews summary card,
 - sorted by `endedAt desc`,
 - optional filtering by `toolId` is an enhancement, not baseline.
 
@@ -405,6 +407,13 @@ Watch copy should be:
 - action-oriented.
 
 Phone copy may be slightly more descriptive, but still without unnecessary verbosity.
+
+Phone browse screens should also stay selective rather than dashboard-heavy:
+
+- `Library` is a direct brewer chooser,
+- `History` is a direct archive list,
+- `Sync` is a compact revision/status explanation,
+- avoid duplicating shell-header information inside another top card.
 
 ## Frozen decisions
 

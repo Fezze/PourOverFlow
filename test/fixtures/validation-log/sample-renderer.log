@@ -1,0 +1,3 @@
+2026-03-28 10:21:00 [pof-validation] display_guard_enable {"wake":true,"bright":600}
+2026-03-28 10:21:05 [pof-validation] resume_attempt {"sessionId":"sess_1"}
+2026-03-28 10:21:12 [pof-validation] history_flush_result {"sent":1,"remaining":0}

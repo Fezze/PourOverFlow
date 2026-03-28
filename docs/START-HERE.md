@@ -75,7 +75,7 @@ Current verified platform note:
 - seed data in `settingsStorage`,
 - a versioned seed catalog that can append newly introduced seed recipes without replaying the whole library on existing installs,
 - real CRUD for recipes and history notes in `setting/`,
-- a cleaner phone-side Settings UX with active top navigation, contextual shell headers, color-banded sections, and a paginated recipe-step editor,
+- a cleaner phone-side Settings UX with active top navigation, contextual shell headers, a selector-first library browse, compact brewer badges, quieter `History` and `Sync` surfaces, and a paginated recipe-step editor,
 - runtime sync with `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
 - watch cache in `LocalStorage` for catalog, latest result, and sync metadata,
 - storage-backed `active_session_v1`,
@@ -105,6 +105,7 @@ Current verified platform note:
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
+- Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
 - Current meaningful coverage baselines after the latest test expansion are `93.79% / 83.81% / 97.98% / 93.69%` for `npm run test:coverage` and `93.36% / 82.40% / 92.76% / 93.36%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
@@ -255,3 +256,4 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - The latest simulator run confirmed that `page/home/index.js` reached full widget render successfully; a later console `ui pause` entry was not, by itself, proof of a home-page build crash.
 - Automatic startup bootstrap is restored for real hardware, but `shared/watch/sync-bridge.js` still skips it in simulator heuristic mode (`Battery().getCurrent() === 0`) while the simulator-side `@zos/ble.send` path is still being debugged.
 - The current watch UX pass follows Zepp design-system list patterns rather than a project-specific Figma node, because no concrete Figma file or node link is stored in the repo yet.
+- The repo now includes a small validation-log parser. Use `npm run validation:logs` instead of manual log scraping when a hardware or simulator session emits `[pof-validation]` lines.

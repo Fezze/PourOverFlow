@@ -12,7 +12,7 @@
 ### Real-device validation
 
 - Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.
-- Use the new `[pof-validation]` log prefix during hardware tests and write back concrete findings instead of leaving them in chat only.
+- Use `npm run validation:logs` against the captured log file during hardware tests and write back concrete findings instead of leaving raw `[pof-validation]` lines in chat only.
 
 ### Watch UI follow-up
 
@@ -32,6 +32,10 @@
 - Decide whether the Playwright module harness should stay focused on browser-safe shared modules or grow browser stubs for selected `@zos/*` modules.
 - Confirm that the new `zepp-app/` subtree plus root-level `coverage/` split stays comfortable on both Windows and Linux after a few normal `zeus dev` cycles.
 - Only keep pushing toward literal `100%` local coverage if it still matters; the main remaining hotspots are defensive branches in `sync-bridge`, storage helpers, validators, router edge paths, display-guard behavior, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`.
+
+### Phone UX follow-up
+
+- Confirm on a real phone that the simplified `Library` screen reads clearly with only brewer and recipe counts in the shell header, compact left badges, and no secondary dashboard panel.
 
 ## Verify checklist
 
