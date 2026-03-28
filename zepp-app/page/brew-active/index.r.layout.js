@@ -1,21 +1,21 @@
 import * as hmUI from "@zos/ui";
-import { px } from "@zos/utils";
 import {
   SHARED_COLORS,
   createFloatingDockStyle,
   createFloatingButtonStyle,
-  createScaffoldLayout
+  createScaffoldLayout,
+  pickRoundMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
-const dockInset = px(10);
-const actionGap = px(16);
-const dockY = px(382);
-const dockHeight = px(84);
-const actionBaseY = dockY + px(8);
-const actionBaseH = dockHeight - px(16);
+const dockInset = pickRoundMetric(10, 8);
+const actionGap = pickRoundMetric(16, 14);
+const dockY = pickRoundMetric(382, 372);
+const dockHeight = pickRoundMetric(84, 78);
+const actionBaseY = dockY + pickRoundMetric(8, 7);
+const actionBaseH = dockHeight - pickRoundMetric(16, 14);
 const actionDockWidth = layout.buttonW - dockInset * 2;
-const actionButtonWidth = Math.floor((actionDockWidth - actionGap - px(16)) / 2);
+const actionButtonWidth = Math.floor((actionDockWidth - actionGap - pickRoundMetric(16, 14)) / 2);
 const centerX = layout.buttonX + Math.floor(layout.buttonW / 2);
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
@@ -24,7 +24,7 @@ const primaryButton = createFloatingButtonStyle(layout, {
   w: actionButtonWidth,
   h: actionBaseH,
   radius: Math.floor(actionBaseH / 2),
-  text_size: px(28)
+  text_size: pickRoundMetric(28, 26)
 });
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
@@ -33,7 +33,7 @@ const secondaryButton = createFloatingButtonStyle(layout, {
   w: actionButtonWidth,
   h: actionBaseH,
   radius: Math.floor(actionBaseH / 2),
-  text_size: px(28)
+  text_size: pickRoundMetric(28, 26)
 });
 
 secondaryButton.normal_color = SHARED_COLORS.secondary;

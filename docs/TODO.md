@@ -18,6 +18,7 @@
 ### Watch UI follow-up
 
 - Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, and `result-summary`.
+- Re-check the new compact-round tuning on `Amazfit Balance` after the `API_LEVEL 3.6` floor change and confirm that the smaller round layout still preserves the intended spacing without over-tightening the 480 baseline.
 - Confirm on real hardware that the simplified paired-pill `brew-active` dock feels balanced and that the primary-right / secondary-left emphasis reads clearly during a live brew.
 - Confirm on real hardware that the new `Discard` label on the `home` resume gate reads clearly and does not feel too heavy compared with the primary `Resume` action.
 - Confirm on real hardware that the larger `brew-active` instruction panel still reads comfortably when step metadata updates every second.

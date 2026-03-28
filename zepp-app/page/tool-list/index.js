@@ -31,6 +31,16 @@ function buildToolRows(tools) {
 }
 
 function createToolListConfig() {
+  const iconSize = Math.max(44, LIST_FRAME.itemHeight - 44);
+  const iconX = 24;
+  const iconY = Math.max(18, Math.floor((LIST_FRAME.itemHeight - iconSize) / 2));
+  const titleY = 14;
+  const titleTextSize = Math.max(22, LIST_FRAME.titleHeight - 22);
+  const metaY = titleY + LIST_FRAME.titleHeight - 8;
+  const metaTextSize = Math.max(14, LIST_FRAME.metaHeight - 12);
+  const textX = iconX + iconSize + 18;
+  const textW = LIST_FRAME.w - textX - 20;
+
   return [
     {
       type_id: 1,
@@ -39,10 +49,10 @@ function createToolListConfig() {
       item_press_effect: true,
       image_view: [
         {
-          x: 26,
-          y: 22,
-          w: 48,
-          h: 48,
+          x: iconX,
+          y: iconY,
+          w: iconSize,
+          h: iconSize,
           key: "icon",
           action: true
         }
@@ -50,25 +60,25 @@ function createToolListConfig() {
       image_view_count: 1,
       text_view: [
         {
-          x: 96,
-          y: 14,
-          w: LIST_FRAME.w - 124,
+          x: textX,
+          y: titleY,
+          w: textW,
           h: LIST_FRAME.titleHeight,
           key: "title",
           color: 0xf5f7fa,
-          text_size: 24,
+          text_size: titleTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
         },
         {
-          x: 96,
-          y: 50,
-          w: LIST_FRAME.w - 124,
+          x: textX,
+          y: metaY,
+          w: textW,
           h: LIST_FRAME.metaHeight,
           key: "meta",
           color: 0xaab4c2,
-          text_size: 16,
+          text_size: metaTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V

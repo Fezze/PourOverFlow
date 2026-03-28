@@ -205,6 +205,8 @@ The project should use the `app.json v3+` mechanism and layout files:
 
 Do not set `designWidth` manually at the start. Use Zepp defaults for round and square first. Once the first screens exist, this can be revisited using real assets, but the documentation baseline should stay neutral and use `px(...)` where values come from a draft.
 
+For the current round baseline, keep a single shared round page set and apply only a small compact-round adjustment when runtime sizing reports a sub-`480x480` round screen. Do not fork a second Balance 1 page set unless later hardware validation proves the compact pass is still insufficient.
+
 ## Manifest and targets
 
 In `app.json`, the next agent should freeze at least:

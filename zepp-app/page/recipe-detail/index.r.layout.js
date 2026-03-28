@@ -1,19 +1,19 @@
 import * as hmUI from "@zos/ui";
-import { px } from "@zos/utils";
 import {
   createFloatingDockStyle,
   createFloatingButtonStyle,
   createPanelStyle,
-  createScaffoldLayout
+  createScaffoldLayout,
+  pickRoundMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(380),
-  h: px(64),
-  radius: px(32),
-  text_size: px(21)
+  y: pickRoundMetric(380, 370),
+  h: pickRoundMetric(64, 60),
+  radius: pickRoundMetric(32, 30),
+  text_size: pickRoundMetric(21, 20)
 });
 
 export const BACKGROUND = layout.background;
@@ -21,20 +21,20 @@ export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 export const DETAIL_PANEL = createPanelStyle(layout, {
-  x: px(56),
-  y: px(110),
-  w: px(368),
-  h: px(246)
+  x: layout.buttonX - pickRoundMetric(8, 6),
+  y: pickRoundMetric(110, 104),
+  w: layout.buttonW + pickRoundMetric(16, 12),
+  h: pickRoundMetric(246, 236)
 });
 export const BODY_TEXT = {
   ...layout.body,
-  y: DETAIL_PANEL.y + px(18),
-  h: DETAIL_PANEL.h - px(36)
+  y: DETAIL_PANEL.y + pickRoundMetric(18, 16),
+  h: DETAIL_PANEL.h - pickRoundMetric(36, 32)
 };
 export const FOOTER_TEXT = {
   ...layout.footer,
-  y: px(326),
-  h: px(28)
+  y: pickRoundMetric(326, 314),
+  h: pickRoundMetric(28, 26)
 };
 export const ACTION_DOCK = createFloatingDockStyle({
   x: primaryButton.x,

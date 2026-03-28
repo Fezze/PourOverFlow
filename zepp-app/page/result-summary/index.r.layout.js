@@ -1,35 +1,35 @@
 import * as hmUI from "@zos/ui";
-import { px } from "@zos/utils";
 import {
   createFloatingDockStyle,
   createFloatingButtonStyle,
-  createScaffoldLayout
+  createScaffoldLayout,
+  pickRoundMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
-const splitGap = px(12);
+const splitGap = pickRoundMetric(12, 10);
 const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  y: px(324),
+  y: pickRoundMetric(324, 312),
   w: splitWidth,
-  h: px(40),
-  radius: px(20)
+  h: pickRoundMetric(40, 38),
+  radius: pickRoundMetric(20, 19)
 });
 const accentButton = createFloatingButtonStyle(layout, {
   theme: "neutral",
   x: layout.buttonX + splitWidth + splitGap,
-  y: px(324),
+  y: pickRoundMetric(324, 312),
   w: splitWidth,
-  h: px(40),
-  radius: px(20)
+  h: pickRoundMetric(40, 38),
+  radius: pickRoundMetric(20, 19)
 });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(382),
-  h: px(64),
-  radius: px(32),
-  text_size: px(21)
+  y: pickRoundMetric(382, 370),
+  h: pickRoundMetric(64, 60),
+  radius: pickRoundMetric(32, 30),
+  text_size: pickRoundMetric(21, 20)
 });
 
 export const BACKGROUND = layout.background;
@@ -39,12 +39,12 @@ export const BODY_TEXT = layout.body;
 export const FOOTER_TEXT = layout.footer;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
-TITLE_TEXT.x = px(48);
-TITLE_TEXT.y = px(68);
-TITLE_TEXT.w = px(384);
-SUBTITLE_TEXT.x = px(56);
-SUBTITLE_TEXT.y = px(106);
-SUBTITLE_TEXT.w = px(368);
+TITLE_TEXT.x = layout.buttonX - pickRoundMetric(16, 12);
+TITLE_TEXT.y = pickRoundMetric(68, 62);
+TITLE_TEXT.w = layout.buttonW + pickRoundMetric(32, 24);
+SUBTITLE_TEXT.x = layout.buttonX - pickRoundMetric(8, 6);
+SUBTITLE_TEXT.y = pickRoundMetric(106, 98);
+SUBTITLE_TEXT.w = layout.buttonW + pickRoundMetric(16, 12);
 export const ACTION_DOCK = createFloatingDockStyle({
   x: primaryButton.x,
   y: primaryButton.y,

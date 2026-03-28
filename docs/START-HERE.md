@@ -87,6 +87,7 @@ Current verified platform note:
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
 - explicit empty `recipe-list` guidance that tells the user to create recipes on the phone first and then refresh from the watch,
 - compact summary rows on `recipe-detail` and populated `result-summary`, with both screens staying static for normal-length content and only falling back to scrolling when the content really overflows, calmer continuous panels, and a single `Home` CTA on the populated result screen so longer content does not rely on a single fixed-height text block,
+- a conservative compact-round layout pass for sub-`480x480` round screens so Balance 1-class devices stay visually closer to the main round baseline without needing a separate page set,
 - a hardware shortcut path on `brew-active` for watches that expose the Zepp shortcut key,
 - a haptics-first watch feedback model without a dedicated hardware-check page,
 - a shared `[pof-validation]` log prefix across display guard, resume, haptics, and queue replay paths so real-device checks can be traced without a dedicated watch debug screen,
@@ -253,6 +254,7 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - `zeus dev` may also ask the user to choose the preview target, for example `Amazfit Balance 2`, when multiple simulator device profiles are available.
 - Simulator deployment can be verified from files and logs even when CLI output is quiet: `last_app_info.json`, the deployed app folder under the resolved simulator root (`%APPDATA%/simulator` on Windows or `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux), and recent `side-service` `status:opened` lines in `renderer.log`.
 - `shared/watch/layouts.js` now uses `getDeviceInfo()` together with `data:os.device.info`, and it also keeps a fallback layout size so a permission problem does not immediately crash first paint.
+- sub-`480x480` round screens now also get a conservative compact-round tuning pass from the shared layout layer instead of a separate Balance-specific page set.
 - The latest simulator run confirmed that `page/home/index.js` reached full widget render successfully; a later console `ui pause` entry was not, by itself, proof of a home-page build crash.
 - Automatic startup bootstrap is restored for real hardware, but `shared/watch/sync-bridge.js` still skips it in simulator heuristic mode (`Battery().getCurrent() === 0`) while the simulator-side `@zos/ble.send` path is still being debugged.
 - The current watch UX pass follows Zepp design-system list patterns rather than a project-specific Figma node, because no concrete Figma file or node link is stored in the repo yet.

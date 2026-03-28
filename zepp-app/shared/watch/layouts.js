@@ -31,6 +31,7 @@ function readLayoutDeviceSize() {
 }
 
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = readLayoutDeviceSize();
+const IS_COMPACT_ROUND_DEVICE = DEVICE_WIDTH < DEFAULT_LAYOUT_SIZE.width || DEVICE_HEIGHT < DEFAULT_LAYOUT_SIZE.height;
 
 export const SHARED_COLORS = {
   background: 0x0e1218,
@@ -50,14 +51,23 @@ export const SHARED_COLORS = {
   neutralPress: 0x303947
 };
 
+export function isCompactRoundDevice() {
+  return IS_COMPACT_ROUND_DEVICE;
+}
+
+export function pickRoundMetric(regularValue, compactValue) {
+  return px(IS_COMPACT_ROUND_DEVICE ? compactValue : regularValue);
+}
+
 export function createScaffoldLayout(options = {}) {
   const isRound = options.shape === "round";
-  const horizontalPadding = isRound ? 64 : 28;
-  const titleY = isRound ? 60 : 30;
-  const subtitleY = isRound ? 94 : 66;
-  const bodyY = isRound ? 134 : 102;
-  const buttonStartY = isRound ? 232 : 214;
-  const buttonHeight = isRound ? 42 : 44;
+  const compactRound = isRound && IS_COMPACT_ROUND_DEVICE;
+  const horizontalPadding = isRound ? (compactRound ? 68 : 64) : 28;
+  const titleY = isRound ? (compactRound ? 56 : 60) : 30;
+  const subtitleY = isRound ? (compactRound ? 88 : 94) : 66;
+  const bodyY = isRound ? (compactRound ? 126 : 134) : 102;
+  const buttonStartY = isRound ? (compactRound ? 224 : 232) : 214;
+  const buttonHeight = isRound ? (compactRound ? 40 : 42) : 44;
   const buttonGap = isRound ? 8 : 8;
 
   return {
@@ -74,7 +84,7 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(isRound ? 38 : 34),
       color: SHARED_COLORS.text,
-      text_size: px(isRound ? 26 : 28),
+      text_size: px(isRound ? (compactRound ? 24 : 26) : 28),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
@@ -85,7 +95,7 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(isRound ? 34 : 30),
       color: SHARED_COLORS.muted,
-      text_size: px(isRound ? 15 : 16),
+      text_size: px(isRound ? (compactRound ? 14 : 15) : 16),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP
@@ -96,18 +106,18 @@ export function createScaffoldLayout(options = {}) {
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(isRound ? 74 : 74),
       color: SHARED_COLORS.text,
-      text_size: px(isRound ? 17 : 18),
+      text_size: px(isRound ? (compactRound ? 16 : 17) : 18),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.TOP,
       text_style: hmUI.text_style.WRAP
     },
     footer: {
       x: px(horizontalPadding),
-      y: DEVICE_HEIGHT - px(isRound ? 82 : 56),
+      y: DEVICE_HEIGHT - px(isRound ? (compactRound ? 88 : 82) : 56),
       w: DEVICE_WIDTH - px(horizontalPadding * 2),
       h: px(38),
       color: SHARED_COLORS.muted,
-      text_size: px(14),
+      text_size: px(isRound ? (compactRound ? 13 : 14) : 14),
       align_h: hmUI.align.LEFT,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.WRAP

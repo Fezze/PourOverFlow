@@ -153,6 +153,32 @@ describe("watch layouts and shortcut helpers", () => {
     expect(squareBrewActive.BUTTONS[1].radius).toBeGreaterThan(18);
   });
 
+  it("applies a conservative compact-round tuning below the 480 baseline", async () => {
+    vi.doMock("@zos/device", () => ({
+      getDeviceInfo: () => ({
+        width: 466,
+        height: 466
+      })
+    }));
+
+    const layouts = await import("../zepp-app/shared/watch/layouts.js");
+    const homeLayout = await import("../zepp-app/page/home/index.r.layout.js");
+    const toolListLayout = await import("../zepp-app/page/tool-list/index.r.layout.js");
+    const recipeListLayout = await import("../zepp-app/page/recipe-list/index.r.layout.js");
+    const recipeDetailLayout = await import("../zepp-app/page/recipe-detail/index.r.layout.js");
+    const brewActiveLayout = await import("../zepp-app/page/brew-active/index.r.layout.js");
+    const resultSummaryLayout = await import("../zepp-app/page/result-summary/index.r.layout.js");
+
+    expect(layouts.isCompactRoundDevice()).toBe(true);
+    expect(layouts.createScaffoldLayout({ shape: "round" }).title.text_size).toBe(24);
+    expect(homeLayout.BUTTONS[0].y).toBeLessThan(362);
+    expect(toolListLayout.LIST_FRAME.h).toBeLessThan(332);
+    expect(recipeListLayout.LIST_PANEL.h).toBeLessThan(270);
+    expect(recipeDetailLayout.DETAIL_PANEL.h).toBeLessThan(246);
+    expect(brewActiveLayout.ACTION_DOCK.y).toBeLessThan(382);
+    expect(resultSummaryLayout.BUTTONS[0].y).toBeLessThan(382);
+  });
+
   it("registers the shortcut key handler and debounces repeated presses", async () => {
     let capturedHandler: ((key: string) => boolean) | null = null;
 

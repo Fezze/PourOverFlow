@@ -42,6 +42,12 @@ function buildRecipeRows(recipes) {
 }
 
 function createRecipeListConfig() {
+  const textInset = 20;
+  const titleY = Math.max(14, Math.floor((LIST_FRAME.itemHeight - LIST_FRAME.titleHeight - LIST_FRAME.metaHeight) / 2));
+  const titleTextSize = Math.max(19, LIST_FRAME.titleHeight - 22);
+  const metaY = titleY + LIST_FRAME.titleHeight - 6;
+  const metaTextSize = Math.max(14, LIST_FRAME.metaHeight - 11);
+
   return [
     {
       type_id: 1,
@@ -50,25 +56,25 @@ function createRecipeListConfig() {
       item_press_effect: true,
       text_view: [
         {
-          x: 20,
-          y: 16,
-          w: LIST_FRAME.w - 40,
+          x: textInset,
+          y: titleY,
+          w: LIST_FRAME.w - textInset * 2,
           h: LIST_FRAME.titleHeight,
           key: "title",
           color: 0xf5f7fa,
-          text_size: 22,
+          text_size: titleTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
         },
         {
-          x: 20,
-          y: 54,
-          w: LIST_FRAME.w - 40,
+          x: textInset,
+          y: metaY,
+          w: LIST_FRAME.w - textInset * 2,
           h: LIST_FRAME.metaHeight,
           key: "meta",
           color: 0xaab4c2,
-          text_size: 15,
+          text_size: metaTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V

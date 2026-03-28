@@ -3,35 +3,36 @@ import { px } from "@zos/utils";
 import {
   createFloatingDockStyle,
   createFloatingButtonStyle,
-  createScaffoldLayout
+  createScaffoldLayout,
+  pickRoundMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
-const splitGap = px(12);
+const splitGap = pickRoundMetric(12, 10);
 const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  y: px(308),
+  y: pickRoundMetric(308, 300),
   w: splitWidth,
-  h: px(40),
-  radius: px(20),
-  text_size: px(18)
+  h: pickRoundMetric(40, 38),
+  radius: pickRoundMetric(20, 19),
+  text_size: pickRoundMetric(18, 17)
 });
 const accentButton = createFloatingButtonStyle(layout, {
   theme: "accent",
   x: layout.buttonX + splitWidth + splitGap,
-  y: px(308),
+  y: pickRoundMetric(308, 300),
   w: splitWidth,
-  h: px(40),
-  radius: px(20),
-  text_size: px(18)
+  h: pickRoundMetric(40, 38),
+  radius: pickRoundMetric(20, 19),
+  text_size: pickRoundMetric(18, 17)
 });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(362),
-  h: px(64),
-  radius: px(32),
-  text_size: px(21)
+  y: pickRoundMetric(362, 350),
+  h: pickRoundMetric(64, 60),
+  radius: pickRoundMetric(32, 30),
+  text_size: pickRoundMetric(21, 20)
 });
 
 export const BACKGROUND = layout.background;
