@@ -59,7 +59,7 @@ The resume gate is not a separate page. It is a simple `home` state with two but
 If a tool has no recipes:
 
 - still show the tool in the list,
-- in `recipe-list`, show an empty state that says recipes are created on the phone first,
+- in `recipe-list`, keep the empty state short and state-based rather than instructional,
 - keep the watch CTA focused on `Refresh from phone` after the user updates the library in Settings.
 
 ## Watch flow 3 - recipe selection
@@ -136,7 +136,7 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - primary timer: step timer when the step is timed,
 - secondary timer: total session timer,
 - brew metadata: `waterMl` and `targetTotalWaterMl` when present,
-- assist copy only when it actually adds value, such as a resume or shortcut hint,
+- avoid helper copy that explains obvious actions when the dock or button labels already make them clear,
 - CTA:
   - a bottom side-by-side action dock,
   - short Zepp-safe labels or icons instead of raw decorative glyphs or two full-width text buttons,
@@ -405,6 +405,7 @@ Watch copy should be:
 - short,
 - operational,
 - action-oriented.
+- avoid extra coaching such as shortcut hints or multi-line "do this next" instructions when the visible CTA already carries that meaning.
 
 Phone copy may be slightly more descriptive, but still without unnecessary verbosity.
 

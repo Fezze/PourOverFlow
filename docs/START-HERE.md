@@ -85,6 +85,7 @@ Current verified platform note:
 - a Zepp-native watch browse flow with scrollable brewer and recipe lists, real method icons, and a dedicated recipe detail/start page,
 - an uneven 24-recipe starter library so every supported brewer now has more than 2 recipes,
 - quieter chooser pages on the watch, where populated `tool-list` and `recipe-list` screens stay focused on selection instead of showing bridge/cache diagnostics or redundant home actions,
+- quieter watch copy overall, where helper hints are trimmed back if the visible actions already explain the next move,
 - explicit empty `recipe-list` guidance that tells the user to create recipes on the phone first and then refresh from the watch,
 - compact summary rows on `recipe-detail` and populated `result-summary`, with both screens staying static for normal-length content and only falling back to scrolling when the content really overflows, calmer continuous panels, and a single `Home` CTA on the populated result screen so longer content does not rely on a single fixed-height text block,
 - a conservative compact-round layout pass for sub-`480x480` round screens so Balance 1-class devices stay visually closer to the main round baseline without needing a separate page set,

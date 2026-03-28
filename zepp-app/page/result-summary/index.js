@@ -257,14 +257,5 @@ Page({
         }
       });
     }
-    if (!lastResult) {
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        ...FOOTER_TEXT,
-        y: BUTTONS[1].y - 34,
-        h: 24,
-        color: MUTED_TEXT,
-        text: "Full history stays on the phone."
-      });
-    }
   }
 });

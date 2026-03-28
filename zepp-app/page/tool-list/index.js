@@ -111,7 +111,7 @@ Page({
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
-        text: "Add recipes on the phone, then refresh."
+        text: "No synced brewers yet"
       });
     }
 
@@ -157,18 +157,6 @@ Page({
         click_func: () => {
           refreshPhoneSnapshot();
         }
-      });
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        x: PRIMARY_BUTTON.x,
-        y: PRIMARY_BUTTON.y + PRIMARY_BUTTON.h + 10,
-        w: PRIMARY_BUTTON.w,
-        h: 28,
-        color: 0xaab4c2,
-        text_size: 14,
-        align_h: hmUI.align.CENTER_H,
-        align_v: hmUI.align.CENTER_V,
-        text_style: hmUI.text_style.WRAP,
-        text: "The list fills after the next phone sync."
       });
     }
   }

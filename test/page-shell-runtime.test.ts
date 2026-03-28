@@ -210,6 +210,8 @@ describe("page shell runtime coverage", () => {
     expect(widgets.some((widget) => widget.type === "BUTTON" && widget.text === "Last")).toBe(true);
     expect(textWidgets.some((widget) => String(widget.text).includes("Phone bridge connected"))).toBe(false);
     expect(textWidgets.some((widget) => String(widget.text).includes("cached recipes ready"))).toBe(false);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Browse the library"))).toBe(false);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Start the next brew"))).toBe(false);
 
     buttons[0].click_func();
     expect(runtime.router.push).toHaveBeenCalledWith({
@@ -459,6 +461,7 @@ describe("page shell runtime coverage", () => {
       expect(buttons.every((widget) => /^[\x20-\x7E]+$/.test(String(widget.text)))).toBe(true);
       expect(textWidgets.some((widget) => String(widget.text).includes("Target 50 ml /"))).toBe(true);
       expect(textWidgets.some((widget) => String(widget.text).includes("Timed step."))).toBe(false);
+      expect(textWidgets.some((widget) => String(widget.text).includes("Shortcut button"))).toBe(false);
       expect(fillRects.length).toBeGreaterThanOrEqual(2);
       expect(runtime.display.setWakeUpRelaunch).toHaveBeenCalled();
       buttons[0].click_func();
@@ -646,7 +649,7 @@ describe("page shell runtime coverage", () => {
     const buttons = widgets.filter((widget) => widget.type === "BUTTON");
 
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "No active brew")).toBe(true);
-    expect(widgets.some((widget) => widget.type === "TEXT" && String(widget.text).includes("recipe list"))).toBe(true);
+    expect(widgets.some((widget) => widget.type === "TEXT" && String(widget.text).includes("No session is stored"))).toBe(true);
     expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Go home");
 
@@ -797,7 +800,8 @@ describe("page shell runtime coverage", () => {
     const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
     const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
-    expect(textWidgets.some((widget) => String(widget.text).includes("Create recipes on phone first"))).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("No recipes yet"))).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("After saving in Settings"))).toBe(false);
     expect(buttons).toHaveLength(1);
     expect(buttons[0].text).toBe("Refresh from phone");
     buttons[0].click_func();
@@ -885,7 +889,7 @@ describe("page shell runtime coverage", () => {
     const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
 
     expect(widgets.some((widget) => widget.type === "TEXT" && widget.text === "No result yet")).toBe(true);
-    expect(textWidgets.some((widget) => String(widget.text).includes("Full history stays on the phone."))).toBe(true);
+    expect(textWidgets.some((widget) => String(widget.text).includes("Full history stays on the phone."))).toBe(false);
 
     buttons[0].click_func();
     expect(runtime.router.push).toHaveBeenCalledWith({

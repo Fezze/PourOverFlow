@@ -52,7 +52,7 @@ function buildHomeSubtitle(state) {
 
 function buildHomeBody(state) {
   if (state.activeSession) {
-    return [`Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`, "Pick up where you left off."].join("\n");
+    return `Step ${state.activeSession.currentStepIndex + 1}/${state.activeSession.recipeSnapshot.steps.length}`;
   }
 
   if (state.lastResult) {
@@ -60,8 +60,8 @@ function buildHomeBody(state) {
   }
 
   return state.selectedTool
-    ? [`${state.recipeCount} recipes ready`, "Choose a recipe to start."].join("\n")
-    : ["Choose a brewer", "Browse the library", "Start the next brew."].join("\n");
+    ? `${state.recipeCount} recipes ready`
+    : "Ready";
 }
 
 Page({
@@ -148,14 +148,5 @@ Page({
       }
     });
 
-    if (scaffoldState.activeSession) {
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        ...FOOTER_TEXT,
-        y: BUTTONS[1].y - 34,
-        h: 24,
-        color: MUTED_TEXT,
-        text: "Shortcut button also resumes when available."
-      });
-    }
   }
 });

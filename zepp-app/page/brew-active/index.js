@@ -84,10 +84,6 @@ function buildAssistText(activeSession) {
     return "Session state is missing the current step.";
   }
 
-  if (activeSession.status === "waiting_for_confirm") {
-    return "Shortcut button also works when available.";
-  }
-
   return "";
 }
 
@@ -208,7 +204,7 @@ Page({
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
-        text: "Start a synced recipe from the recipe list first."
+        text: "No session is stored on the watch."
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {
         ...BUTTONS[0],
@@ -216,10 +212,6 @@ Page({
         click_func: () => {
           goHome();
         }
-      });
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        ...FOOTER_TEXT,
-        text: "Start a recipe from the browse flow first."
       });
       return;
     }

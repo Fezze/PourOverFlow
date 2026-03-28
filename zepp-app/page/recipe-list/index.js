@@ -112,14 +112,7 @@ Page({
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,
-        text: "Create recipes on phone first"
-      });
-      hmUI.createWidget(hmUI.widget.TEXT, {
-        ...SUBTITLE_TEXT,
-        y: SUBTITLE_TEXT.y + 36,
-        h: SUBTITLE_TEXT.h + 18,
-        text_size: Math.max(14, (SUBTITLE_TEXT.text_size || 16) - 1),
-        text: "After saving in Settings, refresh from the watch."
+        text: "No recipes yet"
       });
     }
 
