@@ -13,6 +13,7 @@
 
 - Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.
 - Use `npm run validation:logs` against the captured log file during hardware tests and write back concrete findings instead of leaving raw `[pof-validation]` lines in chat only.
+- Re-run the real-device smoke path on `Amazfit Balance` after the runtime floor change to `3.6`, and confirm that bootstrap sync, resume, and `brew-active` still behave correctly on Balance 1 hardware.
 
 ### Watch UI follow-up
 

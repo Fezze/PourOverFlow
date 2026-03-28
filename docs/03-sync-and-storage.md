@@ -248,7 +248,7 @@ interface AckHistoryEntryPayload {
 
 ## Encoding and decoding
 
-For `API 4.0+`, use:
+For the current `API_LEVEL 3.6+` baseline, use:
 
 - `stringToBuffer` for JSON string -> `ArrayBuffer`,
 - `bufferToString` for `ArrayBuffer` -> JSON string.

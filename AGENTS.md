@@ -49,7 +49,7 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 
 ## Frozen decisions
 
-- Target runtime is `API 4.0`.
+- Target runtime floor is `API_LEVEL 3.6`.
 - Screen scope is `round + square`.
 - `band` is out of scope for v1.
 - The `Tool` catalog is closed and read-only.
@@ -193,6 +193,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - Do not launch the simulator smoke test in parallel with `zeus dev`. Wait for the deploy to finish first, or the freshness gate may fail transiently while the simulator app folder is still updating.
 - Additional verified limitation after a fresh deploy: the simulator Playwright coverage path may still yield only framework/preload scripts such as `mobile-main-service.js` and simulator preload code, not PourOverFlow app scripts. The repo intentionally keeps simulator Playwright as smoke-only and uses module-harness coverage as the meaningful Playwright coverage path.
 - Cross-platform simulator-root helpers must not rely on the host OS path separator when interpreting Linux or Flatpak `XDG_CONFIG_HOME` values. Keep Linux path detection slash-agnostic so coverage and simulator helpers still work when the repo is edited from Windows but validated against Linux-style paths in tests.
+- Current compatibility note: the official device list reports `Amazfit Balance` at `API_LEVEL 3.7`, but the local simulator path may report `3.6`; the repo currently uses a `3.6` floor so Balance 1 support and simulator preview do not drift apart unnecessarily.
 
 ## When to update documents
 

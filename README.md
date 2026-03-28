@@ -28,8 +28,9 @@ This project is to be run in English.
 ## Hard v1 assumptions
 
 - `configVersion: "v3"`
-- `runtime.apiVersion.target: "4.0"`
-- `v4` profile
+- `runtime.apiVersion.target: "3.6"`
+- current compatibility floor: `API_LEVEL 3.6`
+- chosen to keep the app on the current Balance 1 compatibility path, including simulator builds that currently report `3.6`
 - screen scope: `round + square`
 - no `band`
 - closed catalog of supported brewing tools

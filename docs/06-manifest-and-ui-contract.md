@@ -4,7 +4,7 @@
 
 This document freezes two areas that need to be decision-complete before implementation:
 
-- the `app.json` outline for the Zepp OS v4 baseline,
+- the `app.json` outline for the current Zepp OS `API_LEVEL 3.6` baseline,
 - the implementation contract for `setting/index.jsx`.
 
 The document follows official Zepp assumptions for `app.json v3+`, screen adaptation, and `AppSettingsPage`.
@@ -15,6 +15,7 @@ The document follows official Zepp assumptions for `app.json v3+`, screen adapta
 - `setting` and `app-side` are optional modules inside `targets.*.module`.
 - `AppSettingsPage` only has the `build(props)` lifecycle and uses `props.settingsStorage`.
 - `target.platforms` in `app.json v3+` may be based on screen features such as `st: "r"` and `st: "s"`.
+- The current repo floor is intentionally `3.6` to cover the verified Balance 1 compatibility path and the current simulator behavior, even though the official device list may report `Amazfit Balance` as `3.7`.
 
 Sources:
 
@@ -52,10 +53,10 @@ Implementation should start from this outline:
     "device:os.local_storage"
   ],
   "runtime": {
-    "apiVersion": {
-      "minVersion": "4.0",
-      "compatible": "4.0",
-      "target": "4.0"
+      "apiVersion": {
+      "minVersion": "3.6",
+      "compatible": "3.6",
+      "target": "3.6"
     },
     "type": "0"
   },
@@ -109,7 +110,7 @@ Implementation should start from this outline:
 - `appId` is a placeholder to replace later if the project is registered under a concrete account.
 - `vender` must remain ASCII.
 - Keep `data:os.device.info` when the watch layout layer uses `getDeviceInfo()` for runtime sizing.
-- In the first scaffold, do not force `runtime.type`, because official Zeus `os4.0` templates do not require it for a passing build.
+- In the first scaffold, do not force `runtime.type`, because official Zeus templates do not require it for a passing build.
 - Do not add `designWidth` in the first scaffold.
 - Do not add `app-service`, `secondary-widget`, `app-widget`, `data-widget`, or BLE permissions.
 - Do not add a `band` target.

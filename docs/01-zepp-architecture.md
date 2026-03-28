@@ -5,8 +5,9 @@
 The project should be built as a modern Zepp mini-app:
 
 - `configVersion: "v3"`
-- `runtime.apiVersion.target: "4.0"`
-- compatibility profile: `v4`
+- `runtime.apiVersion.target: "3.6"`
+- current compatibility floor: `API_LEVEL 3.6`
+- chosen to keep the Balance 1 path open without depending on the simulator to report `3.7` correctly
 - `round + square` only
 - `band` out of scope
 
@@ -209,7 +210,7 @@ Do not set `designWidth` manually at the start. Use Zepp defaults for round and 
 In `app.json`, the next agent should freeze at least:
 
 - `configVersion: "v3"`,
-- `runtime.apiVersion.target: "4.0"`,
+- `runtime.apiVersion.target: "3.6"`,
 - target `common`,
 - `round` and `square` platforms,
 - registration of all `page/*` pages,
