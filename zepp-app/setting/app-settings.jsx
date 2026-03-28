@@ -24,8 +24,9 @@ import {
   buildLibraryOverview,
   buildRecipeShelfCountLabel,
   buildSyncOverview,
-  buildToolBadgeLabel,
   buildToolCardLabel,
+  buildToolCountBadgeLabel,
+  buildToolSettingsIconPath,
   getSnapshotCounts
 } from "./view-model";
 
@@ -288,37 +289,49 @@ const TOOL_ROW_STYLE = {
   gap: "10px"
 };
 
-const TOOL_BADGE_STYLE = {
+const TOOL_ICON_STYLE = {
   width: "54px",
   minWidth: "54px",
-  fontSize: "12px",
-  fontWeight: "700",
-  lineHeight: "54px",
+  height: "54px",
   borderRadius: "20px",
-  color: "#FFFFFF",
-  textAlign: "center",
+  backgroundColor: "#EAF1F7",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  backgroundSize: "32px 32px",
   padding: "0"
 };
 
-const TOOL_BADGE_TONES = {
+const TOOL_ICON_TONES = {
   tool_aeropress: {
-    background: "#2E8C7B"
+    backgroundColor: "#DFF4EE"
   },
   tool_v60: {
-    background: "#4B74D4"
+    backgroundColor: "#E2E9FF"
   },
   tool_kalita_wave: {
-    background: "#3FA589"
+    backgroundColor: "#DFF7EF"
   },
   tool_chemex: {
-    background: "#5C6FD6"
+    backgroundColor: "#E5E9FF"
   },
   tool_clever_dripper: {
-    background: "#6A9C58"
+    backgroundColor: "#EAF4DE"
   },
   tool_french_press: {
-    background: "#C06B3D"
+    backgroundColor: "#F8E7DC"
   }
+};
+
+const TOOL_COUNT_BADGE_STYLE = {
+  minWidth: "34px",
+  fontSize: "12px",
+  fontWeight: "700",
+  lineHeight: "34px",
+  borderRadius: "17px",
+  background: "#DCE6EF",
+  color: "#21303D",
+  textAlign: "center",
+  padding: "0 10px"
 };
 
 const PANEL_TITLE_RIBBON_STYLE = {
@@ -566,21 +579,30 @@ function getToolMeta(toolId) {
   return TOOL_CATALOG.find((tool) => tool.toolId === toolId) || null;
 }
 
-function createToolBadgeStyle(toolId) {
+function createToolIconStyle(tool) {
   return {
-    ...TOOL_BADGE_STYLE,
-    ...(TOOL_BADGE_TONES[toolId] || {
-      background: "#5E6773"
-    })
+    ...TOOL_ICON_STYLE,
+    ...(TOOL_ICON_TONES[tool.toolId] || {}),
+    backgroundImage: `url(${buildToolSettingsIconPath(tool)})`
   };
 }
 
 function createToolBrowseCard(tool, recipeCount, onClick) {
   return View({ style: TOOL_ROW_STYLE }, [
-    createStaticCard(buildToolBadgeLabel(tool), createToolBadgeStyle(tool.toolId)),
+    View(
+      {
+        style: createToolIconStyle(tool)
+      },
+      []
+    ),
     Button({
       label: buildToolCardLabel(tool, recipeCount),
       style: LIST_CARD_BUTTON_STYLE,
+      onClick
+    }),
+    Button({
+      label: buildToolCountBadgeLabel(recipeCount),
+      style: TOOL_COUNT_BADGE_STYLE,
       onClick
     })
   ]);

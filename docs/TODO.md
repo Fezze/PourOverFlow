@@ -36,6 +36,7 @@
 ### Phone UX follow-up
 
 - Confirm on a real phone that the simplified `Library` screen reads clearly with only brewer and recipe counts in the shell header, compact left badges, and no secondary dashboard panel.
+- Confirm on a real phone that the shared brewer PNG icons render correctly in `setting/` and that the separate right-side count badges stay aligned across short and long brewer names.
 
 ## Verify checklist
 

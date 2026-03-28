@@ -146,6 +146,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
 - The phone-side Settings UI now relies on active top navigation, contextual shell headers, summary cards, and card-tap record opening; avoid regressing it back to row-heavy admin-style screens with redundant `Edit` buttons.
 - Keep phone `Library` selector-first too: the shell header should carry the high-level brewer/recipe counts, while the body stays focused on compact brewer rows with left badges instead of a second dashboard-style `Recipe library` panel.
+- In phone `Library`, prefer the same brewer PNG assets as the watch on the left and a separate numeric count badge on the right; do not fall back to text initials or bury the count inside the main label if the icon assets are available.
 - Keep phone `History` and `Sync` calmer as well; if the shell header already carries the context, do not reintroduce another heavy top summary card with the same information.
 - Watch browse and result pages already refresh on runtime events when new snapshots arrive, but this is not yet a fully reactive UI system.
 - Watch browse now uses scrollable brewer and recipe lists plus a dedicated `recipe-detail` start page; if a later agent redesigns watch browse, update the flow docs and backlog instead of changing it silently.

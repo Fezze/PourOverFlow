@@ -291,7 +291,7 @@ Abort creates a `HistoryEntry` with status `aborted` only if the session was act
 - every change writes the record and index, and `app-side/` picks it up reactively.
 - `library-home` should read as a selector, not a dashboard.
 - Do not repeat the same counts inside a second `Recipe library` panel when the shell header already carries them.
-- Brewer rows should stay visually compact: left badge, brewer label, recipe count.
+- Brewer rows should stay visually compact: shared brewer icon on the left, brewer label in the center, numeric count badge on the right.
 - Do not spend library-home space on history totals, latest mirrored-result cards, or long brewer descriptions.
 
 ## Phone flow 2 - recipe list

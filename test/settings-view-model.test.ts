@@ -7,6 +7,8 @@ import {
   buildSyncOverview,
   buildToolBadgeLabel,
   buildToolCardLabel,
+  buildToolCountBadgeLabel,
+  buildToolSettingsIconPath,
   getSnapshotCounts
 } from "../zepp-app/setting/view-model.js";
 import { TOOL_CATALOG } from "../zepp-app/shared/constants/tool-catalog.js";
@@ -40,7 +42,9 @@ describe("settings view model", () => {
   it("provides compact tool badges and list-card labels", () => {
     expect(buildToolBadgeLabel(TOOL_CATALOG[0])).toBe("AP");
     expect(buildToolBadgeLabel(TOOL_CATALOG[1])).toBe("V60");
-    expect(buildToolCardLabel(TOOL_CATALOG[2], 5)).toBe("Kalita Wave\n5 recipes");
+    expect(buildToolCardLabel(TOOL_CATALOG[2], 5)).toBe("Kalita Wave");
+    expect(buildToolCountBadgeLabel(5)).toBe("5");
+    expect(buildToolSettingsIconPath(TOOL_CATALOG[3])).toBe("../assets/common.s/tool-chemex.png");
   });
 
   it("formats history and sync summaries for simpler secondary screens", () => {

@@ -282,7 +282,7 @@ This is intentional. V1 should stay simple, readable, and aligned with Zepp docu
 - A card tap may be the primary "open/edit" action. Do not keep a second redundant `Edit` button next to the same card if the card already opens the record.
 - Prefer a few grouped sections with clear subtitles over many short utility rows.
 - `library-home` should stay selector-first: let the shell header carry the high-level brewer and recipe counts instead of adding a second dashboard panel with repeated numbers.
-- Brewer rows on `library-home` should be visually compact, with a left badge and only the brewer label plus recipe count in the main card body.
+- Brewer rows on `library-home` should be visually compact, using the same brewer PNG assets as the watch on the left, the brewer label in the main card body, and a separate numeric count badge on the right.
 - `history-list` and `about-sync` should avoid redundant top summary dashboards when the shell header already explains the context.
 
 ### Save policy
@@ -306,7 +306,8 @@ Implementation baseline:
 - use the shell header as the only high-level summary,
 - keep the main body focused on the brewer list itself,
 - do not repeat history totals or latest mirrored-result cards here,
-- do not repeat long brewer descriptions on every library row.
+- do not repeat long brewer descriptions on every library row,
+- do not write the recipe count into the main label when that count already has its own right-side badge.
 
 History and sync remain reachable from the persistent top navigation, so they do not need extra duplicate buttons on `library-home`.
 

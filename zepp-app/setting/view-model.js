@@ -44,7 +44,15 @@ export function buildToolBadgeLabel(tool) {
 }
 
 export function buildToolCardLabel(tool, recipeCount) {
-  return `${tool.label}\n${buildRecipeShelfCountLabel(recipeCount)}`;
+  return tool.label;
+}
+
+export function buildToolCountBadgeLabel(recipeCount) {
+  return String(Math.max(0, Number(recipeCount) || 0));
+}
+
+export function buildToolSettingsIconPath(tool) {
+  return tool ? `../assets/common.s/${tool.iconStem}.png` : "";
 }
 
 export function buildHistoryOverview(snapshot) {

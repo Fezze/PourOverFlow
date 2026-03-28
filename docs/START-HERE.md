@@ -75,7 +75,7 @@ Current verified platform note:
 - seed data in `settingsStorage`,
 - a versioned seed catalog that can append newly introduced seed recipes without replaying the whole library on existing installs,
 - real CRUD for recipes and history notes in `setting/`,
-- a cleaner phone-side Settings UX with active top navigation, contextual shell headers, a selector-first library browse, compact brewer badges, quieter `History` and `Sync` surfaces, and a paginated recipe-step editor,
+- a cleaner phone-side Settings UX with active top navigation, contextual shell headers, a selector-first library browse, the same brewer PNG icons as the watch, right-aligned numeric count badges, quieter `History` and `Sync` surfaces, and a paginated recipe-step editor,
 - runtime sync with `REQUEST_BOOTSTRAP` / `PUSH_*` / `UPSERT_HISTORY_ENTRY` / `ACK_HISTORY_ENTRY`,
 - watch cache in `LocalStorage` for catalog, latest result, and sync metadata,
 - storage-backed `active_session_v1`,
