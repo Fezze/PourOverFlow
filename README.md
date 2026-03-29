@@ -135,11 +135,10 @@ The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\doc
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
-- current meaningful local coverage baselines are `90.74% / 82.17% / 85.58% / 90.62%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
+- current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
 - `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run zepp:dev -- -t "Amazfit Balance 2"` or run `zeus dev` directly from `zepp-app/`.
-- On Windows, Codex or other agent-driven shells may hand child processes a namespaced cwd such as `\\?\C:\...`, while a normal VS Code terminal usually stays on `C:\...`. Zeus does not handle that path form reliably for `dev` or `preview`, so agent-driven Windows runs should prefer the repo wrappers `npm run zepp:dev -- ...` and `npm run zepp:preview -- ...` instead of raw `zeus dev` or `zeus preview`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
 - the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.
 

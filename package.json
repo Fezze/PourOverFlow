@@ -11,7 +11,6 @@
   "scripts": {
     "build": "node scripts/run-zeus-command.mjs build",
     "zepp:dev": "node scripts/run-zeus-command.mjs dev",
-    "zepp:preview": "node scripts/run-zeus-command.mjs preview",
     "test": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts --coverage",
     "test:playwright": "node scripts/playwright-simulator-coverage.mjs",
