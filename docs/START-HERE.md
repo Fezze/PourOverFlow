@@ -52,6 +52,7 @@ Current verified platform note:
 
 - the Vitest commands and `npm run build` are expected to work once Node and Zeus CLI are installed,
 - the actual Zeus package now lives under `zepp-app/`, so root-level Zeus work should go through the repo wrappers or by running Zeus from that subtree directly,
+- on Windows, Codex or other agent-driven shells may expose the cwd as a namespaced path like `\\?\C:\...`; use the repo Zeus wrappers in that case because raw `zeus dev` or `zeus preview` can mis-handle that cwd even when the same command works from a normal VS Code terminal,
 - the Zeus-root helper now walks upward from nested folders too, so root wrappers still resolve `zepp-app/` when launched from `scripts/`, `test/`, or deeper app subfolders,
 - the Playwright harness commands on Linux require `PLAYWRIGHT_COVERAGE_BROWSER`,
 - Flatpak-hosted VS Code sessions should prefer `scripts/playwright-flatpak-host-browser.sh` for Playwright harness runs,
@@ -112,11 +113,12 @@ Current verified platform note:
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
-- Current meaningful coverage baselines after the latest test expansion are `90.79% / 82.11% / 85.55% / 90.67%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`.
+- Current meaningful coverage baselines after the latest test expansion are `90.74% / 82.17% / 85.58% / 90.62%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
 - Run `npm run build` after larger changes to keep the device package healthy from the repo root. It executes Zeus inside `zepp-app/`.
+- For agent-driven Windows Zeus runs, prefer `npm run zepp:dev -- ...` and `npm run zepp:preview -- ...` over raw `zeus dev` and `zeus preview`, because the wrappers normalize the app root before Zeus starts watching files.
 - Before every commit, run the repo-standard verify stack and make sure it is green.
 - After finishing a meaningful chunk of work, commit it unless the user explicitly asked you not to commit yet.
 - Keep pushing coverage upward when meaningful behavior-focused tests can be added without padding the suite.

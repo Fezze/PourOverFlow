@@ -6,7 +6,7 @@ import {
   resolveReportsRoot,
   resolveVitestCoverageDir
 } from "../scripts/report-output-paths.mjs";
-import { resolveZeppAppRoot } from "../scripts/zepp-app-root.mjs";
+import { resolveZeppAppRoot, stripWindowsNamespacePrefix } from "../scripts/zepp-app-root.mjs";
 
 const repoRoot = path.resolve(__dirname, "..");
 const zeppAppRoot = path.join(repoRoot, "zepp-app");
@@ -24,6 +24,19 @@ describe("tooling path helpers", () => {
   it("keeps the zepp app root when already inside it", () => {
     expect(resolveZeppAppRoot({ cwd: zeppAppRoot })).toBe(zeppAppRoot);
     expect(resolveZeppAppRoot({ cwd: path.join(zeppAppRoot, "page", "home") })).toBe(zeppAppRoot);
+  });
+
+  it("strips a Windows namespace prefix before resolving the zepp app root", () => {
+    if (process.platform !== "win32") {
+      return;
+    }
+
+    const namespacedRepoRoot = `\\\\?\\${repoRoot}`;
+    const namespacedNestedRoot = `\\\\?\\${path.join(zeppAppRoot, "page", "home")}`;
+
+    expect(stripWindowsNamespacePrefix(namespacedRepoRoot)).toBe(repoRoot);
+    expect(resolveZeppAppRoot({ cwd: namespacedRepoRoot })).toBe(zeppAppRoot);
+    expect(resolveZeppAppRoot({ cwd: namespacedNestedRoot })).toBe(zeppAppRoot);
   });
 
   it("keeps coverage repo-local by default", () => {

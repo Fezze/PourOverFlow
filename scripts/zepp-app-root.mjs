@@ -3,8 +3,25 @@ import path from "node:path";
 
 export const ZEPP_APP_DIRNAME = "zepp-app";
 
+export function stripWindowsNamespacePrefix(candidatePath) {
+  if (typeof candidatePath !== "string") {
+    return candidatePath;
+  }
+
+  if (candidatePath.startsWith("\\\\?\\UNC\\")) {
+    return `\\\\${candidatePath.slice("\\\\?\\UNC\\".length)}`;
+  }
+
+  if (candidatePath.startsWith("\\\\?\\")) {
+    return candidatePath.slice("\\\\?\\".length);
+  }
+
+  return candidatePath;
+}
+
 export function resolveZeppAppRoot({ cwd = process.cwd() } = {}) {
-  let currentDir = path.resolve(cwd);
+  const normalizedCwd = path.resolve(stripWindowsNamespacePrefix(cwd));
+  let currentDir = normalizedCwd;
   while (true) {
     if (isZeppAppRoot(currentDir)) {
       return currentDir;
@@ -17,7 +34,7 @@ export function resolveZeppAppRoot({ cwd = process.cwd() } = {}) {
 
     const parentDir = path.dirname(currentDir);
     if (parentDir === currentDir) {
-      return path.join(path.resolve(cwd), ZEPP_APP_DIRNAME);
+      return path.join(normalizedCwd, ZEPP_APP_DIRNAME);
     }
 
     currentDir = parentDir;
