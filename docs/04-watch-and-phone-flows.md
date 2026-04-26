@@ -23,6 +23,11 @@ Start quickly even when the phone is unavailable.
 5. Independently from the above, send `REQUEST_BOOTSTRAP`.
 6. Include the current watch locale in `REQUEST_BOOTSTRAP` so first-run phone seeding can pick a supported starter locale if the phone store is still empty.
 
+Transport note:
+
+- on the watch, a locally sent bridge SHAKE is not enough to treat the bridge as handshake-ready,
+- `REQUEST_BOOTSTRAP` and queued-history replay may be scheduled immediately after connect, but they should only send once the bridge reaches ready state through a remote SHAKE or a valid incoming sync envelope.
+
 ### Resume gate
 
 The resume gate is not a separate page. It is a simple `home` state with two buttons:

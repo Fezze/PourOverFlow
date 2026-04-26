@@ -17,6 +17,7 @@
     "test:playwright": "node scripts/playwright-simulator-coverage.mjs",
     "test:playwright:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness",
     "test:playwright:coverage:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness --coverage",
+    "preview:watch": "node scripts/watch-preview.mjs",
     "validation:logs": "node scripts/validation-log-report.mjs",
     "verify": "npm test && npm run test:coverage && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build",
     "verify:fast": "npm test && npm run build"

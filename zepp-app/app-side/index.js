@@ -27,6 +27,38 @@ import {
 const STORAGE_PUSH_DEBOUNCE_MS = 150;
 const inboundBridgeTransportState = createBridgeTransportState();
 
+function removePeerSocketListener(peerSocket, listener) {
+  if (!listener || !peerSocket || typeof peerSocket.removeListener !== "function") {
+    return;
+  }
+
+  peerSocket.removeListener("message", listener);
+}
+
+function removeSettingsStorageListener(settingsStorage, listener) {
+  if (!listener || !settingsStorage || typeof settingsStorage.removeListener !== "function") {
+    return;
+  }
+
+  settingsStorage.removeListener("change", listener);
+}
+
+function destroyAppSideRuntime(service) {
+  removePeerSocketListener(service.peerSocket, service.peerSocketMessageListener);
+  removeSettingsStorageListener(service.settingsStorage, service.settingsStorageChangeListener);
+
+  if (service.snapshotPushScheduler) {
+    service.snapshotPushScheduler.destroy();
+  }
+
+  service.snapshotPushScheduler = null;
+  service.peerSocket = null;
+  service.peerSocketMessageListener = null;
+  service.settingsStorage = null;
+  service.settingsStorageChangeListener = null;
+  service.runtimeReady = false;
+}
+
 function sendEnvelope(syncEnvelope) {
   try {
     if (!messaging || !messaging.peerSocket || typeof messaging.peerSocket.send !== "function") {
@@ -153,16 +185,16 @@ function ensureAppSideRuntime(service) {
 
   try {
     const settingsStorage = settings.settingsStorage;
+    const peerSocket = messaging && messaging.peerSocket ? messaging.peerSocket : null;
     const snapshotPushScheduler = createSnapshotPushScheduler();
-    service.snapshotPushScheduler = snapshotPushScheduler;
-    service.settingsStorage = settingsStorage;
     ensurePhoneStorage(settingsStorage);
 
-    if (!messaging || !messaging.peerSocket || typeof messaging.peerSocket.addListener !== "function") {
+    if (!peerSocket || typeof peerSocket.addListener !== "function") {
+      snapshotPushScheduler.destroy();
       return false;
     }
 
-    messaging.peerSocket.addListener("message", (payload) => {
+    const peerSocketMessageListener = (payload) => {
       const transportResult = readBridgeTransportPayload(inboundBridgeTransportState, payload);
 
       if (transportResult.status === "pending") {
@@ -220,18 +252,28 @@ function ensureAppSideRuntime(service) {
           slices: [PHONE_SYNC_SLICES.HISTORY]
         });
       }
-    });
+    };
 
-    settingsStorage.addListener("change", ({ key }) => {
+    const settingsStorageChangeListener = ({ key }) => {
       if (key === SETTINGS_UI_STORAGE_KEY) {
         return;
       }
       snapshotPushScheduler.schedule(settingsStorage, key);
-    });
+    };
+
+    service.snapshotPushScheduler = snapshotPushScheduler;
+    service.settingsStorage = settingsStorage;
+    service.peerSocket = peerSocket;
+    service.peerSocketMessageListener = peerSocketMessageListener;
+    service.settingsStorageChangeListener = settingsStorageChangeListener;
+
+    peerSocket.addListener("message", peerSocketMessageListener);
+    settingsStorage.addListener("change", settingsStorageChangeListener);
 
     service.runtimeReady = true;
     return true;
   } catch (error) {
+    destroyAppSideRuntime(service);
     console.log("PourOverFlow app-side runtime setup failed", error);
     if (error && error.stack) {
       console.log(error.stack);
@@ -248,9 +290,6 @@ AppSideService({
     ensureAppSideRuntime(this);
   },
   onDestroy() {
-    if (this.snapshotPushScheduler) {
-      this.snapshotPushScheduler.destroy();
-      this.snapshotPushScheduler = null;
-    }
+    destroyAppSideRuntime(this);
   }
 });

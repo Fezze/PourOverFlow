@@ -29,6 +29,7 @@ Implementation state:
 - phone-side storage-driven bootstrap pushes are coalesced with a short debounce,
 - phone-side sync now schedules only the affected slice (`tools`, `catalog`, or `history`) instead of pushing a full bootstrap snapshot on every storage write,
 - bootstrap requests are revision-aware, so the phone may answer with only the stale slices or with nothing if the watch is already up to date,
+- watch-side bridge bootstrap now waits for handshake-ready state from a remote shake or a valid incoming sync envelope; a successful local shake send alone is treated only as `shake_sent`, not as full handshake readiness,
 - the remaining real-device follow-up is comfort validation for haptics and round-screen watch fit, not the basic transport or resume mechanics.
 
 ## Phone-side storage keys
@@ -157,6 +158,19 @@ The same sync-meta record now also carries `seedLocale`:
 3. The watch sends `REQUEST_BOOTSTRAP`.
 4. `app-side/` reads phone records and sends only the stale snapshot slices.
 5. The watch updates `catalog_cache_v1`, `last_result_v1`, and `sync_meta_v1`.
+
+The watch-side handshake state is intentionally staged:
+
+- `disconnected`
+- `connected`
+- `shake_sent`
+- `ready`
+
+Rules:
+
+- a local `sendShake()` moves only to `shake_sent`,
+- a remote SHAKE or a valid incoming sync envelope moves to `ready`,
+- bootstrap requests and queue flushes must wait for `ready`.
 
 At the current stage, some watch pages may still require a rebuild to fully show a new snapshot that arrives after the first render.
 

@@ -36,10 +36,18 @@ import { logValidation } from "./validation-log";
 let isInitialized = false;
 let hasPrimedRuntimeSync = false;
 let appSidePort = 0;
-let hasResolvedShake = false;
 let shouldBootstrapAfterShake = false;
 let shouldFlushQueueAfterShake = false;
 const inboundBridgeTransportState = createBridgeTransportState();
+
+const BRIDGE_HANDSHAKE_STATE = {
+  DISCONNECTED: "disconnected",
+  CONNECTED: "connected",
+  SHAKE_SENT: "shake_sent",
+  READY: "ready"
+};
+
+let bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.DISCONNECTED;
 
 function canAttemptBridgeSend() {
   return typeof bleSend === "function";
@@ -49,8 +57,28 @@ function isBridgeTransportConnected() {
   return Boolean(connectStatus()) || isWatchConnected();
 }
 
+function markBridgeTransportConnected() {
+  if (bridgeHandshakeState === BRIDGE_HANDSHAKE_STATE.READY) {
+    return;
+  }
+
+  bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.CONNECTED;
+}
+
+function markBridgeShakeSent() {
+  if (bridgeHandshakeState === BRIDGE_HANDSHAKE_STATE.READY) {
+    return;
+  }
+
+  bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.SHAKE_SENT;
+}
+
+function shouldSendShake() {
+  return bridgeHandshakeState === BRIDGE_HANDSHAKE_STATE.CONNECTED;
+}
+
 function markBridgeHandshakeResolved(reason, options = {}) {
-  hasResolvedShake = true;
+  bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.READY;
 
   if (options.markConnected) {
     setConnectionStatus(true);
@@ -72,7 +100,7 @@ function sendShake() {
 
   try {
     sendBuffer(buffer, size, "SHAKE");
-    markBridgeHandshakeResolved("local-shake-send");
+    markBridgeShakeSent();
     return true;
   } catch (error) {
     console.log("Failed to send watch sync shake", error);
@@ -84,7 +112,7 @@ function sendShake() {
 }
 
 function hasBridgeHandshake() {
-  return hasResolvedShake;
+  return bridgeHandshakeState === BRIDGE_HANDSHAKE_STATE.READY;
 }
 
 function sendEnvelope(syncEnvelope) {
@@ -107,8 +135,11 @@ function safeSendEnvelope(syncEnvelope) {
     return false;
   }
 
-  if (!hasBridgeHandshake()) {
+  if (!hasBridgeHandshake() && shouldSendShake()) {
     sendShake();
+  }
+
+  if (!hasBridgeHandshake()) {
     return false;
   }
 
@@ -125,8 +156,11 @@ function safeSendEnvelope(syncEnvelope) {
 }
 
 function flushStartupSyncIfReady() {
-  if (!hasBridgeHandshake()) {
+  if (!hasBridgeHandshake() && shouldSendShake()) {
     sendShake();
+  }
+
+  if (!hasBridgeHandshake()) {
     return false;
   }
 
@@ -203,10 +237,11 @@ function handleConnectionStatus(status) {
 
   if (!connected) {
     appSidePort = 0;
-    hasResolvedShake = false;
+    bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.DISCONNECTED;
     return;
   }
 
+  markBridgeTransportConnected();
   shouldBootstrapAfterShake = true;
   shouldFlushQueueAfterShake = true;
   sendShake();
@@ -225,6 +260,7 @@ export function initWatchSyncBridge() {
     setConnectionStatus(Boolean(connectStatus()) && typeof bleSend === "function");
 
     if (Boolean(connectStatus()) && typeof bleSend === "function") {
+      markBridgeTransportConnected();
       shouldBootstrapAfterShake = true;
       shouldFlushQueueAfterShake = true;
       sendShake();
@@ -241,13 +277,13 @@ export function destroyWatchSyncBridge() {
     return;
   }
 
-  removeListener();
+  removeListener(handleConnectionStatus);
   disConnect();
   setConnectionStatus(false);
   isInitialized = false;
   hasPrimedRuntimeSync = false;
   appSidePort = 0;
-  hasResolvedShake = false;
+  bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.DISCONNECTED;
   shouldBootstrapAfterShake = false;
   shouldFlushQueueAfterShake = false;
 }
@@ -266,8 +302,11 @@ export function primeWatchSyncBridge() {
     return false;
   }
 
-  if (!hasBridgeHandshake()) {
+  if (!hasBridgeHandshake() && shouldSendShake()) {
     sendShake();
+  }
+
+  if (!hasBridgeHandshake()) {
     return false;
   }
 
@@ -283,7 +322,7 @@ export function requestBootstrap() {
     return false;
   }
 
-  if (!hasBridgeHandshake()) {
+  if (!hasBridgeHandshake() && shouldSendShake()) {
     sendShake();
   }
 
@@ -320,7 +359,7 @@ export function queueHistoryEntryForSync(historyEntry) {
     return false;
   }
 
-  if (!hasBridgeHandshake()) {
+  if (!hasBridgeHandshake() && shouldSendShake()) {
     sendShake();
   }
 
@@ -350,7 +389,7 @@ export function flushPendingHistoryQueue() {
     return false;
   }
 
-  if (!hasBridgeHandshake()) {
+  if (!hasBridgeHandshake() && shouldSendShake()) {
     sendShake();
   }
 

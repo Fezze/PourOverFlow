@@ -4,6 +4,7 @@ dist/*
 zepp-app/dist/*
 coverage/
 .reports/
+output/playwright/watch-preview/
 npm-debug.log
 yarn-debug.log*
 yarn-error.log*

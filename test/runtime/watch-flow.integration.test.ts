@@ -483,6 +483,41 @@ describe("mocked Zepp runtime watch flow", () => {
     );
   });
 
+  it("waits for the remote shake before sending bootstrap traffic", () => {
+    seedCachedCatalog();
+
+    initWatchSyncBridge();
+    clearSentBridgeFrames();
+    setBleConnected(true);
+
+    expect(readSentSyncEnvelopes()).toEqual([]);
+    expect(__zeusRuntime.bleState.sentPayloads).toHaveLength(1);
+    expect(
+      parseAppBridgeFrame(
+        __zeusRuntime.bleState.sentPayloads[0].data,
+        __zeusRuntime.bleState.sentPayloads[0].size
+      )?.type
+    ).toBe(APP_BRIDGE_MESSAGE_TYPES.SHAKE);
+
+    const shakeFrame = buildAppBridgeShakeFrame({
+      port2: 321
+    });
+    deliverBleMessage(shakeFrame.buffer, shakeFrame.size);
+
+    expect(
+      readSentSyncEnvelopes().some((envelope) => envelope.messageType === SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP)
+    ).toBe(true);
+  });
+
+  it("removes the registered BLE listener on destroy", () => {
+    initWatchSyncBridge();
+
+    destroyWatchSyncBridge();
+
+    expect(__zeusRuntime.ble.removeListener).toHaveBeenCalledTimes(1);
+    expect(__zeusRuntime.ble.removeListener.mock.calls[0][0]).toBeTypeOf("function");
+  });
+
   it("routes from recipe list into a dedicated recipe detail selection step", () => {
     const fixture = seedRichBrowseCatalog();
 

@@ -115,4 +115,15 @@ describe("dependency-gated edge branches", () => {
     expect(syncBridge.flushPendingHistoryQueue()).toBe(false);
     expect(consoleSpy).toHaveBeenCalled();
   });
+
+  it("removes the explicit BLE listener reference on destroy", async () => {
+    const bleModule = await import("@zos/ble");
+    const syncBridge = await import("../zepp-app/shared/watch/sync-bridge.js");
+
+    syncBridge.initWatchSyncBridge();
+    syncBridge.destroyWatchSyncBridge();
+
+    expect(bleModule.removeListener).toHaveBeenCalledTimes(1);
+    expect(bleModule.removeListener).toHaveBeenCalledWith(expect.any(Function));
+  });
 });
