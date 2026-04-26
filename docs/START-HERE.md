@@ -117,7 +117,7 @@ Current verified platform note:
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
-- Run `npm run preview:watch` when you want fresh round-screen review PNGs for the main watch flows without relying on the simulator. The screenshots land under `output/playwright/watch-preview/screenshots`.
+- Run `npm run preview:watch` when you want fresh round and square review PNGs for the main watch flows without relying on the simulator. The screenshots land under `output/playwright/watch-preview/screenshots`.
 - Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
 - Run `npm run verify` for the canonical CLI full-stack verify pass.
 - Run `npm run verify:fast` for the short local loop.

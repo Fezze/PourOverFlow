@@ -50,12 +50,18 @@
 
       #watch-shell {
         position: relative;
-        width: 480px;
-        height: 480px;
+        width: var(--shell-width, 480px);
+        height: var(--shell-height, 480px);
         padding: 14px;
         border-radius: 50%;
         background: radial-gradient(circle at 30% 20%, #2c3440, var(--watch-bezel) 70%);
         box-shadow: var(--shadow);
+      }
+
+      #watch-shell[data-shape="square"] {
+        padding: 12px;
+        border-radius: 56px;
+        background: linear-gradient(180deg, #2b3340 0%, var(--watch-bezel) 100%);
       }
 
       #watch-face {
@@ -67,6 +73,10 @@
         background:
           radial-gradient(circle at top, rgba(255, 255, 255, 0.05), transparent 30%),
           var(--watch-face);
+      }
+
+      #watch-shell[data-shape="square"] #watch-face {
+        border-radius: 44px;
       }
 
       .widget {

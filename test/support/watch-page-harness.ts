@@ -159,6 +159,166 @@ export function createLayoutMock(overrides = {}) {
   };
 }
 
+export function createSquareLayoutMock(page: "home" | "tool-list" | "recipe-detail" | "brew-active" | "result-summary") {
+  const baseLayout = {
+    BACKGROUND: {},
+    TITLE_TEXT: {
+      x: 28,
+      y: 30,
+      w: 424,
+      h: 34,
+      text_size: 28
+    },
+    SUBTITLE_TEXT: {
+      x: 28,
+      y: 66,
+      w: 424,
+      h: 30,
+      text_size: 16
+    },
+    BODY_TEXT: {
+      x: 28,
+      y: 102,
+      w: 424,
+      h: 74,
+      text_size: 18
+    },
+    FOOTER_TEXT: {
+      x: 28,
+      y: 424,
+      w: 424,
+      h: 38,
+      text_size: 14
+    }
+  };
+
+  if (page === "home") {
+    return {
+      ...baseLayout,
+      ACTION_DOCK: {
+        x: 28,
+        y: 286,
+        w: 424,
+        h: 60,
+        radius: 30
+      },
+      BUTTONS: [
+        { x: 28, y: 286, w: 424, h: 60, radius: 30 },
+        { x: 28, y: 238, w: 206, h: 40, radius: 20 },
+        { x: 246, y: 238, w: 206, h: 40, radius: 20 }
+      ]
+    };
+  }
+
+  if (page === "tool-list") {
+    return {
+      ...baseLayout,
+      TITLE_TEXT: {
+        ...baseLayout.TITLE_TEXT,
+        align_h: "CENTER_H"
+      },
+      SUBTITLE_TEXT: {
+        ...baseLayout.SUBTITLE_TEXT,
+        align_h: "CENTER_H"
+      },
+      LIST_FRAME: {
+        x: 18,
+        y: 112,
+        w: 344,
+        h: 228,
+        itemHeight: 92,
+        itemSpace: 10,
+        itemRadius: 20,
+        titleHeight: 40,
+        metaHeight: 24
+      },
+      PRIMARY_BUTTON: {
+        x: 28,
+        y: 214,
+        w: 424,
+        h: 44,
+        radius: 18,
+        text_size: 18
+      }
+    };
+  }
+
+  if (page === "recipe-detail") {
+    return {
+      ...baseLayout,
+      DETAIL_PANEL: {
+        x: 24,
+        y: 100,
+        w: 336,
+        h: 176,
+        radius: 24
+      },
+      BODY_TEXT: {
+        ...baseLayout.BODY_TEXT,
+        y: 116,
+        h: 144
+      },
+      FOOTER_TEXT: {
+        ...baseLayout.FOOTER_TEXT,
+        y: 262,
+        h: 28
+      },
+      ACTION_DOCK: {
+        x: 28,
+        y: 302,
+        w: 424,
+        h: 60,
+        radius: 30
+      },
+      BUTTONS: [
+        { x: 28, y: 302, w: 424, h: 60, radius: 30 }
+      ]
+    };
+  }
+
+  if (page === "brew-active") {
+    return {
+      ...baseLayout,
+      ACTION_DOCK: {
+        x: 36,
+        y: 304,
+        w: 408,
+        h: 76,
+        radius: 38,
+        color: 0x202833
+      },
+      BUTTONS: [
+        { x: 243, y: 311, w: 182, h: 62, radius: 31, text_size: 24 },
+        { x: 55, y: 311, w: 182, h: 62, radius: 31, text_size: 24 }
+      ]
+    };
+  }
+
+  return {
+    ...baseLayout,
+    TITLE_TEXT: {
+      ...baseLayout.TITLE_TEXT,
+      align_h: "CENTER_H"
+    },
+    SUBTITLE_TEXT: {
+      ...baseLayout.SUBTITLE_TEXT,
+      align_h: "CENTER_H"
+    },
+    ACTION_DOCK: {
+      x: 28,
+      y: 300,
+      w: 424,
+      h: 60,
+      radius: 30
+    },
+    BUTTONS: [
+      { x: 28, y: 300, w: 424, h: 60, radius: 30, text_size: 20 },
+      { x: 28, y: 252, w: 206, h: 40, radius: 20 },
+      { x: 246, y: 252, w: 206, h: 40, radius: 20 }
+    ]
+  };
+}
+
 export async function loadPageHarness(modulePath: string, layoutMock: Record<string, unknown>) {
   vi.resetModules();
   vi.doMock("zosLoader:./index.[pf].layout.js", () => layoutMock);

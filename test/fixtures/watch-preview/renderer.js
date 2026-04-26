@@ -1,4 +1,5 @@
 const statusElement = document.querySelector("#status");
+const watchShell = document.querySelector("#watch-shell");
 const watchFace = document.querySelector("#watch-face");
 
 window.__POF_WATCH_PREVIEW_READY__ = false;
@@ -24,8 +25,19 @@ async function bootstrap() {
   const preview = await response.json();
   document.documentElement.lang = preview.locale || "en";
   statusElement.textContent = `${preview.scenario} • ${preview.locale}`;
+  applyShell(preview.device || {});
   renderWidgets(preview.widgets || []);
   window.__POF_WATCH_PREVIEW_READY__ = true;
+}
+
+function applyShell(device) {
+  const width = Number(device.width || 480);
+  const height = Number(device.height || 480);
+  const shape = device.shape === "square" ? "square" : "round";
+
+  watchShell.dataset.shape = shape;
+  watchShell.style.setProperty("--shell-width", `${width}px`);
+  watchShell.style.setProperty("--shell-height", `${height}px`);
 }
 
 function renderWidgets(widgets) {

@@ -143,7 +143,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
-- `npm run preview:watch` exports deterministic watch-page widget fixtures and renders round-screen preview PNGs into `output/playwright/watch-preview/screenshots`.
+- `npm run preview:watch` exports deterministic watch-page widget fixtures and renders round and square watch preview PNGs into `output/playwright/watch-preview/screenshots`.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - `npm run verify` is the canonical CLI full-stack verification command.
 - `npm run verify:fast` is the short local loop for Vitest plus Zeus build.
@@ -161,7 +161,7 @@ Playwright in this repo is intentionally split in two:
 
 There is also a small visual baseline path for watch review work:
 - `npm run preview:watch` renders deterministic PNG previews for `home`, `tool-list`, `recipe-detail`, `brew-active`, and `result-summary` from the mocked watch runtime, without requiring a simulator or real hardware.
-- the current preview baseline is intentionally minimal: round `480x480`, one curated state per screen, and DOM rendering that approximates Zepp widgets closely enough for spacing and copy review.
+- the current preview baseline is intentionally minimal: round and square `480x480`, one curated state per screen, and DOM rendering that approximates Zepp widgets closely enough for spacing and copy review.
 
 The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo's [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) subtree and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `npm run zepp:dev -- ...` or `zeus dev` from `zepp-app/` before trusting the simulator test result.
 Do not start the simulator smoke test in parallel with `zepp:dev` or `zeus dev`. Wait for the deploy to finish first, otherwise the freshness gate may fail transiently while the simulator app folder is still being updated.
