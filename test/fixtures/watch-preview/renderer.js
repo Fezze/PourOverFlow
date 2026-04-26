@@ -1,6 +1,7 @@
 const statusElement = document.querySelector("#status");
 const watchShell = document.querySelector("#watch-shell");
 const watchFace = document.querySelector("#watch-face");
+let currentPreview = null;
 
 window.__POF_WATCH_PREVIEW_READY__ = false;
 
@@ -23,6 +24,7 @@ async function bootstrap() {
   }
 
   const preview = await response.json();
+  currentPreview = preview;
   document.documentElement.lang = preview.locale || "en";
   statusElement.textContent = `${preview.scenario} • ${preview.locale}`;
   applyShell(preview.device || {});
@@ -127,7 +129,19 @@ function createScrollList(widget) {
     if (hasIcon) {
       const icon = document.createElement("div");
       icon.className = "icon-chip";
-      icon.textContent = buildIconLabel(row.icon);
+      const imagePath = buildIconAssetPath(row.icon);
+      if (imagePath) {
+        const image = document.createElement("img");
+        image.alt = row.title || buildIconLabel(row.icon);
+        image.src = imagePath;
+        image.addEventListener("error", () => {
+          icon.replaceChildren();
+          icon.textContent = buildIconLabel(row.icon);
+        }, { once: true });
+        icon.appendChild(image);
+      } else {
+        icon.textContent = buildIconLabel(row.icon);
+      }
       card.appendChild(icon);
     }
 
@@ -199,4 +213,12 @@ function buildIconLabel(iconName) {
     .map((segment) => segment[0])
     .join("")
     .toUpperCase();
+}
+
+function buildIconAssetPath(iconName) {
+  if (!iconName || !currentPreview?.device?.assetDirectory) {
+    return null;
+  }
+
+  return `/${String(currentPreview.device.assetDirectory).replace(/^\/+/, "")}/${iconName}`;
 }

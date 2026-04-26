@@ -4,6 +4,8 @@ import { getSupportedTools } from "../../zepp-app/shared/constants/tool-catalog.
 import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../../zepp-app/shared/domain/seed-library.js";
 import { CURRENT_SCHEMA_VERSION, createRecipeSnapshot, createRecipeSummary } from "../../zepp-app/shared/domain/schema.js";
 
+export type PreviewPage = "home" | "tool-list" | "recipe-list" | "recipe-detail" | "brew-active" | "result-summary";
+
 export function createCatalogFixture() {
   const primaryRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
   const secondaryRecord = getSeedRecipeRecordById("seed_ap_inverted_sweet", 1_100);
@@ -77,7 +79,12 @@ export function createExpandedCatalogFixture() {
 
 export function createLayoutMock(overrides = {}) {
   return {
-    BACKGROUND: {},
+    BACKGROUND: {
+      x: 0,
+      y: 0,
+      w: 480,
+      h: 480
+    },
     TITLE_TEXT: {
       x: 48,
       y: 68,
@@ -159,9 +166,14 @@ export function createLayoutMock(overrides = {}) {
   };
 }
 
-export function createSquareLayoutMock(page: "home" | "tool-list" | "recipe-detail" | "brew-active" | "result-summary") {
+export function createSquareLayoutMock(page: PreviewPage) {
   const baseLayout = {
-    BACKGROUND: {},
+    BACKGROUND: {
+      x: 0,
+      y: 0,
+      w: 480,
+      h: 480
+    },
     TITLE_TEXT: {
       x: 28,
       y: 30,
@@ -233,6 +245,38 @@ export function createSquareLayoutMock(page: "home" | "tool-list" | "recipe-deta
         metaHeight: 24
       },
       PRIMARY_BUTTON: {
+        x: 28,
+        y: 214,
+        w: 424,
+        h: 44,
+        radius: 18,
+        text_size: 18
+      }
+    };
+  }
+
+  if (page === "recipe-list") {
+    return {
+      ...baseLayout,
+      LIST_PANEL: {
+        x: 28,
+        y: 108,
+        w: 424,
+        h: 228,
+        radius: 24
+      },
+      LIST_FRAME: {
+        x: 36,
+        y: 116,
+        w: 408,
+        h: 212,
+        itemHeight: 96,
+        itemSpace: 8,
+        itemRadius: 18,
+        titleHeight: 38,
+        metaHeight: 24
+      },
+      EMPTY_BUTTON: {
         x: 28,
         y: 214,
         w: 424,
@@ -317,6 +361,147 @@ export function createSquareLayoutMock(page: "home" | "tool-list" | "recipe-deta
       { x: 246, y: 252, w: 206, h: 40, radius: 20 }
     ]
   };
+}
+
+export function createCompactRoundLayoutMock(page: PreviewPage) {
+  const baseLayout = {
+    BACKGROUND: {
+      x: 0,
+      y: 0,
+      w: 416,
+      h: 416
+    },
+    TITLE_TEXT: {
+      x: 68,
+      y: 56,
+      w: 280,
+      h: 38,
+      text_size: 24,
+      align_h: "CENTER_H"
+    },
+    SUBTITLE_TEXT: {
+      x: 68,
+      y: 88,
+      w: 280,
+      h: 34,
+      text_size: 14,
+      align_h: "CENTER_H"
+    },
+    BODY_TEXT: {
+      x: 68,
+      y: 126,
+      w: 280,
+      h: 74,
+      text_size: 16
+    },
+    FOOTER_TEXT: {
+      x: 68,
+      y: 328,
+      w: 280,
+      h: 26,
+      text_size: 13
+    }
+  };
+
+  if (page === "home") {
+    return {
+      ...baseLayout,
+      ACTION_DOCK: {
+        x: 68,
+        y: 350,
+        w: 280,
+        h: 60,
+        radius: 30
+      },
+      BUTTONS: [
+        { x: 68, y: 350, w: 280, h: 60, radius: 30 },
+        { x: 68, y: 300, w: 135, h: 38, radius: 19 },
+        { x: 213, y: 300, w: 135, h: 38, radius: 19 }
+      ]
+    };
+  }
+
+  if (page === "recipe-detail") {
+    return {
+      ...baseLayout,
+      DETAIL_PANEL: {
+        x: 62,
+        y: 104,
+        w: 292,
+        h: 236,
+        radius: 24
+      },
+      BODY_TEXT: {
+        ...baseLayout.BODY_TEXT,
+        y: 120,
+        h: 204
+      },
+      FOOTER_TEXT: {
+        ...baseLayout.FOOTER_TEXT,
+        y: 314
+      },
+      ACTION_DOCK: {
+        x: 68,
+        y: 370,
+        w: 280,
+        h: 60,
+        radius: 30
+      },
+      BUTTONS: [
+        { x: 68, y: 370, w: 280, h: 60, radius: 30 }
+      ]
+    };
+  }
+
+  if (page === "brew-active") {
+    return {
+      ...baseLayout,
+      ACTION_DOCK: {
+        x: 76,
+        y: 372,
+        w: 264,
+        h: 78,
+        radius: 39,
+        color: 0x202833
+      },
+      BUTTONS: [
+        { x: 211, y: 379, w: 118, h: 64, radius: 32, text_size: 26 },
+        { x: 87, y: 379, w: 118, h: 64, radius: 32, text_size: 26 }
+      ]
+    };
+  }
+
+  if (page === "result-summary") {
+    return {
+      ...baseLayout,
+      TITLE_TEXT: {
+        ...baseLayout.TITLE_TEXT,
+        x: 56,
+        y: 62,
+        w: 304
+      },
+      SUBTITLE_TEXT: {
+        ...baseLayout.SUBTITLE_TEXT,
+        x: 62,
+        y: 98,
+        w: 292
+      },
+      ACTION_DOCK: {
+        x: 68,
+        y: 370,
+        w: 280,
+        h: 60,
+        radius: 30
+      },
+      BUTTONS: [
+        { x: 68, y: 370, w: 280, h: 60, radius: 30, text_size: 20 },
+        { x: 68, y: 312, w: 135, h: 38, radius: 19 },
+        { x: 213, y: 312, w: 135, h: 38, radius: 19 }
+      ]
+    };
+  }
+
+  return createLayoutMock();
 }
 
 export async function loadPageHarness(modulePath: string, layoutMock: Record<string, unknown>) {

@@ -33,6 +33,7 @@ async function main() {
       await page.locator("#watch-shell").screenshot({
         path: path.join(SCREENSHOT_ROOT, `${scenario.name}.png`)
       });
+      await access(path.join(SCREENSHOT_ROOT, `${scenario.name}.png`));
       await page.close();
       console.log(`Saved watch preview screenshot: ${scenario.name}.png`);
     }
