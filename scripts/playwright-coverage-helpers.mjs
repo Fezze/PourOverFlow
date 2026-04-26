@@ -22,6 +22,46 @@ const WINDOWS_CHROMIUM_CANDIDATES = [
   "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
 ];
 
+const LINUX_CHROMIUM_CANDIDATES = [
+  "/snap/bin/chromium",
+  "/usr/bin/chromium",
+  "/usr/bin/google-chrome",
+  "/usr/bin/microsoft-edge",
+  "/usr/bin/chromium-browser"
+];
+
+function isWindowsAbsolutePath(value) {
+  return typeof value === "string" && /^[A-Za-z]:[\\/]/.test(value);
+}
+
+function resolvePortablePath(...segments) {
+  const filteredSegments = segments.filter((segment) => segment !== undefined && segment !== null && segment !== "");
+  const firstSegment = filteredSegments[0];
+  if (isWindowsAbsolutePath(firstSegment)) {
+    return path.win32.resolve(...filteredSegments);
+  }
+
+  return path.resolve(...filteredSegments);
+}
+
+function joinPortablePath(...segments) {
+  const filteredSegments = segments.filter((segment) => segment !== undefined && segment !== null && segment !== "");
+  const firstSegment = filteredSegments[0];
+  if (isWindowsAbsolutePath(firstSegment)) {
+    return path.win32.join(...filteredSegments);
+  }
+
+  return path.join(...filteredSegments);
+}
+
+function normalizePortableComparablePath(value) {
+  if (isWindowsAbsolutePath(value)) {
+    return path.win32.normalize(value).replace(/\\/g, "/").toLowerCase();
+  }
+
+  return path.resolve(value).replace(/\\/g, "/").toLowerCase();
+}
+
 export function parsePlaywrightCoverageArgs(argv = []) {
   const options = {
     mode: DEFAULT_PLAYWRIGHT_COVERAGE_MODE,
@@ -222,15 +262,17 @@ export function toCoverageDisplayPath(absolutePath, { cwd, lastAppInfo }) {
 }
 
 export function getSimulatorAppSourceCandidates(cwd) {
-  const root = resolveZeppAppRoot({ cwd });
+  const root = isWindowsAbsolutePath(cwd)
+    ? joinPortablePath(cwd, "zepp-app")
+    : resolveZeppAppRoot({ cwd });
   return [
-    path.join(root, "app.json"),
-    path.join(root, "app.js"),
-    path.join(root, "page"),
-    path.join(root, "app-side"),
-    path.join(root, "setting"),
-    path.join(root, "shared"),
-    path.join(root, "assets")
+    joinPortablePath(root, "app.json"),
+    joinPortablePath(root, "app.js"),
+    joinPortablePath(root, "page"),
+    joinPortablePath(root, "app-side"),
+    joinPortablePath(root, "setting"),
+    joinPortablePath(root, "shared"),
+    joinPortablePath(root, "assets")
   ];
 }
 
@@ -239,7 +281,11 @@ export function isSimulatorDeploymentForCurrentProject(lastAppInfo, cwd) {
     return false;
   }
 
-  return normalizeComparablePath(lastAppInfo.user_app_path) === normalizeComparablePath(resolveZeppAppRoot({ cwd }));
+  const expectedZeppAppRoot = isWindowsAbsolutePath(cwd)
+    ? joinPortablePath(cwd, "zepp-app")
+    : resolveZeppAppRoot({ cwd });
+
+  return normalizePortableComparablePath(lastAppInfo.user_app_path) === normalizePortableComparablePath(expectedZeppAppRoot);
 }
 
 function isSubPathOf(candidatePath, rootPath) {
@@ -253,7 +299,7 @@ function normalizeDisplaySegment(value) {
 
 export function getMockBrowserExecutableCandidates(env = process.env) {
   const override = env[DEFAULT_PLAYWRIGHT_MOCK_BROWSER_EXECUTABLE_ENV];
-  return [override, ...WINDOWS_CHROMIUM_CANDIDATES].filter(Boolean);
+  return [override, ...WINDOWS_CHROMIUM_CANDIDATES, ...LINUX_CHROMIUM_CANDIDATES].filter(Boolean);
 }
 
 export function resolveSimulatorRoot({
@@ -263,7 +309,7 @@ export function resolveSimulatorRoot({
 } = {}) {
   const explicitRoot = env[DEFAULT_ZEPP_SIMULATOR_ROOT_ENV];
   if (explicitRoot) {
-    return path.resolve(explicitRoot);
+    return resolvePortablePath(explicitRoot);
   }
 
   if (platform === "win32") {
@@ -273,7 +319,7 @@ export function resolveSimulatorRoot({
       );
     }
 
-    return path.resolve(env.APPDATA, "simulator");
+    return resolvePortablePath(env.APPDATA, "simulator");
   }
 
   const xdgConfigHome = env.XDG_CONFIG_HOME || "";

@@ -24,24 +24,29 @@ This project must be run in English.
 
 Recommended local toolchain baseline for this repo:
 
-- Node.js `20.x`
-- npm `10.x`
-- global Zeus CLI from `@zeppos/zeus-cli`
+- Node.js `24.x`
+- npm `11.x`
+- local Zeus CLI from `@zeppos/zeus-cli`
 - a Chromium-family browser for the Playwright module harness
 
-The repo now pins the Node baseline through [`.nvmrc`](c:\Users\krzys\Projects\PourOverFlow\.nvmrc) and `package.json` engines.
+Fallback baseline if a future Zeus release regresses on Node 24:
+
+- Node.js `22.x`
+- npm `10.x`
+
+The repo now pins the Node baseline through [`.nvmrc`](../.nvmrc), `package.json` engines, [.env.example](../.env.example), and [UBUNTU-26.md](UBUNTU-26.md).
 
 Linux setup path:
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-nvm install 20
-nvm use 20
+nvm install 24
+nvm use 24
 node -v
 npm -v
-npm i -g @zeppos/zeus-cli
-zeus -v
-npm install
+npm ci
+npm run doctor:ubuntu
+npm run verify
 ```
 
 For the browser-module harness on Linux, export `PLAYWRIGHT_COVERAGE_BROWSER` to a Chromium-family browser path before running the Playwright harness commands. Common examples are `/usr/bin/chromium`, `/snap/bin/chromium`, `/usr/bin/google-chrome`, or `/usr/bin/microsoft-edge`.
@@ -50,7 +55,9 @@ If VS Code or Codex is itself running inside a Flatpak sandbox, use [playwright-
 
 Current verified platform note:
 
-- the Vitest commands and `npm run build` are expected to work once Node and Zeus CLI are installed,
+- `npm run doctor:ubuntu` is the first Linux environment check,
+- `npm run verify` is the canonical CLI equivalent of the repo-standard VS Code verify task,
+- the Vitest commands and `npm run build` are expected to work once dependencies are installed,
 - the actual Zeus package now lives under `zepp-app/`, so root-level Zeus work should go through the repo wrappers or by running Zeus from that subtree directly,
 - the Zeus-root helper now walks upward from nested folders too, so root wrappers still resolve `zepp-app/` when launched from `scripts/`, `test/`, or deeper app subfolders,
 - the Playwright harness commands on Linux require `PLAYWRIGHT_COVERAGE_BROWSER`,
@@ -111,6 +118,8 @@ Current verified platform note:
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
+- Run `npm run verify` for the canonical CLI full-stack verify pass.
+- Run `npm run verify:fast` for the short local loop.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
 - Current meaningful coverage baselines after the latest test expansion are `90.79% / 82.11% / 85.55% / 90.67%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.

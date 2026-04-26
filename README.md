@@ -44,12 +44,17 @@ This project is to be run in English.
 
 Recommended local baseline for this repo:
 
-- Node.js `20.x`
-- npm `10.x`
-- global Zeus CLI from `@zeppos/zeus-cli`
+- Node.js `24.x`
+- npm `11.x`
+- local Zeus CLI from `@zeppos/zeus-cli`
 - a Chromium-family browser for the Playwright module harness
 
-The repo includes [`.nvmrc`](c:\Users\krzys\Projects\PourOverFlow\.nvmrc) and `package.json` engines to make that baseline explicit.
+Fallback baseline if a future Zeus release regresses on Node 24:
+
+- Node.js `22.x`
+- npm `10.x`
+
+The repo includes [`.nvmrc`](.nvmrc), `package.json` engines, [.env.example](.env.example), and [docs/UBUNTU-26.md](docs/UBUNTU-26.md) to make that baseline explicit.
 
 Linux-first setup:
 
@@ -58,19 +63,21 @@ Linux-first setup:
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 # restart the shell, then install and use the repo baseline
-nvm install 20
-nvm use 20
+nvm install 24
+nvm use 24
 
 # confirm the toolchain
 node -v
 npm -v
 
-# install the Zepp CLI globally
-npm i -g @zeppos/zeus-cli
-zeus -v
-
 # install repo dependencies
-npm install
+npm ci
+
+# validate the Linux setup
+npm run doctor:ubuntu
+
+# run the canonical CLI verify path
+npm run verify
 ```
 
 For the Playwright module harness on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` to a Chromium-family browser executable before running the harness commands. Example values are `/usr/bin/chromium`, `/snap/bin/chromium`, `/usr/bin/google-chrome`, or `/usr/bin/microsoft-edge`.
@@ -87,7 +94,9 @@ export PLAYWRIGHT_COVERAGE_BROWSER="$PWD/scripts/playwright-flatpak-host-browser
 
 Current platform note:
 
-- `npm test`, `npm run test:coverage`, and `npm run build` should work once Node and Zeus CLI are installed.
+- `npm run doctor:ubuntu` checks the supported Linux baseline before the first full verify run.
+- `npm run verify` is the canonical CLI equivalent of the repo-standard VS Code verification stack.
+- `npm test`, `npm run test:coverage`, and `npm run build` should work once dependencies are installed.
 - `npm run test:playwright:harness` and `npm run test:playwright:coverage:harness` need the browser path above on Linux.
 - when VS Code runs as a Flatpak, prefer the repo wrapper `scripts/playwright-flatpak-host-browser.sh` so Playwright can launch host Chromium with forwarded pipe FDs.
 - `npm run test:playwright` now supports the common Linux simulator path too:
@@ -101,16 +110,17 @@ export ZEPP_SIMULATOR_ROOT="$HOME/.config/simulator"
 
 ## Most important documents
 
-- [Start Here](c:\Users\krzys\Projects\PourOverFlow\docs\START-HERE.md)
-- [Product Goals](c:\Users\krzys\Projects\PourOverFlow\docs\00-product-goals.md)
-- [Zepp Architecture](c:\Users\krzys\Projects\PourOverFlow\docs\01-zepp-architecture.md)
-- [Domain Model](c:\Users\krzys\Projects\PourOverFlow\docs\02-domain-model.md)
-- [Sync and Storage](c:\Users\krzys\Projects\PourOverFlow\docs\03-sync-and-storage.md)
-- [Watch and Phone Flows](c:\Users\krzys\Projects\PourOverFlow\docs\04-watch-and-phone-flows.md)
-- [Seed Library](c:\Users\krzys\Projects\PourOverFlow\docs\05-seed-library.md)
-- [Manifest and UI Contract](c:\Users\krzys\Projects\PourOverFlow\docs\06-manifest-and-ui-contract.md)
-- [Implementation TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md)
-- [Agent Instructions](c:\Users\krzys\Projects\PourOverFlow\AGENTS.md)
+- [Start Here](docs/START-HERE.md)
+- [Product Goals](docs/00-product-goals.md)
+- [Zepp Architecture](docs/01-zepp-architecture.md)
+- [Domain Model](docs/02-domain-model.md)
+- [Sync and Storage](docs/03-sync-and-storage.md)
+- [Watch and Phone Flows](docs/04-watch-and-phone-flows.md)
+- [Seed Library](docs/05-seed-library.md)
+- [Manifest and UI Contract](docs/06-manifest-and-ui-contract.md)
+- [Ubuntu 26 setup](docs/UBUNTU-26.md)
+- [Implementation TODO](docs/TODO.md)
+- [Agent Instructions](AGENTS.md)
 
 ## Work order
 
@@ -124,7 +134,7 @@ export ZEPP_SIMULATOR_ROOT="$HOME/.config/simulator"
 
 ## Next work
 
-The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md): confirm haptic comfort over a real brew and finish the remaining round-screen comfort pass that cannot be proven by simulator or pure tests alone.
+The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort over a real brew and finish the remaining round-screen comfort pass that cannot be proven by simulator or pure tests alone.
 
 ## Test commands
 
@@ -134,9 +144,11 @@ The next practical step lives in [TODO](c:\Users\krzys\Projects\PourOverFlow\doc
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
+- `npm run verify` is the canonical CLI full-stack verification command.
+- `npm run verify:fast` is the short local loop for Vitest plus Zeus build.
 - set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
 - current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
-- the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json).
+- the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](.vscode/tasks.json).
 - the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
 - `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run zepp:dev -- -t "Amazfit Balance 2"` or run `zeus dev` directly from `zepp-app/`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.

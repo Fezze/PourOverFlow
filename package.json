@@ -5,20 +5,24 @@
   "type": "module",
   "description": "PourOverFlow Zepp OS scaffold",
   "engines": {
-    "node": ">=20 <21",
-    "npm": ">=10 <11"
+    "node": ">=24 <25",
+    "npm": ">=11 <12"
   },
   "scripts": {
     "build": "node scripts/run-zeus-command.mjs build",
     "zepp:dev": "node scripts/run-zeus-command.mjs dev",
+    "doctor:ubuntu": "node scripts/doctor-ubuntu.mjs",
     "test": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts --coverage",
     "test:playwright": "node scripts/playwright-simulator-coverage.mjs",
     "test:playwright:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness",
     "test:playwright:coverage:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness --coverage",
-    "validation:logs": "node scripts/validation-log-report.mjs"
+    "validation:logs": "node scripts/validation-log-report.mjs",
+    "verify": "npm test && npm run test:coverage && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build",
+    "verify:fast": "npm test && npm run build"
   },
   "devDependencies": {
+    "@zeppos/zeus-cli": "^1.9.0",
     "@vitest/coverage-v8": "^4.1.1",
     "istanbul-lib-coverage": "^3.2.2",
     "istanbul-lib-report": "^3.0.1",

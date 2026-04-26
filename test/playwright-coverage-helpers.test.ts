@@ -146,13 +146,13 @@ describe("playwright coverage helpers", () => {
 
   it("lists the app-facing source paths used for simulator deployment freshness", () => {
     expect(getSimulatorAppSourceCandidates("C:/Users/krzys/Projects/PourOverFlow")).toEqual([
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app.json"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app.js"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/page"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app-side"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/setting"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/shared"),
-      path.resolve("C:/Users/krzys/Projects/PourOverFlow/zepp-app/assets")
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app.json"),
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app.js"),
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/page"),
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/app-side"),
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/setting"),
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/shared"),
+      resolvePortableTestPath("C:/Users/krzys/Projects/PourOverFlow/zepp-app/assets")
     ]);
     expect(DEFAULT_SIMULATOR_DEPLOYMENT_FRESHNESS_TOLERANCE_MS).toBe(2000);
   });
@@ -259,6 +259,11 @@ describe("playwright coverage helpers", () => {
     ).toBe("D:/Portable/Chrome/chrome.exe");
   });
 
+  it("includes Linux Chromium-family fallbacks for module-harness runs", () => {
+    expect(getMockBrowserExecutableCandidates({} as NodeJS.ProcessEnv)).toContain("/usr/bin/google-chrome");
+    expect(getMockBrowserExecutableCandidates({} as NodeJS.ProcessEnv)).toContain("/usr/bin/chromium");
+  });
+
   it("resolves the simulator root from an explicit override", () => {
     expect(
       normalizePathForExpect(
@@ -284,7 +289,7 @@ describe("playwright coverage helpers", () => {
           homeDir: "C:/Users/krzys"
         })
       )
-    ).toBe(normalizePathForExpect(path.resolve("C:/Users/krzys/AppData/Roaming/simulator")));
+    ).toBe(normalizePathForExpect(resolvePortableTestPath("C:/Users/krzys/AppData/Roaming/simulator")));
   });
 
   it("resolves the simulator root from XDG config on Linux", () => {
@@ -375,6 +380,10 @@ describe("playwright coverage helpers", () => {
     ).toBe(normalizePathForExpect("D:/tmp/pof-reports/playwright/simulator"));
   });
 });
+
+function resolvePortableTestPath(value: string) {
+  return /^[A-Za-z]:[\\/]/.test(value) ? path.win32.resolve(value) : path.resolve(value);
+}
 
 function normalizePathForExpect(value: string) {
   return value.replace(/\\/g, "/").toLowerCase();

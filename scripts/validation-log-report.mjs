@@ -6,6 +6,22 @@ import { resolveSimulatorRoot } from "./playwright-coverage-helpers.mjs";
 export const VALIDATION_LOG_PREFIX = "[pof-validation]";
 export const DEFAULT_VALIDATION_LOG_FILE = "renderer.log";
 
+function isWindowsAbsolutePath(value) {
+  return typeof value === "string" && /^[A-Za-z]:[\\/]/.test(value);
+}
+
+function resolvePortablePath(targetPath) {
+  return isWindowsAbsolutePath(targetPath)
+    ? path.win32.resolve(targetPath)
+    : path.resolve(targetPath);
+}
+
+function joinPortablePath(rootPath, ...segments) {
+  return isWindowsAbsolutePath(rootPath)
+    ? path.win32.join(rootPath, ...segments)
+    : path.join(rootPath, ...segments);
+}
+
 export function parseValidationLogArgs(argv = []) {
   const options = {
     filePath: null,
@@ -49,18 +65,20 @@ export function parseValidationLogArgs(argv = []) {
 
 export function resolveValidationLogPath(options = {}, env = process.env) {
   if (options.filePath) {
-    return path.resolve(options.filePath);
+    return resolvePortablePath(options.filePath);
   }
 
+  const shouldUseWindowsSimulatorRoot =
+    !options.simulatorRoot && Boolean(env.APPDATA) && !env.XDG_CONFIG_HOME && !env.HOME;
   const simulatorRoot = options.simulatorRoot
-    ? path.resolve(options.simulatorRoot)
+    ? resolvePortablePath(options.simulatorRoot)
     : resolveSimulatorRoot({
       env,
-      platform: process.platform,
+      platform: shouldUseWindowsSimulatorRoot ? "win32" : process.platform,
       homeDir: env.HOME || env.USERPROFILE || ""
     });
 
-  return path.join(simulatorRoot, "logs", DEFAULT_VALIDATION_LOG_FILE);
+  return joinPortablePath(simulatorRoot, "logs", DEFAULT_VALIDATION_LOG_FILE);
 }
 
 export function parseValidationLogLine(line) {
