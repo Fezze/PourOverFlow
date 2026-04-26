@@ -17,10 +17,10 @@
     "test:playwright": "node scripts/playwright-simulator-coverage.mjs",
     "test:playwright:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness",
     "test:playwright:coverage:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness --coverage",
-    "verify:visual": "node node_modules/vitest/vitest.mjs run --config test/vitest.preview.config.ts",
+    "verify:visual": "node scripts/watch-preview.mjs --verify",
     "preview:watch": "node scripts/watch-preview.mjs",
     "validation:logs": "node scripts/validation-log-report.mjs",
-    "verify": "npm test && npm run test:coverage && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build",
+    "verify": "npm test && npm run test:coverage && npm run verify:visual && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build",
     "verify:fast": "npm test && npm run build"
   },
   "devDependencies": {

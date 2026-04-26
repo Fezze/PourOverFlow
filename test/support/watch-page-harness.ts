@@ -471,6 +471,38 @@ export function createCompactRoundLayoutMock(page: PreviewPage) {
     };
   }
 
+  if (page === "recipe-list") {
+    return {
+      ...baseLayout,
+      LIST_PANEL: {
+        x: 56,
+        y: 118,
+        w: 304,
+        h: 228,
+        radius: 22
+      },
+      LIST_FRAME: {
+        x: 64,
+        y: 126,
+        w: 288,
+        h: 212,
+        itemHeight: 92,
+        itemSpace: 8,
+        itemRadius: 18,
+        titleHeight: 36,
+        metaHeight: 22
+      },
+      EMPTY_BUTTON: {
+        x: 68,
+        y: 358,
+        w: 280,
+        h: 46,
+        radius: 23,
+        text_size: 18
+      }
+    };
+  }
+
   if (page === "result-summary") {
     return {
       ...baseLayout,

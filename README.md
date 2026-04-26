@@ -143,7 +143,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
-- `npm run verify:visual` runs the preview fixture export and structural checks without generating screenshots.
+- `npm run verify:visual` runs the watch preview browser-render gate, including fixture export, structural checks, and deterministic screenshot rendering into the verification output path.
 - `npm run preview:watch` exports deterministic watch-page widget fixtures and renders round and square watch preview PNGs into `output/playwright/watch-preview/screenshots`.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - `npm run verify` is the canonical CLI full-stack verification command.
@@ -151,7 +151,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
 - current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](.vscode/tasks.json).
-- the task runs Vitest, Vitest coverage, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
+- the task runs Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
 - `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run zepp:dev -- -t "Amazfit Balance 2"` or run `zeus dev` directly from `zepp-app/`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
 - the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.
@@ -161,8 +161,8 @@ Playwright in this repo is intentionally split in two:
 - browser module-harness coverage, through `npm run test:playwright:coverage:harness`
 
 There is also a small visual baseline path for watch review work:
-- `npm run verify:visual` keeps the preview matrix structurally honest through fixture export, metadata checks, button-count checks, text-presence checks, and basic bounds validation.
-- `npm run preview:watch` renders deterministic PNG previews for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `brew-active`, and `result-summary` from the mocked watch runtime, without requiring a simulator or real hardware.
+- `npm run verify:visual` is the deterministic visual gate: it exports the preview fixtures, validates their metadata and widget structure, renders every preview in a real browser, and fails on runtime errors, console errors, missing screenshots, or suspiciously small outputs.
+- `npm run preview:watch` is the artifact generator: it runs the same browser renderer but writes review PNGs to `output/playwright/watch-preview/screenshots` for manual inspection.
 - the current preview baseline now covers round and square `480x480`, selected Polish and English states, plus compact-round `416x416` checks for the screens most likely to suffer mask or spacing regressions.
 
 The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo's [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) subtree and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `npm run zepp:dev -- ...` or `zeus dev` from `zepp-app/` before trusting the simulator test result.

@@ -59,6 +59,7 @@ const previewScenarios: PreviewScenario[] = [
   createRecipeListScenario({ locale: "en-US", state: "populated", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
   createRecipeListScenario({ locale: "pl-PL", state: "populated", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
   createRecipeListScenario({ locale: "en-US", state: "empty-brewer", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
+  createRecipeListScenario({ locale: "pl-PL", state: "populated", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE }),
   createRecipeDetailScenario({ locale: "en-US", state: "normal", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
   createRecipeDetailScenario({ locale: "pl-PL", state: "normal", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
   createRecipeDetailScenario({ locale: "en-US", state: "overflow", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE }),
@@ -155,6 +156,16 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
   const { device, widgets, expectedButtonCount, requiredTextSnippets } = fixturePayload;
   const textWidgets = widgets.filter((widget) => widget.type === "TEXT");
   const buttonWidgets = widgets.filter((widget) => widget.type === "BUTTON");
+  const scrollListWidgets = widgets.filter((widget) => widget.type === "SCROLL_LIST");
+
+  expect(device.width, `${fixturePayload.scenario} should have a sane device width`).toBeGreaterThanOrEqual(300);
+  expect(device.height, `${fixturePayload.scenario} should have a sane device height`).toBeGreaterThanOrEqual(300);
+  expect(["round", "square"], `${fixturePayload.scenario} should use a supported shape`).toContain(device.shape);
+  expect(["round", "square", "compact-round"], `${fixturePayload.scenario} should use a supported layout variant`).toContain(device.layoutVariant);
+  expect(
+    fixturePayload.scenario,
+    "scenario name should match page/state/locale/shape/size metadata"
+  ).toBe(buildScenarioName(fixturePayload.page, fixturePayload.state, fixturePayload.locale, fixturePayload.device.shape, fixturePayload.device.width, fixturePayload.device.height));
 
   widgets.forEach((widget, index) => {
     if (Number.isFinite(widget.w)) {
@@ -177,6 +188,19 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
   textWidgets.forEach((widget, index) => {
     expect(String(widget.text || "").trim(), `text widget ${index} should not be empty`).not.toBe("");
   });
+
+  buttonWidgets.forEach((widget, index) => {
+    expect(String(widget.text || "").trim(), `button ${index} should not have an empty label`).not.toBe("");
+  });
+
+  scrollListWidgets.forEach((widget, index) => {
+    expect(Array.isArray(widget.data_array), `scroll list ${index} should include items`).toBe(true);
+  });
+
+  const visibleTextOrScrollItems = textWidgets.length + scrollListWidgets.reduce((count, widget) => {
+    return count + (Array.isArray(widget.data_array) ? widget.data_array.length : 0);
+  }, 0);
+  expect(visibleTextOrScrollItems, `${fixturePayload.scenario} should expose visible text or list content`).toBeGreaterThan(0);
 
   expect(buttonWidgets.length, `${fixturePayload.scenario} should have the expected button count`).toBe(expectedButtonCount);
 
@@ -285,7 +309,7 @@ function createToolListScenario(options: {
 function createRecipeListScenario(options: {
   locale: PreviewLocale;
   state: "populated" | "empty-brewer";
-  layoutVariant: "round" | "square";
+  layoutVariant: "round" | "square" | "compact-round";
   shape: PreviewShape;
   width: number;
   height: number;

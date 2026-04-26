@@ -1,6 +1,6 @@
 import http from "node:http";
 import path from "node:path";
-import { access, mkdir, readFile, readdir, rm, stat } from "node:fs/promises";
+import { access, mkdir, readFile, rm, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { chromium } from "playwright-core";
 
@@ -10,13 +10,17 @@ const PROJECT_ROOT = process.cwd();
 const PREVIEW_ROOT = path.join(PROJECT_ROOT, "output", "playwright", "watch-preview");
 const FIXTURE_ROOT = path.join(PREVIEW_ROOT, "fixtures");
 const SCREENSHOT_ROOT = path.join(PREVIEW_ROOT, "screenshots");
+const VERIFY_SCREENSHOT_ROOT = path.join(PREVIEW_ROOT, "verify");
+const VERIFY_MODE = process.argv.includes("--verify");
+const ACTIVE_SCREENSHOT_ROOT = VERIFY_MODE ? VERIFY_SCREENSHOT_ROOT : SCREENSHOT_ROOT;
+const MIN_SCREENSHOT_BYTES = 4_096;
 
 await main();
 
 async function main() {
   await exportPreviewFixtures();
-  await rm(SCREENSHOT_ROOT, { recursive: true, force: true });
-  await mkdir(SCREENSHOT_ROOT, { recursive: true });
+  await rm(ACTIVE_SCREENSHOT_ROOT, { recursive: true, force: true });
+  await mkdir(ACTIVE_SCREENSHOT_ROOT, { recursive: true });
 
   const executablePath = await resolveBrowserExecutable();
   const server = await startStaticServer(PROJECT_ROOT);
@@ -24,18 +28,57 @@ async function main() {
 
   try {
     const scenarios = JSON.parse(await readFile(path.join(FIXTURE_ROOT, "manifest.json"), "utf8"));
+    if (!Array.isArray(scenarios) || scenarios.length === 0) {
+      throw new Error("Watch preview manifest is empty. Preview export did not produce any scenarios.");
+    }
+
     for (const scenario of scenarios) {
       const page = await browser.newPage({ viewport: { width: 760, height: 760 } });
-      await page.goto(`${server.baseUrl}/test/fixtures/watch-preview/index.html?scenario=${encodeURIComponent(scenario.name)}`);
-      await page.waitForFunction(() => window.__POF_WATCH_PREVIEW_READY__ === true, undefined, {
-        timeout: 30_000
+      const previewUrl = `${server.baseUrl}/test/fixtures/watch-preview/index.html?scenario=${encodeURIComponent(scenario.name)}`;
+      const pageErrors = [];
+      const consoleErrors = [];
+
+      page.on("pageerror", (error) => {
+        pageErrors.push(error instanceof Error ? error.message : String(error));
       });
-      await page.locator("#watch-shell").screenshot({
-        path: path.join(SCREENSHOT_ROOT, `${scenario.name}.png`)
+      page.on("console", (message) => {
+        if (message.type() === "error") {
+          consoleErrors.push(message.text());
+        }
       });
-      await access(path.join(SCREENSHOT_ROOT, `${scenario.name}.png`));
-      await page.close();
-      console.log(`Saved watch preview screenshot: ${scenario.name}.png`);
+
+      try {
+        await page.goto(previewUrl, { waitUntil: "networkidle" });
+        await page.waitForFunction(() => window.__POF_WATCH_PREVIEW_READY__ === true, undefined, {
+          timeout: 30_000
+        });
+
+        if (pageErrors.length > 0 || consoleErrors.length > 0) {
+          throw new Error(
+            [
+              `Preview scenario ${scenario.name} emitted runtime errors.`,
+              ...pageErrors.map((entry) => `pageerror: ${entry}`),
+              ...consoleErrors.map((entry) => `console.error: ${entry}`)
+            ].join("\n")
+          );
+        }
+
+        const screenshotPath = path.join(ACTIVE_SCREENSHOT_ROOT, `${scenario.name}.png`);
+        await page.locator("#watch-shell").screenshot({ path: screenshotPath });
+        await access(screenshotPath);
+        const screenshotStat = await stat(screenshotPath);
+        if (screenshotStat.size < MIN_SCREENSHOT_BYTES) {
+          throw new Error(
+            `Preview screenshot for ${scenario.name} looks suspiciously small (${screenshotStat.size} bytes).`
+          );
+        }
+
+        if (!VERIFY_MODE) {
+          console.log(`Saved watch preview screenshot: ${scenario.name}.png`);
+        }
+      } finally {
+        await page.close();
+      }
     }
   } finally {
     await browser.close();
@@ -94,9 +137,16 @@ async function startStaticServer(rootDir) {
   const server = http.createServer(async (request, response) => {
     try {
       const requestUrl = new URL(request.url || "/", "http://127.0.0.1");
+      if (requestUrl.pathname === "/favicon.ico") {
+        response.writeHead(204);
+        response.end();
+        return;
+      }
+
       const relativePath = decodeURIComponent(requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname);
       const absolutePath = path.resolve(rootDir, `.${relativePath}`);
-      if (!absolutePath.startsWith(rootDir)) {
+      const relativeToRoot = path.relative(rootDir, absolutePath);
+      if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
         response.writeHead(403);
         response.end("Forbidden");
         return;

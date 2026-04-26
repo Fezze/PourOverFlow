@@ -32,7 +32,7 @@
 ### Tooling follow-up
 
 - Re-run a clean Ubuntu 26 checkout with `npm ci`, `npm run doctor:ubuntu`, and `npm run verify` to confirm the new local-Zeus path is enough without any global Zeus install.
-- Expand the preview baseline further only if later review passes need additional watch states beyond the current `verify:visual` matrix, richer icon treatment than the current shared tool assets, or more square/compact coverage.
+- Expand the preview baseline further only if later review passes need additional watch states beyond the current browser-rendered `verify:visual` matrix, richer icon treatment than the current shared tool assets, or more square/compact coverage.
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.
 - Decide whether the Playwright module harness should stay focused on browser-safe shared modules or grow browser stubs for selected `@zos/*` modules.
 - Confirm that the new `zepp-app/` subtree plus root-level `coverage/` split stays comfortable on both Windows and Linux after a few normal `zeus dev` cycles.

@@ -60,6 +60,19 @@
       "problemMatcher": []
     },
     {
+      "label": "Verify: visual preview",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/watch-preview.mjs",
+        "--verify"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Verify: Zeus build",
       "type": "shell",
       "command": "node",
@@ -78,6 +91,7 @@
       "dependsOn": [
         "Verify: vitest",
         "Verify: vitest coverage",
+        "Verify: visual preview",
         "Verify: Playwright harness smoke",
         "Verify: Playwright harness coverage",
         "Verify: Zeus build"

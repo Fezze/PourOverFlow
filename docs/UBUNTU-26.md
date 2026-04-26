@@ -65,13 +65,17 @@ The canonical CLI verify path is now:
 npm run verify
 ```
 
+That path now includes `npm run verify:visual`, which uses the local Chromium-family browser to render the watch preview matrix as a deterministic gate. Keep `PLAYWRIGHT_COVERAGE_BROWSER` set before full verify on Linux.
+
 For a faster local loop:
 
 ```bash
 npm run verify:fast
 ```
 
-VS Code still exposes `Verify: all tests and coverage`; it should be treated as equivalent to the same underlying CLI stack.
+`npm run verify:fast` intentionally stays short and does not include the visual preview gate.
+
+VS Code still exposes `Verify: all tests and coverage`; it should be treated as equivalent to the same underlying CLI stack, including the visual preview gate.
 
 ## Zeus commands
 

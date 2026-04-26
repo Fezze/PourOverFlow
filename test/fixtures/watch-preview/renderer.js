@@ -2,6 +2,7 @@ const statusElement = document.querySelector("#status");
 const watchShell = document.querySelector("#watch-shell");
 const watchFace = document.querySelector("#watch-face");
 let currentPreview = null;
+let pendingAssetLoads = [];
 
 window.__POF_WATCH_PREVIEW_READY__ = false;
 
@@ -29,6 +30,7 @@ async function bootstrap() {
   statusElement.textContent = `${preview.scenario} • ${preview.locale}`;
   applyShell(preview.device || {});
   renderWidgets(preview.widgets || []);
+  await Promise.all(pendingAssetLoads);
   window.__POF_WATCH_PREVIEW_READY__ = true;
 }
 
@@ -43,6 +45,7 @@ function applyShell(device) {
 }
 
 function renderWidgets(widgets) {
+  pendingAssetLoads = [];
   watchFace.replaceChildren();
 
   widgets.forEach((widget) => {
@@ -133,11 +136,19 @@ function createScrollList(widget) {
       if (imagePath) {
         const image = document.createElement("img");
         image.alt = row.title || buildIconLabel(row.icon);
-        image.src = imagePath;
-        image.addEventListener("error", () => {
-          icon.replaceChildren();
-          icon.textContent = buildIconLabel(row.icon);
-        }, { once: true });
+        const imageLoad = new Promise((resolve) => {
+          const fallbackLabel = buildIconLabel(row.icon);
+          const finalizeFallback = () => {
+            icon.replaceChildren();
+            icon.textContent = fallbackLabel;
+            resolve(undefined);
+          };
+
+          image.addEventListener("load", () => resolve(undefined), { once: true });
+          image.addEventListener("error", finalizeFallback, { once: true });
+          image.src = imagePath;
+        });
+        pendingAssetLoads.push(imageLoad);
         icon.appendChild(image);
       } else {
         icon.textContent = buildIconLabel(row.icon);
