@@ -10,6 +10,7 @@ This file is a repo-level instruction set for the next AI agent. Treat it as hig
 - The current starter catalog is a versioned uneven 24-recipe seed set, and existing installs now migrate forward through `seedCatalogVersion` instead of replaying the whole seed library.
 - Shared runtime localization now supports `en-US` and `pl-PL`, and starter recipes are localized through split seed modules plus a stored `seedLocale` baseline on the phone side.
 - The actual Zeus package now lives under `zepp-app/`, while docs, scripts, tests, editor tasks, and coverage stay at repo root.
+- The manifest now follows the Parallax Pilot-style target matrix (`round-416`, `round-454`, `round-466`, `round-480`, `square-390x450`) while keeping the runtime target at `API_LEVEL 3.6`.
 - The current work scope is cleanup, remaining real-watch comfort validation, and follow-up tooling or watch UX hardening.
 - This repo is a Zepp OS project, so any task involving implementation, architecture, debugging, or validation must use the `zepp-miniapp-builder` skill as the default workflow.
 
@@ -52,6 +53,7 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 
 - Target runtime floor is `API_LEVEL 3.6`.
 - Screen scope is `round + square`.
+- Manifest target scope is `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`.
 - `band` is out of scope for v1.
 - The `Tool` catalog is closed and read-only.
 - The phone is the source of truth for recipes and history.
@@ -82,6 +84,7 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 
 - Before every commit, run the repo-standard verification stack or an equivalent full local verify pass and make sure it is green.
 - The preferred verify path is the VS Code compound task `Verify: all tests and coverage`; command-line equivalents are acceptable when they cover the same stack.
+- After any successful build that closes a meaningful code change, create a commit before moving on unless the user explicitly says not to commit.
 - After finishing a meaningful chunk of work, create a commit instead of leaving completed work uncommitted.
 - If the user explicitly asks not to commit yet, follow that instruction and keep the tree ready instead.
 - Do not commit known-broken code, stale docs, or partially updated contracts.
@@ -125,6 +128,8 @@ Minimum standard:
 
 - pure-logic tests for the model, session reducer, and sync,
 - simulator validation for layout and flow,
+- every new watch screen or page must add at least one deterministic Playwright screenshot scenario,
+- visual validation for new or changed watch screens must include checking generated screenshots, not only passing tests,
 - real-device validation for haptics, screen sleep, resume, and queue replay.
 - improve coverage when meaningful tests can be added without turning the suite into coverage padding.
 - prefer behavior-focused tests over superficial assertions written only to move the percentage.
@@ -141,7 +146,7 @@ The first implementation task from the current repo state is the nearest sensibl
 
 ## Discovered toolchain nuances
 
-- For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under `assets/<target>.<shape>/icon.png`, not only the logical `icon.png` name in `app.json`. In this repo those files are under `zepp-app/assets/...`.
+- For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under target asset folders, not only the logical `icon.png` name in `app.json`. In this repo those folders include `zepp-app/assets/round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`, while `common.r` and `common.s` remain shared fallbacks.
 - The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`. In this repo that shim lives under `zepp-app/setting/index.js`.
 - Timestamp-based resume reconciliation and active-brew display guard handling are implemented, and real-watch logs already confirmed the core wake, resume, and queue replay paths.
 - `setting/` writes a helper key `pof_settings_ui_state_v1` into `settingsStorage`; `app-side` and future sync must ignore it because it is not part of the canonical domain model.
@@ -184,6 +189,8 @@ The first implementation task from the current repo state is the nearest sensibl
 - The current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`; if a later agent pushes for literal 100%, the remaining hotspots are mostly defensive Zepp-runtime branches in `sync-bridge`, `phone-store`, `validators`, `tool-list`, `home`, `recipe-list`, `brew-active`, locale data modules, and the browser-harness copies of `session-reducer` and `recipe-engine`.
 - The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks `zosLoader:./index.[pf].layout.js`, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
 - The repo includes `npm run test:playwright` and `npm run test:playwright:harness` as no-coverage Playwright smoke runs, so the simulator path and the browser module harness can both be exercised without writing coverage reports.
+- Parallax-compatible aliases are available: `npm run dev`, `npm run sim:doctor`, `npm run sim:smoke`, and `npm run test:playwright:screens`.
+- The Parallax-style simulator workflow is `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build`.
 - The same script supports `npm run test:playwright:coverage:harness`, which opens a local browser harness page and executes real browser-safe project modules for Playwright/V8 coverage without a simulator; keep treating it as complementary to Vitest, not as proof of Zepp-only runtime behavior.
 - The repo also includes `npm run validation:logs`, which summarizes `[pof-validation]` events from the simulator `renderer.log` by default or from an explicit `--file` path when you are reviewing exported real-device logs.
 - The simulator smoke script now resolves simulator metadata from `%APPDATA%/simulator` on Windows, `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux, or an explicit `ZEPP_SIMULATOR_ROOT` override.

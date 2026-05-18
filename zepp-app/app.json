@@ -24,7 +24,7 @@
     }
   },
   "targets": {
-    "common": {
+    "round-416": {
       "module": {
         "page": {
           "pages": [
@@ -45,12 +45,303 @@
       },
       "platforms": [
         {
-          "st": "r"
+          "name": "falcon",
+          "deviceSource": 414
         },
         {
-          "st": "s"
+          "name": "falcon",
+          "deviceSource": 415
         }
-      ]
+      ],
+      "designWidth": 416
+    },
+    "round-454": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/home/index",
+            "page/tool-list/index",
+            "page/recipe-list/index",
+            "page/recipe-detail/index",
+            "page/brew-active/index",
+            "page/result-summary/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        {
+          "name": "cheetah-round",
+          "deviceSource": 8192256
+        },
+        {
+          "name": "cheetah-round",
+          "deviceSource": 8192257
+        },
+        {
+          "name": "t-rex-ultra",
+          "deviceSource": 6553856
+        },
+        {
+          "name": "t-rex-ultra",
+          "deviceSource": 6553857
+        }
+      ],
+      "designWidth": 454
+    },
+    "round-466": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/home/index",
+            "page/tool-list/index",
+            "page/recipe-list/index",
+            "page/recipe-detail/index",
+            "page/brew-active/index",
+            "page/result-summary/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        {
+          "name": "active-3-premium",
+          "deviceSource": 10944768
+        },
+        {
+          "name": "active-3-premium",
+          "deviceSource": 10944769
+        },
+        {
+          "name": "active-3-premium",
+          "deviceSource": 10944771
+        },
+        {
+          "name": "active-3-premium",
+          "deviceSource": 10948867
+        },
+        {
+          "name": "t-rex-3-pro-44mm",
+          "deviceSource": 10682624
+        },
+        {
+          "name": "t-rex-3-pro-44mm",
+          "deviceSource": 10682625
+        },
+        {
+          "name": "t-rex-3-pro-44mm",
+          "deviceSource": 10682627
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 8913152
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 8913153
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 8913155
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 8913159
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 10092800
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 10092801
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 10092803
+        },
+        {
+          "name": "active-2-round",
+          "deviceSource": 10092807
+        },
+        {
+          "name": "gtr-4",
+          "deviceSource": 7930112
+        },
+        {
+          "name": "gtr-4",
+          "deviceSource": 7930113
+        },
+        {
+          "name": "gtr-4",
+          "deviceSource": 7864577
+        }
+      ],
+      "designWidth": 466
+    },
+    "round-480": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/home/index",
+            "page/tool-list/index",
+            "page/recipe-list/index",
+            "page/recipe-detail/index",
+            "page/brew-active/index",
+            "page/result-summary/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        {
+          "name": "balance",
+          "deviceSource": 8519936
+        },
+        {
+          "name": "balance",
+          "deviceSource": 8519937
+        },
+        {
+          "name": "balance",
+          "deviceSource": 8519939
+        },
+        {
+          "name": "balance-2",
+          "deviceSource": 9568512
+        },
+        {
+          "name": "balance-2",
+          "deviceSource": 9568513
+        },
+        {
+          "name": "balance-2",
+          "deviceSource": 9568515
+        },
+        {
+          "name": "t-rex-3",
+          "deviceSource": 8716544
+        },
+        {
+          "name": "t-rex-3",
+          "deviceSource": 8716545
+        },
+        {
+          "name": "t-rex-3",
+          "deviceSource": 8716547
+        },
+        {
+          "name": "t-rex-3-pro-48mm",
+          "deviceSource": 10551552
+        },
+        {
+          "name": "t-rex-3-pro-48mm",
+          "deviceSource": 10551553
+        },
+        {
+          "name": "t-rex-3-pro-48mm",
+          "deviceSource": 10551555
+        },
+        {
+          "name": "active-max",
+          "deviceSource": 10813697
+        },
+        {
+          "name": "active-max",
+          "deviceSource": 10813699
+        },
+        {
+          "name": "cheetah-pro",
+          "deviceSource": 8126720
+        },
+        {
+          "name": "cheetah-pro",
+          "deviceSource": 8126721
+        }
+      ],
+      "designWidth": 480
+    },
+    "square-390x450": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/home/index",
+            "page/tool-list/index",
+            "page/recipe-list/index",
+            "page/recipe-detail/index",
+            "page/brew-active/index",
+            "page/result-summary/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        }
+      },
+      "platforms": [
+        {
+          "name": "active-2-square",
+          "deviceSource": 10223872
+        },
+        {
+          "name": "active-2-square",
+          "deviceSource": 10223873
+        },
+        {
+          "name": "active-2-square",
+          "deviceSource": 10223875
+        },
+        {
+          "name": "bip-6",
+          "deviceSource": 9765120
+        },
+        {
+          "name": "bip-6",
+          "deviceSource": 9765121
+        },
+        {
+          "name": "bip-6",
+          "deviceSource": 10158337
+        },
+        {
+          "name": "active",
+          "deviceSource": 8323328
+        },
+        {
+          "name": "active",
+          "deviceSource": 8323329
+        },
+        {
+          "name": "cheetah-square",
+          "deviceSource": 8257793
+        },
+        {
+          "name": "gts-4",
+          "deviceSource": 7995648
+        },
+        {
+          "name": "gts-4",
+          "deviceSource": 7995649
+        }
+      ],
+      "designWidth": 390
     }
   },
   "i18n": {

@@ -15,6 +15,7 @@
 - Use `npm run validation:logs` against the captured log file during hardware tests and write back concrete findings instead of leaving raw `[pof-validation]` lines in chat only.
 - Re-run the real-device smoke path on `Amazfit Balance` after the runtime floor change to `3.6`, and confirm that bootstrap sync, resume, and `brew-active` still behave correctly on Balance 1 hardware.
 - Re-run the watch smoke path in Polish on real hardware and confirm that localized copy still fits on `home`, chooser pages, `recipe-detail`, `brew-active`, and `result-summary`.
+- Confirm target-matrix packaging on at least one `round-416`/Balance 1-class device or simulator profile and one `square-390x450` profile after the Parallax-style manifest split.
 
 ### Watch UI follow-up
 
@@ -32,7 +33,7 @@
 ### Tooling follow-up
 
 - Re-run a clean Ubuntu 26 checkout with `npm ci`, `npm run doctor:ubuntu`, and `npm run verify` to confirm the new local-Zeus path is enough without any global Zeus install.
-- Expand the preview baseline further only if later review passes need additional watch states beyond the current browser-rendered `verify:visual` matrix, richer icon treatment than the current shared tool assets, or more square/compact coverage.
+- Keep the Parallax-style screenshot matrix current: every new watch screen or page must add at least one deterministic `verify:visual` scenario.
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.
 - Decide whether the Playwright module harness should stay focused on browser-safe shared modules or grow browser stubs for selected `@zos/*` modules.
 - Confirm that the new `zepp-app/` subtree plus root-level `coverage/` split stays comfortable on both Windows and Linux after a few normal `zeus dev` cycles.

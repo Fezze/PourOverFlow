@@ -60,6 +60,7 @@ Current verified platform note:
 - the Vitest commands and `npm run build` are expected to work once dependencies are installed,
 - the actual Zeus package now lives under `zepp-app/`, so root-level Zeus work should go through the repo wrappers or by running Zeus from that subtree directly,
 - the Zeus-root helper now walks upward from nested folders too, so root wrappers still resolve `zepp-app/` when launched from `scripts/`, `test/`, or deeper app subfolders,
+- Parallax-compatible aliases are available: `npm run dev`, `npm run sim:doctor`, `npm run sim:smoke`, and `npm run test:playwright:screens`,
 - the Playwright harness commands on Linux require `PLAYWRIGHT_COVERAGE_BROWSER`,
 - Flatpak-hosted VS Code sessions should prefer `scripts/playwright-flatpak-host-browser.sh` for Playwright harness runs,
 - the simulator smoke command now resolves simulator metadata from:
@@ -79,6 +80,7 @@ Current verified platform note:
 - manifest and Settings UI contract,
 - Zepp app scaffold with passing `npm run build`,
 - a dedicated `zepp-app/` subtree so Zeus only watches the mini-app package and not root-level coverage output,
+- a Parallax Pilot-style manifest target matrix for `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450` while still targeting `API_LEVEL 3.6`,
 - seed data in `settingsStorage`,
 - a versioned seed catalog that can append newly introduced seed recipes without replaying the whole library on existing installs,
 - shared localization support for `en-US` and `pl-PL` across watch, phone, and starter recipes,
@@ -115,10 +117,13 @@ Current verified platform note:
 - Run `npm test` to execute the full Vitest suite across pure logic and mocked Zepp runtime flow tests.
 - Run `npm run test:coverage` when you want local JS coverage output.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
+- Run `npm run sim:doctor` to inspect local simulator metadata, DevTools status, and deployment freshness when simulator files are present.
+- Run `npm run sim:smoke` as the Parallax-compatible alias for the simulator smoke check.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - Run `npm run verify:visual` when you want the browser-backed preview gate, including fixture export, structural checks, and deterministic render validation.
-- Run `npm run preview:watch` when you want fresh review PNG artifacts for the main watch flows without relying on the simulator. The screenshots land under `output/playwright/watch-preview/screenshots`.
+- Run `npm run test:playwright:screens` as the Parallax-compatible alias for the screenshot gate.
+- Run `npm run preview:watch` when you want fresh review PNG artifacts for the main watch flows without relying on the simulator. The target-matrix screenshots land under `output/playwright/watch-preview/screenshots`.
 - Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
 - Run `npm run verify` for the canonical CLI full-stack verify pass, including the visual preview gate.
 - Run `npm run verify:fast` for the short local loop.
@@ -128,6 +133,8 @@ Current verified platform note:
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
 - Run `npm run build` after larger changes to keep the device package healthy from the repo root. It executes Zeus inside `zepp-app/`.
+- For Parallax-style simulator validation, use `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build`.
+- Any new watch page or screen must add at least one deterministic Playwright screenshot scenario before close-out.
 - Before every commit, run the repo-standard verify stack and make sure it is green.
 - After finishing a meaningful chunk of work, commit it unless the user explicitly asked you not to commit yet.
 - Keep pushing coverage upward when meaningful behavior-focused tests can be added without padding the suite.
@@ -247,7 +254,7 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 
 ## Important repo discoveries
 
-- The Zeus v4 scaffold builds target-based icons correctly from `assets/common.r/icon.png` and `assets/common.s/icon.png`.
+- The Zeus v4 scaffold builds target-based icons correctly from target asset folders. This repo now keeps `assets/round-416`, `assets/round-454`, `assets/round-466`, `assets/round-480`, and `assets/square-390x450`, while retaining `common.r` and `common.s` as fallback/shared asset locations.
 - The actual Zeus package now lives under `zepp-app/`, so docs, tests, scripts, and root `coverage/` can change without making `zeus dev` react.
 - `setting/index.js` is a practical toolchain entrypoint even when the main Settings App code lives in `.jsx`.
 - The current watch flow is no longer a local seed preview, and `active_session_v1` is already storage-backed; the remaining follow-up is resume hardening, not session persistence itself.

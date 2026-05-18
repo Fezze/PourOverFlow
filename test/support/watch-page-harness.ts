@@ -536,6 +536,654 @@ export function createCompactRoundLayoutMock(page: PreviewPage) {
   return createLayoutMock();
 }
 
+export function createPreviewLayoutMock(
+  page: PreviewPage,
+  device: { shape: "round" | "square"; width: number; height: number }
+) {
+  if (device.shape === "square") {
+    return createPreviewSquareLayoutMock(page, device.width, device.height);
+  }
+
+  return createPreviewRoundLayoutMock(page, device.width, device.height, device.width < 480 || device.height < 480);
+}
+
+function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: number, compact: boolean) {
+  const layout = createPreviewScaffoldLayout({
+    shape: "round",
+    width,
+    height,
+    compact
+  });
+  const metric = (regularValue: number, compactValue: number) => compact ? compactValue : regularValue;
+  const splitGap = metric(12, 10);
+  const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
+
+  if (page === "home") {
+    const secondaryButton = createPreviewButtonStyle(layout, {
+      theme: "secondary",
+      y: metric(308, 300),
+      w: splitWidth,
+      h: metric(40, 38),
+      radius: metric(20, 19),
+      text_size: metric(18, 17)
+    });
+    const accentButton = createPreviewButtonStyle(layout, {
+      theme: "accent",
+      x: layout.buttonX + splitWidth + splitGap,
+      y: metric(308, 300),
+      w: splitWidth,
+      h: metric(40, 38),
+      radius: metric(20, 19),
+      text_size: metric(18, 17)
+    });
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "primary",
+      y: metric(362, 350),
+      h: metric(64, 60),
+      radius: metric(32, 30),
+      text_size: metric(21, 20)
+    });
+
+    return {
+      ...layout.exports,
+      ACTION_DOCK: createPreviewDockStyle(primaryButton),
+      BUTTONS: [primaryButton, secondaryButton, accentButton]
+    };
+  }
+
+  if (page === "tool-list") {
+    const title = {
+      ...layout.title,
+      x: layout.buttonX - metric(16, 12),
+      y: metric(66, 60),
+      w: layout.buttonW + metric(32, 24),
+      text_size: metric(26, 24),
+      align_h: "CENTER_H"
+    };
+    const subtitle = {
+      ...layout.subtitle,
+      x: layout.buttonX - metric(8, 6),
+      y: metric(106, 98),
+      w: layout.buttonW + metric(16, 12),
+      align_h: "CENTER_H"
+    };
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "secondary",
+      y: metric(388, 378),
+      h: metric(40, 38),
+      radius: metric(20, 19)
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: title,
+      SUBTITLE_TEXT: subtitle,
+      LIST_FRAME: {
+        x: layout.buttonX - metric(16, 12),
+        y: metric(112, 108),
+        w: layout.buttonW + metric(32, 24),
+        h: metric(332, 320),
+        itemHeight: metric(92, 88),
+        itemSpace: metric(12, 10),
+        itemRadius: metric(24, 22),
+        titleHeight: metric(48, 44),
+        metaHeight: metric(28, 26)
+      },
+      PRIMARY_BUTTON: primaryButton
+    };
+  }
+
+  if (page === "recipe-list") {
+    const listPanel = createPreviewPanelStyle(layout, {
+      x: layout.buttonX - metric(6, 4),
+      y: metric(114, 108),
+      w: layout.buttonW + metric(12, 8),
+      h: metric(270, 260)
+    });
+    const emptyButton = createPreviewButtonStyle(layout, {
+      theme: "secondary",
+      y: metric(388, 378),
+      h: metric(40, 38),
+      radius: metric(20, 19)
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: {
+        ...layout.title,
+        x: layout.buttonX,
+        y: metric(64, 60),
+        w: layout.buttonW,
+        text_size: metric(26, 24)
+      },
+      SUBTITLE_TEXT: {
+        ...layout.subtitle,
+        x: layout.buttonX,
+        y: metric(100, 94),
+        w: layout.buttonW
+      },
+      LIST_PANEL: listPanel,
+      LIST_FRAME: {
+        x: listPanel.x + 8,
+        y: listPanel.y + 8,
+        w: listPanel.w - 16,
+        h: listPanel.h - 16,
+        itemHeight: metric(104, 98),
+        itemSpace: 8,
+        itemRadius: metric(22, 20),
+        titleHeight: metric(44, 40),
+        metaHeight: metric(26, 24)
+      },
+      EMPTY_BUTTON: emptyButton
+    };
+  }
+
+  if (page === "recipe-detail") {
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "primary",
+      y: metric(380, 370),
+      h: metric(64, 60),
+      radius: metric(32, 30),
+      text_size: metric(21, 20)
+    });
+    const detailPanel = createPreviewPanelStyle(layout, {
+      x: layout.buttonX - metric(8, 6),
+      y: metric(110, 104),
+      w: layout.buttonW + metric(16, 12),
+      h: metric(246, 236)
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: {
+        ...layout.title,
+        align_h: "CENTER_H"
+      },
+      SUBTITLE_TEXT: layout.subtitle,
+      DETAIL_PANEL: detailPanel,
+      BODY_TEXT: {
+        ...layout.body,
+        y: detailPanel.y + metric(18, 16),
+        h: detailPanel.h - metric(36, 32)
+      },
+      FOOTER_TEXT: {
+        ...layout.footer,
+        y: metric(326, 314),
+        h: metric(28, 26)
+      },
+      ACTION_DOCK: createPreviewDockStyle(primaryButton),
+      BUTTONS: [primaryButton]
+    };
+  }
+
+  if (page === "brew-active") {
+    const dockInset = metric(10, 8);
+    const actionGap = metric(16, 14);
+    const dockY = metric(382, 372);
+    const dockHeight = metric(84, 78);
+    const actionBaseY = dockY + metric(8, 7);
+    const actionBaseH = dockHeight - metric(16, 14);
+    const actionDockWidth = layout.buttonW - dockInset * 2;
+    const actionButtonWidth = Math.floor((actionDockWidth - actionGap - metric(16, 14)) / 2);
+    const centerX = layout.buttonX + Math.floor(layout.buttonW / 2);
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "primary",
+      x: centerX + Math.floor(actionGap / 2),
+      y: actionBaseY,
+      w: actionButtonWidth,
+      h: actionBaseH,
+      radius: Math.floor(actionBaseH / 2),
+      text_size: metric(28, 26)
+    });
+    const secondaryButton = createPreviewButtonStyle(layout, {
+      theme: "secondary",
+      x: centerX - Math.floor(actionGap / 2) - actionButtonWidth,
+      y: actionBaseY,
+      w: actionButtonWidth,
+      h: actionBaseH,
+      radius: Math.floor(actionBaseH / 2),
+      text_size: metric(28, 26)
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: {
+        ...layout.title,
+        align_h: "CENTER_H"
+      },
+      BODY_TEXT: layout.body,
+      FOOTER_TEXT: layout.footer,
+      ACTION_DOCK: {
+        x: layout.buttonX + dockInset,
+        y: dockY,
+        w: actionDockWidth,
+        h: dockHeight,
+        radius: Math.floor(dockHeight / 2),
+        color: 0x202833
+      },
+      BUTTONS: [primaryButton, secondaryButton]
+    };
+  }
+
+  const secondaryButton = createPreviewButtonStyle(layout, {
+    theme: "secondary",
+    y: metric(324, 312),
+    w: splitWidth,
+    h: metric(40, 38),
+    radius: metric(20, 19)
+  });
+  const accentButton = createPreviewButtonStyle(layout, {
+    theme: "neutral",
+    x: layout.buttonX + splitWidth + splitGap,
+    y: metric(324, 312),
+    w: splitWidth,
+    h: metric(40, 38),
+    radius: metric(20, 19)
+  });
+  const primaryButton = createPreviewButtonStyle(layout, {
+    theme: "primary",
+    y: metric(382, 370),
+    h: metric(64, 60),
+    radius: metric(32, 30),
+    text_size: metric(21, 20)
+  });
+
+  return {
+    ...layout.exports,
+    TITLE_TEXT: {
+      ...layout.title,
+      x: layout.buttonX - metric(16, 12),
+      y: metric(68, 62),
+      w: layout.buttonW + metric(32, 24),
+      align_h: "CENTER_H"
+    },
+    SUBTITLE_TEXT: {
+      ...layout.subtitle,
+      x: layout.buttonX - metric(8, 6),
+      y: metric(106, 98),
+      w: layout.buttonW + metric(16, 12),
+      align_h: "CENTER_H"
+    },
+    ACTION_DOCK: createPreviewDockStyle(primaryButton),
+    BUTTONS: [primaryButton, secondaryButton, accentButton]
+  };
+}
+
+function createPreviewSquareLayoutMock(page: PreviewPage, width: number, height: number) {
+  const layout = createPreviewScaffoldLayout({
+    shape: "square",
+    width,
+    height,
+    compact: false
+  });
+  const splitGap = 12;
+  const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
+
+  if (page === "home") {
+    const secondaryButton = createPreviewButtonStyle(layout, {
+      theme: "secondary",
+      y: 238,
+      w: splitWidth,
+      h: 40,
+      radius: 20,
+      text_size: 18
+    });
+    const accentButton = createPreviewButtonStyle(layout, {
+      theme: "accent",
+      x: layout.buttonX + splitWidth + splitGap,
+      y: 238,
+      w: splitWidth,
+      h: 40,
+      radius: 20,
+      text_size: 18
+    });
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "primary",
+      y: 286,
+      h: 60,
+      radius: 30,
+      text_size: 20
+    });
+
+    return {
+      ...layout.exports,
+      ACTION_DOCK: createPreviewDockStyle(primaryButton),
+      BUTTONS: [primaryButton, secondaryButton, accentButton]
+    };
+  }
+
+  if (page === "tool-list") {
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: {
+        ...layout.title,
+        align_h: "CENTER_H"
+      },
+      SUBTITLE_TEXT: {
+        ...layout.subtitle,
+        align_h: "CENTER_H"
+      },
+      LIST_FRAME: {
+        x: 18,
+        y: 112,
+        w: Math.min(344, width - 36),
+        h: 228,
+        itemHeight: 92,
+        itemSpace: 10,
+        itemRadius: 20,
+        titleHeight: 40,
+        metaHeight: 24
+      },
+      PRIMARY_BUTTON: createPreviewButtonStyle(layout, {
+        theme: "secondary",
+        y: layout.buttonY,
+        h: layout.buttonH,
+        radius: 18,
+        text_size: 18
+      })
+    };
+  }
+
+  if (page === "recipe-list") {
+    const listPanel = createPreviewPanelStyle(layout, {
+      y: 108,
+      h: 228
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: layout.title,
+      SUBTITLE_TEXT: layout.subtitle,
+      LIST_PANEL: listPanel,
+      LIST_FRAME: {
+        x: listPanel.x + 8,
+        y: listPanel.y + 8,
+        w: listPanel.w - 16,
+        h: listPanel.h - 16,
+        itemHeight: 96,
+        itemSpace: 8,
+        itemRadius: 18,
+        titleHeight: 38,
+        metaHeight: 24
+      },
+      EMPTY_BUTTON: createPreviewButtonStyle(layout, {
+        theme: "secondary",
+        y: layout.buttonY,
+        h: layout.buttonH,
+        radius: 18,
+        text_size: 18
+      })
+    };
+  }
+
+  if (page === "recipe-detail") {
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "primary",
+      y: 302,
+      h: 60,
+      radius: 30,
+      text_size: 20
+    });
+    const detailPanel = createPreviewPanelStyle(layout, {
+      x: 24,
+      y: 100,
+      w: Math.min(336, width - 48),
+      h: 176
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: layout.title,
+      SUBTITLE_TEXT: layout.subtitle,
+      DETAIL_PANEL: detailPanel,
+      BODY_TEXT: {
+        ...layout.body,
+        y: detailPanel.y + 16,
+        h: detailPanel.h - 32
+      },
+      FOOTER_TEXT: {
+        ...layout.footer,
+        y: 262,
+        h: 28
+      },
+      ACTION_DOCK: createPreviewDockStyle(primaryButton),
+      BUTTONS: [primaryButton]
+    };
+  }
+
+  if (page === "brew-active") {
+    const dockInset = 8;
+    const actionGap = 14;
+    const dockY = 304;
+    const dockHeight = 76;
+    const actionBaseY = dockY + 7;
+    const actionBaseH = dockHeight - 14;
+    const actionDockWidth = layout.buttonW - dockInset * 2;
+    const actionButtonWidth = Math.floor((actionDockWidth - actionGap - 14) / 2);
+    const centerX = layout.buttonX + Math.floor(layout.buttonW / 2);
+    const primaryButton = createPreviewButtonStyle(layout, {
+      theme: "primary",
+      x: centerX + Math.floor(actionGap / 2),
+      y: actionBaseY,
+      w: actionButtonWidth,
+      h: actionBaseH,
+      radius: Math.floor(actionBaseH / 2),
+      text_size: 24
+    });
+    const secondaryButton = createPreviewButtonStyle(layout, {
+      theme: "secondary",
+      x: centerX - Math.floor(actionGap / 2) - actionButtonWidth,
+      y: actionBaseY,
+      w: actionButtonWidth,
+      h: actionBaseH,
+      radius: Math.floor(actionBaseH / 2),
+      text_size: 24
+    });
+
+    return {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: layout.title,
+      BODY_TEXT: layout.body,
+      FOOTER_TEXT: layout.footer,
+      ACTION_DOCK: {
+        x: layout.buttonX + dockInset,
+        y: dockY,
+        w: actionDockWidth,
+        h: dockHeight,
+        radius: Math.floor(dockHeight / 2),
+        color: 0x202833
+      },
+      BUTTONS: [primaryButton, secondaryButton]
+    };
+  }
+
+  const secondaryButton = createPreviewButtonStyle(layout, {
+    theme: "secondary",
+    y: 252,
+    w: splitWidth,
+    h: 40,
+    radius: 20
+  });
+  const accentButton = createPreviewButtonStyle(layout, {
+    theme: "neutral",
+    x: layout.buttonX + splitWidth + splitGap,
+    y: 252,
+    w: splitWidth,
+    h: 40,
+    radius: 20
+  });
+  const primaryButton = createPreviewButtonStyle(layout, {
+    theme: "primary",
+    y: 300,
+    h: 60,
+    radius: 30,
+    text_size: 20
+  });
+
+  return {
+    ...layout.exports,
+    TITLE_TEXT: {
+      ...layout.title,
+      align_h: "CENTER_H"
+    },
+    SUBTITLE_TEXT: {
+      ...layout.subtitle,
+      align_h: "CENTER_H"
+    },
+    ACTION_DOCK: createPreviewDockStyle(primaryButton),
+    BUTTONS: [primaryButton, secondaryButton, accentButton]
+  };
+}
+
+function createPreviewScaffoldLayout(options: {
+  shape: "round" | "square";
+  width: number;
+  height: number;
+  compact: boolean;
+}) {
+  const isRound = options.shape === "round";
+  const horizontalPadding = isRound ? (options.compact ? 68 : 64) : 28;
+  const buttonStartY = isRound ? (options.compact ? 224 : 232) : 214;
+  const buttonHeight = isRound ? (options.compact ? 40 : 42) : 44;
+  const buttonGap = 8;
+  const buttonX = horizontalPadding;
+  const buttonW = options.width - horizontalPadding * 2;
+  const layout = {
+    background: {
+      x: 0,
+      y: 0,
+      w: options.width,
+      h: options.height,
+      color: 0x0e1218
+    },
+    title: {
+      x: horizontalPadding,
+      y: isRound ? (options.compact ? 56 : 60) : 30,
+      w: buttonW,
+      h: isRound ? 38 : 34,
+      color: 0xf5f7fa,
+      text_size: isRound ? (options.compact ? 24 : 26) : 28,
+      align_h: "LEFT",
+      align_v: "CENTER_V",
+      text_style: "WRAP"
+    },
+    subtitle: {
+      x: horizontalPadding,
+      y: isRound ? (options.compact ? 88 : 94) : 66,
+      w: buttonW,
+      h: isRound ? 34 : 30,
+      color: 0xaab4c2,
+      text_size: isRound ? (options.compact ? 14 : 15) : 16,
+      align_h: "LEFT",
+      align_v: "CENTER_V",
+      text_style: "WRAP"
+    },
+    body: {
+      x: horizontalPadding,
+      y: isRound ? (options.compact ? 126 : 134) : 102,
+      w: buttonW,
+      h: 74,
+      color: 0xf5f7fa,
+      text_size: isRound ? (options.compact ? 16 : 17) : 18,
+      align_h: "LEFT",
+      align_v: "TOP",
+      text_style: "WRAP"
+    },
+    footer: {
+      x: horizontalPadding,
+      y: options.height - (isRound ? (options.compact ? 88 : 82) : 56),
+      w: buttonW,
+      h: 38,
+      color: 0xaab4c2,
+      text_size: isRound ? (options.compact ? 13 : 14) : 14,
+      align_h: "LEFT",
+      align_v: "CENTER_V",
+      text_style: "WRAP"
+    },
+    buttonX,
+    buttonY: buttonStartY,
+    buttonW,
+    buttonH: buttonHeight,
+    buttonGap
+  };
+
+  return {
+    ...layout,
+    exports: {
+      BACKGROUND: layout.background,
+      TITLE_TEXT: layout.title,
+      SUBTITLE_TEXT: layout.subtitle,
+      BODY_TEXT: layout.body,
+      FOOTER_TEXT: layout.footer
+    }
+  };
+}
+
+function createPreviewButtonStyle(
+  layout: ReturnType<typeof createPreviewScaffoldLayout>,
+  options: Record<string, any> = {}
+) {
+  const palette = {
+    primary: {
+      normal: 0x0986d4,
+      press: 0x06649f
+    },
+    secondary: {
+      normal: 0x2a3340,
+      press: 0x202733
+    },
+    accent: {
+      normal: 0xd9922e,
+      press: 0xaf6f19
+    },
+    neutral: {
+      normal: 0x434f5f,
+      press: 0x303947
+    }
+  }[options.theme || "primary"] || {
+    normal: 0x0986d4,
+    press: 0x06649f
+  };
+  const h = options.h ?? layout.buttonH;
+
+  return {
+    x: options.x ?? layout.buttonX,
+    y: options.y ?? layout.buttonY,
+    w: options.w ?? layout.buttonW,
+    h,
+    radius: options.radius ?? Math.floor(h / 2),
+    text_size: options.text_size ?? (h >= 64 ? 22 : 18),
+    normal_color: palette.normal,
+    press_color: palette.press,
+    color: 0xf5f7fa
+  };
+}
+
+function createPreviewDockStyle(button: Record<string, number>) {
+  return {
+    x: button.x,
+    y: button.y,
+    w: button.w,
+    h: button.h,
+    radius: button.radius,
+    color: 0x202833
+  };
+}
+
+function createPreviewPanelStyle(
+  layout: ReturnType<typeof createPreviewScaffoldLayout>,
+  options: Record<string, any> = {}
+) {
+  return {
+    x: options.x ?? layout.buttonX,
+    y: options.y ?? layout.body.y - 12,
+    w: options.w ?? layout.buttonW,
+    h: options.h ?? 104,
+    radius: options.radius ?? 24,
+    color: options.color ?? 0x171d26
+  };
+}
+
 export async function loadPageHarness(modulePath: string, layoutMock: Record<string, unknown>) {
   vi.resetModules();
   vi.doMock("zosLoader:./index.[pf].layout.js", () => layoutMock);

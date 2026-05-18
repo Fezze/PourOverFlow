@@ -7,18 +7,14 @@ import { WATCH_STORAGE_KEYS } from "../zepp-app/shared/storage/keys.js";
 import {
   buildPage,
   createCatalogFixture,
-  createCompactRoundLayoutMock,
   createExpandedCatalogFixture,
-  createLayoutMock,
-  createSquareLayoutMock,
+  createPreviewLayoutMock,
   loadPageHarness,
   type PreviewPage
 } from "./support/watch-page-harness.ts";
 
 const OUTPUT_ROOT = path.resolve(process.cwd(), "output", "playwright", "watch-preview");
 const FIXTURE_ROOT = path.join(OUTPUT_ROOT, "fixtures");
-const COMPACT_ROUND_SIZE = 416;
-
 type PreviewLocale = "en-US" | "pl-PL";
 type PreviewShape = "round" | "square";
 type PreviewLayoutVariant = "round" | "square" | "compact-round";
@@ -36,6 +32,7 @@ type PreviewState =
 
 type PreviewScenario = {
   name: string;
+  targetName: string;
   page: PreviewPage;
   state: PreviewState;
   locale: PreviewLocale;
@@ -43,33 +40,48 @@ type PreviewScenario = {
   layoutVariant: PreviewLayoutVariant;
   width: number;
   height: number;
+  assetDirectory: string;
   modulePath: string;
   expectedButtonCount: number;
   requiredTextSnippets: string[];
   prepare: (runtime: any) => Promise<void>;
 };
 
-const previewScenarios: PreviewScenario[] = [
-  createHomeScenario({ locale: "en-US", state: "ready", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createHomeScenario({ locale: "pl-PL", state: "ready", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createHomeScenario({ locale: "en-US", state: "empty", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createHomeScenario({ locale: "pl-PL", state: "resume", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE }),
-  createToolListScenario({ locale: "en-US", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createToolListScenario({ locale: "pl-PL", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
-  createRecipeListScenario({ locale: "en-US", state: "populated", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createRecipeListScenario({ locale: "pl-PL", state: "populated", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
-  createRecipeListScenario({ locale: "en-US", state: "empty-brewer", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createRecipeListScenario({ locale: "pl-PL", state: "populated", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE }),
-  createRecipeDetailScenario({ locale: "en-US", state: "normal", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createRecipeDetailScenario({ locale: "pl-PL", state: "normal", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
-  createRecipeDetailScenario({ locale: "en-US", state: "overflow", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE }),
-  createBrewActiveScenario({ locale: "en-US", state: "timed", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createBrewActiveScenario({ locale: "pl-PL", state: "waiting", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
-  createBrewActiveScenario({ locale: "en-US", state: "overflow", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE }),
-  createResultSummaryScenario({ locale: "en-US", state: "normal", layoutVariant: "round", shape: "round", width: 480, height: 480 }),
-  createResultSummaryScenario({ locale: "pl-PL", state: "empty-result", layoutVariant: "square", shape: "square", width: 480, height: 480 }),
-  createResultSummaryScenario({ locale: "en-US", state: "normal", layoutVariant: "compact-round", shape: "round", width: COMPACT_ROUND_SIZE, height: COMPACT_ROUND_SIZE })
+type PreviewTarget = {
+  targetName: string;
+  shape: PreviewShape;
+  layoutVariant: PreviewLayoutVariant;
+  width: number;
+  height: number;
+  assetDirectory: string;
+};
+
+const PREVIEW_LOCALES: PreviewLocale[] = ["en-US", "pl-PL"];
+const PREVIEW_TARGETS: PreviewTarget[] = [
+  createPreviewTarget("round-416", "round", 416, 416),
+  createPreviewTarget("round-454", "round", 454, 454),
+  createPreviewTarget("round-466", "round", 466, 466),
+  createPreviewTarget("round-480", "round", 480, 480),
+  createPreviewTarget("square-390x450", "square", 390, 450)
 ];
+
+const previewScenarios: PreviewScenario[] = PREVIEW_LOCALES.flatMap((locale) => (
+  PREVIEW_TARGETS.flatMap((target) => [
+    createHomeScenario({ locale, state: "ready", target }),
+    createHomeScenario({ locale, state: "empty", target }),
+    createHomeScenario({ locale, state: "resume", target }),
+    createToolListScenario({ locale, target }),
+    createRecipeListScenario({ locale, state: "populated", target }),
+    createRecipeListScenario({ locale, state: "empty-brewer", target }),
+    createRecipeDetailScenario({ locale, state: "normal", target }),
+    createRecipeDetailScenario({ locale, state: "overflow", target }),
+    createBrewActiveScenario({ locale, state: "timed", target }),
+    createBrewActiveScenario({ locale, state: "waiting", target }),
+    createBrewActiveScenario({ locale, state: "overflow", target }),
+    createResultSummaryScenario({ locale, state: "normal", target }),
+    createResultSummaryScenario({ locale, state: "empty-result", target })
+  ])
+));
 
 beforeAll(async () => {
   await rm(FIXTURE_ROOT, { recursive: true, force: true });
@@ -80,7 +92,11 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
   const manifest = [] as Array<Record<string, unknown>>;
 
   for (const scenario of previewScenarios) {
-    const layoutMock = resolveLayoutMock(scenario);
+    const layoutMock = createPreviewLayoutMock(scenario.page, {
+      shape: scenario.shape,
+      width: scenario.width,
+      height: scenario.height
+    });
     const { runtime, pageDefinition } = await loadPageHarness(scenario.modulePath, layoutMock);
 
     expect(pageDefinition).toBeTruthy();
@@ -93,12 +109,14 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
       page: scenario.page,
       state: scenario.state,
       locale: scenario.locale,
+      targetName: scenario.targetName,
       device: {
         width: scenario.width,
         height: scenario.height,
         shape: scenario.shape,
         layoutVariant: scenario.layoutVariant,
-        assetDirectory: scenario.shape === "square" ? "zepp-app/assets/common.s" : "zepp-app/assets/common.r"
+        targetName: scenario.targetName,
+        assetDirectory: scenario.assetDirectory
       },
       expectedButtonCount: scenario.expectedButtonCount,
       requiredTextSnippets: scenario.requiredTextSnippets,
@@ -114,10 +132,12 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
       page: scenario.page,
       state: scenario.state,
       locale: scenario.locale,
+      targetName: scenario.targetName,
       shape: scenario.shape,
       layoutVariant: scenario.layoutVariant,
       width: scenario.width,
       height: scenario.height,
+      assetDirectory: scenario.assetDirectory,
       fixtureFile: fileName,
       screenshotFile: `${scenario.name}.png`,
       expectedButtonCount: scenario.expectedButtonCount
@@ -139,18 +159,6 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
   const manifestFromDisk = JSON.parse(await readFile(path.join(FIXTURE_ROOT, "manifest.json"), "utf8"));
   expect(manifestFromDisk).toHaveLength(previewScenarios.length);
 });
-
-function resolveLayoutMock(scenario: PreviewScenario) {
-  if (scenario.layoutVariant === "square") {
-    return createSquareLayoutMock(scenario.page);
-  }
-
-  if (scenario.layoutVariant === "compact-round") {
-    return createCompactRoundLayoutMock(scenario.page);
-  }
-
-  return createLayoutMock();
-}
 
 function validatePreviewFixture(fixturePayload: Record<string, any>) {
   const { device, widgets, expectedButtonCount, requiredTextSnippets } = fixturePayload;
@@ -222,23 +230,38 @@ function serializeWidgets(widgets: Array<Record<string, unknown>>) {
   })));
 }
 
+function createPreviewTarget(
+  targetName: string,
+  shape: PreviewShape,
+  width: number,
+  height: number
+): PreviewTarget {
+  return {
+    targetName,
+    shape,
+    layoutVariant: shape === "square" ? "square" : width < 480 || height < 480 ? "compact-round" : "round",
+    width,
+    height,
+    assetDirectory: `zepp-app/assets/${targetName}`
+  };
+}
+
 function createHomeScenario(options: {
   locale: PreviewLocale;
   state: "ready" | "empty" | "resume";
-  layoutVariant: PreviewLayoutVariant;
-  shape: PreviewShape;
-  width: number;
-  height: number;
+  target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("home", options.state, options.locale, options.shape, options.width, options.height),
+    name: buildScenarioName("home", options.state, options.locale, options.target.shape, options.target.width, options.target.height),
+    targetName: options.target.targetName,
     page: "home",
     state: options.state,
     locale: options.locale,
-    shape: options.shape,
-    layoutVariant: options.layoutVariant,
-    width: options.width,
-    height: options.height,
+    shape: options.target.shape,
+    layoutVariant: options.target.layoutVariant,
+    width: options.target.width,
+    height: options.target.height,
+    assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/home/index.js",
     expectedButtonCount: 3,
     requiredTextSnippets: options.locale === "pl-PL"
@@ -251,7 +274,7 @@ function createHomeScenario(options: {
     async prepare(runtime) {
       const fixture = createCatalogFixture();
       runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.width, height: options.height, keyNumber: 3, keyType: "sport" });
+      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
 
       if (options.state === "empty") {
         runtime.setLocalStorageState({});
@@ -278,27 +301,26 @@ function createHomeScenario(options: {
 
 function createToolListScenario(options: {
   locale: PreviewLocale;
-  layoutVariant: "round" | "square";
-  shape: PreviewShape;
-  width: number;
-  height: number;
+  target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("tool-list", "populated", options.locale, options.shape, options.width, options.height),
+    name: buildScenarioName("tool-list", "populated", options.locale, options.target.shape, options.target.width, options.target.height),
+    targetName: options.target.targetName,
     page: "tool-list",
     state: "populated",
     locale: options.locale,
-    shape: options.shape,
-    layoutVariant: options.layoutVariant,
-    width: options.width,
-    height: options.height,
+    shape: options.target.shape,
+    layoutVariant: options.target.layoutVariant,
+    width: options.target.width,
+    height: options.target.height,
+    assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/tool-list/index.js",
     expectedButtonCount: 0,
     requiredTextSnippets: options.locale === "pl-PL" ? ["Zaparzacze"] : ["Brewers"],
     async prepare(runtime) {
       const fixture = createExpandedCatalogFixture();
       runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.width, height: options.height, keyNumber: 3, keyType: "sport" });
+      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
       });
@@ -309,20 +331,19 @@ function createToolListScenario(options: {
 function createRecipeListScenario(options: {
   locale: PreviewLocale;
   state: "populated" | "empty-brewer";
-  layoutVariant: "round" | "square" | "compact-round";
-  shape: PreviewShape;
-  width: number;
-  height: number;
+  target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("recipe-list", options.state, options.locale, options.shape, options.width, options.height),
+    name: buildScenarioName("recipe-list", options.state, options.locale, options.target.shape, options.target.width, options.target.height),
+    targetName: options.target.targetName,
     page: "recipe-list",
     state: options.state,
     locale: options.locale,
-    shape: options.shape,
-    layoutVariant: options.layoutVariant,
-    width: options.width,
-    height: options.height,
+    shape: options.target.shape,
+    layoutVariant: options.target.layoutVariant,
+    width: options.target.width,
+    height: options.target.height,
+    assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/recipe-list/index.js",
     expectedButtonCount: options.state === "empty-brewer" ? 1 : 0,
     requiredTextSnippets: options.state === "empty-brewer"
@@ -333,7 +354,7 @@ function createRecipeListScenario(options: {
     async prepare(runtime) {
       const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
       runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.width, height: options.height, keyNumber: 3, keyType: "sport" });
+      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
 
       if (options.state === "empty-brewer") {
         const fixture = createCatalogFixture();
@@ -356,33 +377,32 @@ function createRecipeListScenario(options: {
 function createRecipeDetailScenario(options: {
   locale: PreviewLocale;
   state: "normal" | "overflow";
-  layoutVariant: "round" | "square" | "compact-round";
-  shape: PreviewShape;
-  width: number;
-  height: number;
+  target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("recipe-detail", options.state, options.locale, options.shape, options.width, options.height),
+    name: buildScenarioName("recipe-detail", options.state, options.locale, options.target.shape, options.target.width, options.target.height),
+    targetName: options.target.targetName,
     page: "recipe-detail",
     state: options.state,
     locale: options.locale,
-    shape: options.shape,
-    layoutVariant: options.layoutVariant,
-    width: options.width,
-    height: options.height,
+    shape: options.target.shape,
+    layoutVariant: options.target.layoutVariant,
+    width: options.target.width,
+    height: options.target.height,
+    assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/recipe-detail/index.js",
     expectedButtonCount: 1,
     requiredTextSnippets: options.state === "overflow"
       ? []
       : options.locale === "pl-PL"
         ? []
-        : ["Start brew", "Brew profile"],
+        : ["Start brew"],
     async prepare(runtime) {
       const fixture = createCatalogFixture();
       const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
 
       runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.width, height: options.height, keyNumber: 3, keyType: "sport" });
+      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
 
       const snapshot = options.state === "overflow"
         ? {
@@ -409,20 +429,19 @@ function createRecipeDetailScenario(options: {
 function createBrewActiveScenario(options: {
   locale: PreviewLocale;
   state: "timed" | "waiting" | "overflow";
-  layoutVariant: "round" | "square" | "compact-round";
-  shape: PreviewShape;
-  width: number;
-  height: number;
+  target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("brew-active", options.state, options.locale, options.shape, options.width, options.height),
+    name: buildScenarioName("brew-active", options.state, options.locale, options.target.shape, options.target.width, options.target.height),
+    targetName: options.target.targetName,
     page: "brew-active",
     state: options.state,
     locale: options.locale,
-    shape: options.shape,
-    layoutVariant: options.layoutVariant,
-    width: options.width,
-    height: options.height,
+    shape: options.target.shape,
+    layoutVariant: options.target.layoutVariant,
+    width: options.target.width,
+    height: options.target.height,
+    assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/brew-active/index.js",
     expectedButtonCount: 2,
     requiredTextSnippets: options.locale === "pl-PL"
@@ -465,7 +484,7 @@ function createBrewActiveScenario(options: {
       }
 
       runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.width, height: options.height, keyNumber: 3, keyType: "sport" });
+      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
       });
@@ -478,20 +497,19 @@ function createBrewActiveScenario(options: {
 function createResultSummaryScenario(options: {
   locale: PreviewLocale;
   state: "normal" | "empty-result";
-  layoutVariant: "round" | "square" | "compact-round";
-  shape: PreviewShape;
-  width: number;
-  height: number;
+  target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("result-summary", options.state, options.locale, options.shape, options.width, options.height),
+    name: buildScenarioName("result-summary", options.state, options.locale, options.target.shape, options.target.width, options.target.height),
+    targetName: options.target.targetName,
     page: "result-summary",
     state: options.state,
     locale: options.locale,
-    shape: options.shape,
-    layoutVariant: options.layoutVariant,
-    width: options.width,
-    height: options.height,
+    shape: options.target.shape,
+    layoutVariant: options.target.layoutVariant,
+    width: options.target.width,
+    height: options.target.height,
+    assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/result-summary/index.js",
     expectedButtonCount: options.state === "empty-result" ? 2 : 1,
     requiredTextSnippets: options.state === "empty-result"
@@ -503,7 +521,7 @@ function createResultSummaryScenario(options: {
         : ["Status", "Home"],
     async prepare(runtime) {
       runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.width, height: options.height, keyNumber: 3, keyType: "sport" });
+      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
 
       if (options.state === "empty-result") {
         runtime.setLocalStorageState({});

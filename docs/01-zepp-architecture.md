@@ -9,6 +9,7 @@ The project should be built as a modern Zepp mini-app:
 - current compatibility floor: `API_LEVEL 3.6`
 - chosen to keep the Balance 1 path open without depending on the simulator to report `3.7` correctly
 - `round + square` only
+- Parallax Pilot-style target matrix: `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`
 - `band` out of scope
 
 The codebase should use `@zos/*`, not legacy `hmUI` or `hmApp`.
@@ -33,6 +34,11 @@ zepp-app/
   assets/
     common.r/
     common.s/
+    round-416/
+    round-454/
+    round-466/
+    round-480/
+    square-390x450/
   page/
     home/
       index.js
@@ -211,11 +217,17 @@ The project should use the `app.json v3+` mechanism and layout files:
 - `index.r.layout.js` for round,
 - `index.s.layout.js` for square,
 - `zosLoader:./index.[pf].layout.js` for layout selection,
-- `zepp-app/assets/common.r` and `zepp-app/assets/common.s` for assets.
+- target asset folders such as `zepp-app/assets/round-480` and `zepp-app/assets/square-390x450`, with `common.r` and `common.s` retained as shared fallback asset locations.
 
 ### `designWidth` decision
 
-Do not set `designWidth` manually at the start. Use Zepp defaults for round and square first. Once the first screens exist, this can be revisited using real assets, but the documentation baseline should stay neutral and use `px(...)` where values come from a draft.
+The manifest now sets `designWidth` per target family so Zeus packages the same shared page code for the supported device matrix:
+
+- `round-416`: `416`
+- `round-454`: `454`
+- `round-466`: `466`
+- `round-480`: `480`
+- `square-390x450`: `390`
 
 For the current round baseline, keep a single shared round page set and apply only a small compact-round adjustment when runtime sizing reports a sub-`480x480` round screen. Do not fork a second Balance 1 page set unless later hardware validation proves the compact pass is still insufficient.
 
@@ -225,8 +237,7 @@ In `app.json`, the next agent should freeze at least:
 
 - `configVersion: "v3"`,
 - `runtime.apiVersion.target: "3.6"`,
-- target `common`,
-- `round` and `square` platforms,
+- targets `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`,
 - registration of all `page/*` pages,
 - enabled `setting/` and `app-side/`.
 

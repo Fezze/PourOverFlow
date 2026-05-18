@@ -37,7 +37,7 @@ Sources:
 
 ### Target shape
 
-Implementation should start from this outline:
+Implementation should stay aligned with this outline:
 
 ```json
 {
@@ -59,15 +59,14 @@ Implementation should start from this outline:
     "device:os.local_storage"
   ],
   "runtime": {
-      "apiVersion": {
+    "apiVersion": {
       "minVersion": "3.6",
       "compatible": "3.6",
       "target": "3.6"
-    },
-    "type": "0"
+    }
   },
   "targets": {
-    "common": {
+    "round-416": {
       "module": {
         "page": {
           "pages": [
@@ -86,15 +85,13 @@ Implementation should start from this outline:
           "path": "setting/index"
         }
       },
-      "platforms": [
-        {
-          "st": "r"
-        },
-        {
-          "st": "s"
-        }
-      ]
-    }
+      "platforms": [{ "name": "falcon", "deviceSource": 414 }],
+      "designWidth": 416
+    },
+    "round-454": "...same module shape, designWidth 454",
+    "round-466": "...same module shape, designWidth 466",
+    "round-480": "...same module shape, designWidth 480",
+    "square-390x450": "...same module shape, designWidth 390"
   },
   "i18n": {
     "en-US": {
@@ -116,8 +113,9 @@ Implementation should start from this outline:
 - `appId` is a placeholder to replace later if the project is registered under a concrete account.
 - `vender` must remain ASCII.
 - Keep `data:os.device.info` when the watch layout layer uses `getDeviceInfo()` for runtime sizing.
-- In the first scaffold, do not force `runtime.type`, because official Zeus templates do not require it for a passing build.
-- Do not add `designWidth` in the first scaffold.
+- Do not force `runtime.type`, because official Zeus templates do not require it for a passing build.
+- Keep the Parallax-style target matrix on the same `API_LEVEL 3.6` runtime baseline; do not copy Parallax Pilot's `target: "4.0"` unless that becomes an explicit product decision.
+- Keep `designWidth` tied to the target family: `416`, `454`, `466`, `480`, and `390` for `square-390x450`.
 - Do not add `app-service`, `secondary-widget`, `app-widget`, `data-widget`, or BLE permissions.
 - Do not add a `band` target.
 
@@ -130,6 +128,11 @@ zepp-app/
   assets/
     common.r/
     common.s/
+    round-416/
+    round-454/
+    round-466/
+    round-480/
+    square-390x450/
   page/home/index.js
   page/home/index.r.layout.js
   page/home/index.s.layout.js
@@ -173,6 +176,7 @@ The watch UI now follows these repo-level rules:
 - once a detail page already shows visible summary rows and a clear CTA, avoid spending extra footer space on generic "scroll" hints,
 - destructive or secondary watch actions should prefer short Zepp-safe labels or icon treatment over another full-width text button,
 - active-brew actions may use a custom side-by-side dock when that better matches the intended Zepp interaction pattern, but keep that dock visually simple: one rounded base surface and two rounded pill actions instead of extra mask or divider chrome.
+- every new watch page or screen must add at least one deterministic Playwright screenshot scenario, and visual validation must include reviewing generated screenshots instead of relying only on passing tests.
 
 ## Asset contract for icons
 
@@ -182,10 +186,15 @@ The watch UI now follows these repo-level rules:
 - for target-based Zeus scaffolding, the practical baseline is also:
   - `zepp-app/assets/common.r/icon.png`
   - `zepp-app/assets/common.s/icon.png`
+  - `zepp-app/assets/round-416/icon.png`
+  - `zepp-app/assets/round-454/icon.png`
+  - `zepp-app/assets/round-466/icon.png`
+  - `zepp-app/assets/round-480/icon.png`
+  - `zepp-app/assets/square-390x450/icon.png`
 
 ### Tool icons
 
-Tool icons should be stored as round/square asset pairs:
+Tool icons should be stored in the shared round/square fallback folders and copied into each target asset folder:
 
 - `zepp-app/assets/common.r/tool-aeropress.png`
 - `zepp-app/assets/common.s/tool-aeropress.png`
@@ -199,6 +208,7 @@ Tool icons should be stored as round/square asset pairs:
 - `zepp-app/assets/common.s/tool-clever-dripper.png`
 - `zepp-app/assets/common.r/tool-french-press.png`
 - `zepp-app/assets/common.s/tool-french-press.png`
+- `zepp-app/assets/<target>/tool-*.png` for every manifest target
 
 ### Mapping rule
 

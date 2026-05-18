@@ -6,7 +6,7 @@ PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a w
 
 The repo already includes a Zepp app scaffold with a passing `npm run build`, a versioned seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, a cleaner phone-side Settings UX with contextual headers, a selector-first `Library` view, the same brewer PNG icons as the watch, right-aligned numeric count badges, quieter `History` and `Sync` surfaces, and a paginated recipe-step editor, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, a haptics-first feedback layer, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `brew-active`, and `result-summary`.
 The latest watch UX pass also keeps brewer and recipe chooser pages quieter on-device: populated browse screens no longer spend space on bridge/cache chatter or redundant home buttons, empty watch states stay short and action-led instead of coaching the user through the next step, real brewer method icons now render directly from the closed tool catalog assets, `recipe-detail` now stays static for normal-length recipe summaries and only falls back to scrolling when the content truly overflows, populated `result-summary` now does the same for the normal three-row summary inside calmer continuous panels, the populated result screen uses a single `Home` CTA instead of a redundant `Browse + Home` pair, and the watch flow no longer spends a separate page on manual hardware checks.
-The shared round layout layer now also applies a conservative compact tuning below the `480x480` baseline so Balance 1-class screens stay closer to the main composition without adding a second round target or a separate page set.
+The manifest now follows the Parallax Pilot-style target matrix for supported watch families while keeping the PourOverFlow runtime at `API_LEVEL 3.6`: `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`.
 The repo now keeps the actual Zeus package under [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) while docs, tests, scripts, VS Code tasks, and coverage reports stay at the repo root. That keeps `zeus dev` focused on app files instead of reacting to generated report output.
 The starter library now ships as an uneven 24-recipe catalog, and the phone-side seed flow tracks `seedCatalogVersion` so older installs can append only newly introduced seed recipes instead of replaying the whole seed set.
 The repo now also includes a first localization baseline: shared watch and phone copy supports `en-US` and `pl-PL`, starter recipes are split into locale-aware seed modules instead of one giant file, and phone-side seed state now records `seedLocale` so brand-new installs can choose a supported starter locale while older installs keep the legacy English baseline without replaying the full library.
@@ -35,6 +35,7 @@ This project is to be run in English.
 - current compatibility floor: `API_LEVEL 3.6`
 - chosen to keep the app on the current Balance 1 compatibility path, including simulator builds that currently report `3.6`
 - screen scope: `round + square`
+- manifest target matrix: `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`
 - no `band`
 - closed catalog of supported brewing tools
 - the phone is the source of truth for recipes and history
@@ -141,10 +142,14 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm test` runs the full Vitest suite, including the pure logic tests and the mocked Zepp runtime flow tests.
 - `npm run test:coverage` generates Vitest coverage reports in the repo-local `coverage/` directory by default.
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
+- `npm run sim:doctor` checks the local simulator metadata path, DevTools port file, and latest deployment freshness when those files are available.
+- `npm run sim:smoke` is the Parallax-compatible alias for the simulator smoke command.
+- `npm run dev` is the Parallax-compatible alias for the Zeus dev wrapper.
+- `npm run test:playwright:screens` is the Parallax-compatible alias for the deterministic watch screenshot gate.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
 - `npm run verify:visual` runs the watch preview browser-render gate, including fixture export, structural checks, and deterministic screenshot rendering into the verification output path.
-- `npm run preview:watch` exports deterministic watch-page widget fixtures and renders round and square watch preview PNGs into `output/playwright/watch-preview/screenshots`.
+- `npm run preview:watch` exports deterministic watch-page widget fixtures and renders the locale and target-family screenshot matrix into `output/playwright/watch-preview/screenshots`.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - `npm run verify` is the canonical CLI full-stack verification command.
 - `npm run verify:fast` is the short local loop for Vitest plus Zeus build.
@@ -152,7 +157,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](.vscode/tasks.json).
 - the task runs Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
-- `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run zepp:dev -- -t "Amazfit Balance 2"` or run `zeus dev` directly from `zepp-app/`.
+- `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run dev -- -t "Amazfit Balance 2"`, `npm run zepp:dev -- -t "Amazfit Balance 2"`, or run `zeus dev` directly from `zepp-app/`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
 - the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.
 
@@ -163,7 +168,17 @@ Playwright in this repo is intentionally split in two:
 There is also a small visual baseline path for watch review work:
 - `npm run verify:visual` is the deterministic visual gate: it exports the preview fixtures, validates their metadata and widget structure, renders every preview in a real browser, and fails on runtime errors, console errors, missing screenshots, or suspiciously small outputs.
 - `npm run preview:watch` is the artifact generator: it runs the same browser renderer but writes review PNGs to `output/playwright/watch-preview/screenshots` for manual inspection.
-- the current preview baseline now covers round and square `480x480`, selected Polish and English states, plus compact-round `416x416` checks for the screens most likely to suffer mask or spacing regressions.
+- the current preview baseline covers both locales across `round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`, with current meaningful states for every watch page.
+- every new watch page or screen must add at least one deterministic screenshot scenario before close-out.
+
+Parallax-style simulator validation sequence:
+
+```bash
+npm run sim:doctor
+npm run dev
+npm run sim:smoke
+npm run build
+```
 
 The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo's [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) subtree and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `npm run zepp:dev -- ...` or `zeus dev` from `zepp-app/` before trusting the simulator test result.
 Do not start the simulator smoke test in parallel with `zepp:dev` or `zeus dev`. Wait for the deploy to finish first, otherwise the freshness gate may fail transiently while the simulator app folder is still being updated.
