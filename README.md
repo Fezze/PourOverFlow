@@ -149,7 +149,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
 - `npm run verify:visual` runs the watch preview browser-render gate, including fixture export, structural checks, and deterministic screenshot rendering into the verification output path.
-- `npm run preview:watch` exports deterministic watch-page widget fixtures and renders the locale and target-family screenshot matrix into `output/playwright/watch-preview/screenshots`.
+- `npm run preview:watch` exports deterministic watch-page widget fixtures and renders the locale and target-family screenshot matrix into `output/playwright/watch-preview/screenshots/<locale>/<target>/<resolution>/`.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - `npm run verify` is the canonical CLI full-stack verification command.
 - `npm run verify:fast` is the short local loop for Vitest plus Zeus build.

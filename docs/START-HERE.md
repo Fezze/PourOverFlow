@@ -123,7 +123,7 @@ Current verified platform note:
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
 - Run `npm run verify:visual` when you want the browser-backed preview gate, including fixture export, structural checks, and deterministic render validation.
 - Run `npm run test:playwright:screens` as the Parallax-compatible alias for the screenshot gate.
-- Run `npm run preview:watch` when you want fresh review PNG artifacts for the main watch flows without relying on the simulator. The target-matrix screenshots land under `output/playwright/watch-preview/screenshots`.
+- Run `npm run preview:watch` when you want fresh review PNG artifacts for the main watch flows without relying on the simulator. The target-matrix screenshots land under `output/playwright/watch-preview/screenshots/<locale>/<target>/<resolution>/`.
 - Run `npm run validation:logs` when you want a quick summary of `[pof-validation]` events from the current simulator log, or pass `-- --file <path>` to inspect an exported log directly.
 - Run `npm run verify` for the canonical CLI full-stack verify pass, including the visual preview gate.
 - Run `npm run verify:fast` for the short local loop.

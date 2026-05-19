@@ -63,7 +63,8 @@ async function main() {
           );
         }
 
-        const screenshotPath = path.join(ACTIVE_SCREENSHOT_ROOT, `${scenario.name}.png`);
+        const screenshotPath = resolveScreenshotPath(scenario);
+        await mkdir(path.dirname(screenshotPath), { recursive: true });
         await page.locator("#watch-shell").screenshot({ path: screenshotPath });
         await access(screenshotPath);
         const screenshotStat = await stat(screenshotPath);
@@ -74,7 +75,7 @@ async function main() {
         }
 
         if (!VERIFY_MODE) {
-          console.log(`Saved watch preview screenshot: ${scenario.name}.png`);
+          console.log(`Saved watch preview screenshot: ${path.relative(ACTIVE_SCREENSHOT_ROOT, screenshotPath)}`);
         }
       } finally {
         await page.close();
@@ -84,6 +85,43 @@ async function main() {
     await browser.close();
     await stopStaticServer(server.server);
   }
+}
+
+function resolveScreenshotPath(scenario) {
+  const relativeScreenshotPath = typeof scenario.screenshotFile === "string" && scenario.screenshotFile
+    ? scenario.screenshotFile
+    : buildFallbackScreenshotPath(scenario);
+
+  const absoluteScreenshotPath = path.resolve(ACTIVE_SCREENSHOT_ROOT, relativeScreenshotPath);
+  const relativeToRoot = path.relative(ACTIVE_SCREENSHOT_ROOT, absoluteScreenshotPath);
+  if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
+    throw new Error(`Preview scenario ${scenario.name} resolved outside the screenshot root.`);
+  }
+
+  return absoluteScreenshotPath;
+}
+
+function buildFallbackScreenshotPath(scenario) {
+  const locale = scenario.locale || "unknown-locale";
+  const targetName = scenario.targetName || scenario.shape || "unknown-target";
+  const resolution = Number.isFinite(scenario.width) && Number.isFinite(scenario.height)
+    ? `${scenario.width}x${scenario.height}`
+    : "unknown-resolution";
+  const pageName = scenario.page || "unknown-page";
+  const stateName = scenario.state || "default";
+
+  return path.join(
+    sanitizePathSegment(locale),
+    sanitizePathSegment(targetName),
+    sanitizePathSegment(resolution),
+    `${sanitizePathSegment(pageName)}-${sanitizePathSegment(stateName)}.png`
+  );
+}
+
+function sanitizePathSegment(value) {
+  return String(value || "unknown")
+    .replace(/[^a-z0-9._-]+/gi, "-")
+    .replace(/^-+|-+$/g, "") || "unknown";
 }
 
 async function exportPreviewFixtures() {

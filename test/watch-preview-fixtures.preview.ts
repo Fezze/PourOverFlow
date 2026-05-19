@@ -139,7 +139,7 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
       height: scenario.height,
       assetDirectory: scenario.assetDirectory,
       fixtureFile: fileName,
-      screenshotFile: `${scenario.name}.png`,
+      screenshotFile: buildScreenshotFilePath(scenario),
       expectedButtonCount: scenario.expectedButtonCount
     });
 
@@ -244,6 +244,15 @@ function createPreviewTarget(
     height,
     assetDirectory: `zepp-app/assets/${targetName}`
   };
+}
+
+function buildScreenshotFilePath(scenario: PreviewScenario) {
+  return path.posix.join(
+    scenario.locale,
+    scenario.targetName,
+    `${scenario.width}x${scenario.height}`,
+    `${scenario.page}-${scenario.state}.png`
+  );
 }
 
 function createHomeScenario(options: {
