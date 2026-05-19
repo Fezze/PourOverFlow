@@ -275,8 +275,8 @@ function createHomeScenario(options: {
     expectedButtonCount: 3,
     requiredTextSnippets: options.locale === "pl-PL"
       ? options.state === "resume"
-        ? ["Wznow", "Odrzuc"]
-        : ["Przegladaj", "Ostatni"]
+        ? ["Wznow", "Odrzuć"]
+        : ["Przeglądaj", "Ostatni"]
       : options.state === "resume"
         ? ["Resume", "Discard"]
         : ["Browse", "Last"],
@@ -357,7 +357,7 @@ function createRecipeListScenario(options: {
     expectedButtonCount: options.state === "empty-brewer" ? 1 : 0,
     requiredTextSnippets: options.state === "empty-brewer"
       ? options.locale === "pl-PL"
-        ? ["Odswiez z telefonu"]
+        ? ["Odśwież z telefonu"]
         : ["Refresh from phone"]
       : ["V60"],
     async prepare(runtime) {

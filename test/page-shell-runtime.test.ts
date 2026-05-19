@@ -86,8 +86,8 @@ describe("page shell runtime coverage", () => {
     const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
     const buttonWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
 
-    expect(textWidgets.some((widget) => widget.text === "Nastepna kawa")).toBe(true);
-    expect(buttonWidgets.some((widget) => widget.text === "Przegladaj")).toBe(true);
+    expect(textWidgets.some((widget) => widget.text === "Następna kawa")).toBe(true);
+    expect(buttonWidgets.some((widget) => widget.text === "Przeglądaj")).toBe(true);
     expect(buttonWidgets.some((widget) => widget.text === "Ostatni")).toBe(true);
   });
 

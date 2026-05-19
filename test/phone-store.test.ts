@@ -115,11 +115,11 @@ test("ensurePhoneStorage can seed starter recipes in Polish and records the seed
   expect(readRecipeRecord(settingsStorage, "seed_ap_daily_clean")).toMatchObject({
     name: "AeroPress Daily Clean",
     filterLabel: "Papier",
-    grindLabel: "Srednio-drobne"
+    grindLabel: "Średnio-drobne"
   });
   expect(readRecipeRecord(settingsStorage, "seed_v60_high_sweet")).toMatchObject({
     name: "V60 High Sweet",
-    notes: "Trzymaj wyzszy, stabilny centralny strumien."
+    notes: "Trzymaj wyższy, stabilny centralny strumień."
   });
 });
 

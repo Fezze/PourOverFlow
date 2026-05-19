@@ -51,7 +51,7 @@ describe("settings view model", () => {
   it("can localize summaries and brewer labels for Polish settings UI", () => {
     const i18n = createTranslator("pl-PL");
 
-    expect(buildLibraryOverview(snapshot as never, i18n)).toBe("6 brewerow - 3 przepisow");
+    expect(buildLibraryOverview(snapshot as never, i18n)).toBe("6 zaparzaczy - 3 przepisy");
     expect(buildRecipeShelfCountLabel(4, i18n)).toBe("4 przepisy");
     expect(buildToolCardLabel(TOOL_CATALOG[5], 5, i18n)).toBe("French Press");
   });

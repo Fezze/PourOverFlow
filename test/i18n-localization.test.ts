@@ -55,9 +55,9 @@ describe("i18n localization", () => {
     const i18n = createTranslator("pl-PL");
 
     expect(getMessagesForLocale("pl-PL").settings.nav.library).toBe("Biblioteka");
-    expect(i18n.getToolDescription("tool_v60")).toBe("Klasyczny stozkowy pour-over");
+    expect(i18n.getToolDescription("tool_v60")).toBe("Klasyczny stożkowy pour-over");
     expect(i18n.t("watch.toolList.title")).toBe("Zaparzacze");
-    expect(i18n.t("settings.messages.recipeDeleted")).toBe("Usunieto przepis. Historia zostala zachowana.");
+    expect(i18n.t("settings.messages.recipeDeleted")).toBe("Usunięto przepis. Historia została zachowana.");
   });
 
   it("resolves phone locale from explicit preference and navigator fallback", () => {
@@ -84,7 +84,7 @@ describe("i18n localization", () => {
     expect(polishSeed.name).toBe("AeroPress Daily Clean");
     expect(polishSeed.filterLabel).toBe("Papier");
     expect(polishSeed.steps[0].title).toBe("Przygotuj");
-    expect(polishSeed.steps[0].body).toBe("Przeplucz filtr, wloz papier i wsyp kawe.");
+    expect(polishSeed.steps[0].body).toBe("Przepłucz filtr, włóż papier i wsyp kawę.");
     expect(englishSeed.filterLabel).toBe("Paper");
     expect(englishSeed.steps[0].title).toBe("Prep");
   });
