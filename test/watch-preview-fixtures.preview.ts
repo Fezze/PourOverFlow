@@ -199,6 +199,13 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
 
   buttonWidgets.forEach((widget, index) => {
     expect(String(widget.text || "").trim(), `button ${index} should not have an empty label`).not.toBe("");
+
+    if (device.shape === "round" && Number.isFinite(widget.y) && Number.isFinite(widget.h)) {
+      expect(
+        widget.y + widget.h,
+        `button ${index} should clear the lower round-screen mask`
+      ).toBeLessThanOrEqual(device.height - 20);
+    }
   });
 
   scrollListWidgets.forEach((widget, index) => {

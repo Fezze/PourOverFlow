@@ -32,6 +32,7 @@ function readLayoutDeviceSize() {
 
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = readLayoutDeviceSize();
 const IS_COMPACT_ROUND_DEVICE = DEVICE_WIDTH < DEFAULT_LAYOUT_SIZE.width || DEVICE_HEIGHT < DEFAULT_LAYOUT_SIZE.height;
+const IS_TINY_ROUND_DEVICE = DEVICE_WIDTH <= 430 || DEVICE_HEIGHT <= 430;
 
 export const SHARED_COLORS = {
   background: 0x0e1218,
@@ -55,7 +56,19 @@ export function isCompactRoundDevice() {
   return IS_COMPACT_ROUND_DEVICE;
 }
 
+export function isTinyRoundDevice() {
+  return IS_TINY_ROUND_DEVICE;
+}
+
 export function pickRoundMetric(regularValue, compactValue) {
+  return px(IS_COMPACT_ROUND_DEVICE ? compactValue : regularValue);
+}
+
+export function pickRoundSizeMetric(regularValue, compactValue, tinyValue = compactValue) {
+  if (IS_TINY_ROUND_DEVICE) {
+    return px(tinyValue);
+  }
+
   return px(IS_COMPACT_ROUND_DEVICE ? compactValue : regularValue);
 }
 

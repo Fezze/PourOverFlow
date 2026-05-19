@@ -3,7 +3,8 @@ import {
   createFloatingDockStyle,
   createFloatingButtonStyle,
   createScaffoldLayout,
-  pickRoundMetric
+  pickRoundMetric,
+  pickRoundSizeMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
@@ -11,7 +12,7 @@ const splitGap = pickRoundMetric(12, 10);
 const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  y: pickRoundMetric(324, 312),
+  y: pickRoundSizeMetric(324, 292, 278),
   w: splitWidth,
   h: pickRoundMetric(40, 38),
   radius: pickRoundMetric(20, 19)
@@ -19,17 +20,17 @@ const secondaryButton = createFloatingButtonStyle(layout, {
 const accentButton = createFloatingButtonStyle(layout, {
   theme: "neutral",
   x: layout.buttonX + splitWidth + splitGap,
-  y: pickRoundMetric(324, 312),
+  y: pickRoundSizeMetric(324, 292, 278),
   w: splitWidth,
   h: pickRoundMetric(40, 38),
   radius: pickRoundMetric(20, 19)
 });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: pickRoundMetric(382, 370),
-  h: pickRoundMetric(64, 60),
-  radius: pickRoundMetric(32, 30),
-  text_size: pickRoundMetric(21, 20)
+  y: pickRoundSizeMetric(382, 344, 326),
+  h: pickRoundSizeMetric(64, 56, 54),
+  radius: pickRoundSizeMetric(32, 28, 27),
+  text_size: pickRoundSizeMetric(21, 20, 19)
 });
 
 export const BACKGROUND = layout.background;

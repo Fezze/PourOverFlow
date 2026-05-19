@@ -116,18 +116,26 @@ function createScrollList(widget) {
   element.className = "widget scroll-list";
   applyBounds(element, widget);
 
-  const itemHeight = Number(widget.item_config?.[0]?.item_height || 72);
+  const itemConfig = widget.item_config?.[0] || {};
+  const itemHeight = Number(itemConfig.item_height || 72);
   const itemSpace = Number(widget.item_space || 0);
-  const itemRadius = Number(widget.item_config?.[0]?.item_bg_radius || 18);
+  const itemRadius = Number(itemConfig.item_bg_radius || 18);
   const rows = Array.isArray(widget.data_array) ? widget.data_array : [];
 
   rows.forEach((row, index) => {
     const card = document.createElement("div");
     const hasIcon = Boolean(row?.icon);
-    card.className = `scroll-card${hasIcon ? " with-icon" : ""}`;
+    const textViews = Array.isArray(itemConfig.text_view) ? itemConfig.text_view : [];
+    const shouldUseGenericTextViews = !hasIcon && textViews.some((textView) => (
+      textView?.key && row?.[textView.key] !== undefined && textView.key !== "title" && textView.key !== "meta"
+    ));
+    card.className = `scroll-card${hasIcon ? " with-icon" : ""}${shouldUseGenericTextViews ? " generic" : ""}`;
     card.style.top = `${index * (itemHeight + itemSpace)}px`;
     card.style.height = `${itemHeight}px`;
     card.style.setProperty("--card-radius", `${itemRadius}px`);
+    if (typeof itemConfig.item_bg_color === "number") {
+      card.style.setProperty("--card-color", toColor(itemConfig.item_bg_color, "var(--watch-surface)"));
+    }
 
     if (hasIcon) {
       const icon = document.createElement("div");
@@ -156,20 +164,39 @@ function createScrollList(widget) {
       card.appendChild(icon);
     }
 
-    const textWrap = document.createElement("div");
-    const title = document.createElement("div");
-    title.className = "card-title";
-    title.textContent = row?.title || "";
-    textWrap.appendChild(title);
+    if (shouldUseGenericTextViews) {
+      textViews.forEach((textView) => {
+        if (!textView?.key || row?.[textView.key] === undefined) {
+          return;
+        }
 
-    if (row?.meta) {
-      const meta = document.createElement("div");
-      meta.className = "card-meta";
-      meta.textContent = row.meta;
-      textWrap.appendChild(meta);
+        const textElement = document.createElement("div");
+        textElement.className = "scroll-text";
+        applyBounds(textElement, textView);
+        textElement.textContent = String(row[textView.key] || "");
+        textElement.style.fontSize = `${Number(textView.text_size || 16)}px`;
+        textElement.style.setProperty("--widget-color", toColor(textView.color, "var(--watch-text)"));
+        textElement.style.justifyContent = toHorizontalAlign(textView.align_h);
+        textElement.style.alignItems = toVerticalAlign(textView.align_v);
+        textElement.style.whiteSpace = textView.text_style === "WRAP" ? "pre-wrap" : "pre-line";
+        card.appendChild(textElement);
+      });
+    } else {
+      const textWrap = document.createElement("div");
+      const title = document.createElement("div");
+      title.className = "card-title";
+      title.textContent = row?.title || "";
+      textWrap.appendChild(title);
+
+      if (row?.meta) {
+        const meta = document.createElement("div");
+        meta.className = "card-meta";
+        meta.textContent = row.meta;
+        textWrap.appendChild(meta);
+      }
+
+      card.appendChild(textWrap);
     }
-
-    card.appendChild(textWrap);
     element.appendChild(card);
   });
 

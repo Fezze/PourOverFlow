@@ -4,16 +4,17 @@ import {
   createFloatingButtonStyle,
   createPanelStyle,
   createScaffoldLayout,
-  pickRoundMetric
+  pickRoundMetric,
+  pickRoundSizeMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: pickRoundMetric(380, 370),
-  h: pickRoundMetric(64, 60),
-  radius: pickRoundMetric(32, 30),
-  text_size: pickRoundMetric(21, 20)
+  y: pickRoundSizeMetric(380, 348, 328),
+  h: pickRoundSizeMetric(64, 56, 54),
+  radius: pickRoundSizeMetric(32, 28, 27),
+  text_size: pickRoundSizeMetric(21, 20, 19)
 });
 
 export const BACKGROUND = layout.background;
@@ -24,7 +25,7 @@ export const DETAIL_PANEL = createPanelStyle(layout, {
   x: layout.buttonX - pickRoundMetric(8, 6),
   y: pickRoundMetric(110, 104),
   w: layout.buttonW + pickRoundMetric(16, 12),
-  h: pickRoundMetric(246, 236)
+  h: pickRoundSizeMetric(246, 228, 214)
 });
 export const BODY_TEXT = {
   ...layout.body,

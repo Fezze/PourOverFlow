@@ -2,7 +2,8 @@ import * as hmUI from "@zos/ui";
 import {
   createButtonStyle,
   createScaffoldLayout,
-  pickRoundMetric
+  pickRoundMetric,
+  pickRoundSizeMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
@@ -23,7 +24,7 @@ export const LIST_FRAME = {
   x: layout.buttonX - pickRoundMetric(16, 12),
   y: pickRoundMetric(112, 108),
   w: layout.buttonW + pickRoundMetric(32, 24),
-  h: pickRoundMetric(332, 320),
+  h: pickRoundSizeMetric(332, 300, 282),
   itemHeight: pickRoundMetric(92, 88),
   itemSpace: pickRoundMetric(12, 10),
   itemRadius: pickRoundMetric(24, 22),

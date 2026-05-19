@@ -4,16 +4,17 @@ import {
   createFloatingDockStyle,
   createFloatingButtonStyle,
   createScaffoldLayout,
-  pickRoundMetric
+  pickRoundMetric,
+  pickRoundSizeMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
 const dockInset = pickRoundMetric(10, 8);
 const actionGap = pickRoundMetric(16, 14);
-const dockY = pickRoundMetric(382, 372);
-const dockHeight = pickRoundMetric(84, 78);
-const actionBaseY = dockY + pickRoundMetric(8, 7);
-const actionBaseH = dockHeight - pickRoundMetric(16, 14);
+const dockY = pickRoundSizeMetric(382, 342, 326);
+const dockHeight = pickRoundSizeMetric(84, 70, 62);
+const actionBaseY = dockY + pickRoundSizeMetric(8, 7, 6);
+const actionBaseH = dockHeight - pickRoundSizeMetric(16, 14, 12);
 const actionDockWidth = layout.buttonW - dockInset * 2;
 const actionButtonWidth = Math.floor((actionDockWidth - actionGap - pickRoundMetric(16, 14)) / 2);
 const centerX = layout.buttonX + Math.floor(layout.buttonW / 2);
@@ -24,7 +25,7 @@ const primaryButton = createFloatingButtonStyle(layout, {
   w: actionButtonWidth,
   h: actionBaseH,
   radius: Math.floor(actionBaseH / 2),
-  text_size: pickRoundMetric(28, 26)
+  text_size: pickRoundSizeMetric(28, 24, 22)
 });
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
@@ -33,7 +34,7 @@ const secondaryButton = createFloatingButtonStyle(layout, {
   w: actionButtonWidth,
   h: actionBaseH,
   radius: Math.floor(actionBaseH / 2),
-  text_size: pickRoundMetric(28, 26)
+  text_size: pickRoundSizeMetric(28, 24, 22)
 });
 
 secondaryButton.normal_color = SHARED_COLORS.secondary;
@@ -43,7 +44,10 @@ primaryButton.press_color = SHARED_COLORS.primaryPress;
 
 export const BACKGROUND = layout.background;
 export const TITLE_TEXT = layout.title;
-export const BODY_TEXT = layout.body;
+export const BODY_TEXT = {
+  ...layout.body,
+  y: pickRoundSizeMetric(134, 124, 116)
+};
 export const FOOTER_TEXT = layout.footer;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 export const ACTION_DOCK = createFloatingDockStyle({

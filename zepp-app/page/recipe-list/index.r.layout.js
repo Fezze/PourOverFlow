@@ -2,7 +2,8 @@ import {
   createButtonStyle,
   createPanelStyle,
   createScaffoldLayout,
-  pickRoundMetric
+  pickRoundMetric,
+  pickRoundSizeMetric
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
@@ -35,6 +36,6 @@ export const LIST_FRAME = {
   metaHeight: pickRoundMetric(26, 24)
 };
 export const EMPTY_BUTTON = createButtonStyle(layout, 0, "secondary");
-EMPTY_BUTTON.y = pickRoundMetric(388, 378);
+EMPTY_BUTTON.y = pickRoundSizeMetric(388, 348, 338);
 EMPTY_BUTTON.h = pickRoundMetric(40, 38);
 EMPTY_BUTTON.radius = pickRoundMetric(20, 19);

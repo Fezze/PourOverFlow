@@ -122,9 +122,14 @@
         align-content: center;
         gap: 4px;
         padding: 14px 16px;
-        background: var(--watch-surface);
+        background: var(--card-color, var(--watch-surface));
         border-radius: var(--card-radius, 18px);
         border: 1px solid var(--watch-outline);
+      }
+
+      .scroll-card.generic {
+        display: block;
+        padding: 0;
       }
 
       .scroll-card.with-icon {
@@ -166,6 +171,14 @@
         font-size: 14px;
         line-height: 1.25;
         white-space: pre-wrap;
+      }
+
+      .scroll-text {
+        position: absolute;
+        display: flex;
+        color: var(--widget-color, var(--watch-text));
+        line-height: 1.18;
+        overflow: hidden;
       }
     </style>
   </head>

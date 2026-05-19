@@ -170,6 +170,8 @@ describe("watch layouts and shortcut helpers", () => {
     const resultSummaryLayout = await import("../zepp-app/page/result-summary/index.r.layout.js");
 
     expect(layouts.isCompactRoundDevice()).toBe(true);
+    expect(layouts.isTinyRoundDevice()).toBe(false);
+    expect(layouts.pickRoundSizeMetric(12, 10, 8)).toBe(10);
     expect(layouts.createScaffoldLayout({ shape: "round" }).title.text_size).toBe(24);
     expect(homeLayout.BUTTONS[0].y).toBeLessThan(362);
     expect(toolListLayout.LIST_FRAME.h).toBeLessThan(332);
@@ -177,6 +179,30 @@ describe("watch layouts and shortcut helpers", () => {
     expect(recipeDetailLayout.DETAIL_PANEL.h).toBeLessThan(246);
     expect(brewActiveLayout.ACTION_DOCK.y).toBeLessThan(382);
     expect(resultSummaryLayout.BUTTONS[0].y).toBeLessThan(382);
+  });
+
+  it("keeps tiny round bottom controls above the lower mask", async () => {
+    vi.doMock("@zos/device", () => ({
+      getDeviceInfo: () => ({
+        width: 416,
+        height: 416
+      })
+    }));
+
+    const layouts = await import("../zepp-app/shared/watch/layouts.js");
+    const homeLayout = await import("../zepp-app/page/home/index.r.layout.js");
+    const recipeDetailLayout = await import("../zepp-app/page/recipe-detail/index.r.layout.js");
+    const brewActiveLayout = await import("../zepp-app/page/brew-active/index.r.layout.js");
+    const resultSummaryLayout = await import("../zepp-app/page/result-summary/index.r.layout.js");
+
+    expect(layouts.isCompactRoundDevice()).toBe(true);
+    expect(layouts.isTinyRoundDevice()).toBe(true);
+    expect(layouts.pickRoundSizeMetric(12, 10, 8)).toBe(8);
+    expect(homeLayout.BUTTONS[0].y + homeLayout.BUTTONS[0].h).toBeLessThanOrEqual(396);
+    expect(recipeDetailLayout.BUTTONS[0].y + recipeDetailLayout.BUTTONS[0].h).toBeLessThanOrEqual(396);
+    expect(brewActiveLayout.BUTTONS[0].y + brewActiveLayout.BUTTONS[0].h).toBeLessThanOrEqual(396);
+    expect(brewActiveLayout.ACTION_DOCK.y + brewActiveLayout.ACTION_DOCK.h).toBeLessThanOrEqual(396);
+    expect(resultSummaryLayout.BUTTONS[0].y + resultSummaryLayout.BUTTONS[0].h).toBeLessThanOrEqual(396);
   });
 
   it("registers the shortcut key handler and debounces repeated presses", async () => {

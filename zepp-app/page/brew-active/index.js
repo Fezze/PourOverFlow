@@ -341,7 +341,7 @@ Page({
 
         return this.i18n.t("watch.brewActive.actions.next");
       })(),
-      text_size: 24,
+      text_size: BUTTONS[0].text_size,
       click_func: () => {
         advanceOrCompleteActiveSession();
       }
@@ -349,7 +349,7 @@ Page({
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
       text: this.i18n.t("watch.brewActive.actions.stop"),
-      text_size: 24,
+      text_size: BUTTONS[1].text_size,
       click_func: () => {
         abortActiveBrew();
       }

@@ -96,17 +96,38 @@ Page({
     });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
+    const isResumeState = Boolean(scaffoldState.activeSession);
+    const titleTextStyle = isResumeState
+      ? {
+          ...TITLE_TEXT,
+          y: TITLE_TEXT.y - 4,
+          h: TITLE_TEXT.h + 18,
+          text_size: TITLE_TEXT.text_size - 2,
+          align_v: hmUI.align.TOP
+        }
+      : TITLE_TEXT;
+    const subtitleTextStyle = isResumeState
+      ? {
+          ...SUBTITLE_TEXT,
+          y: SUBTITLE_TEXT.y + 18,
+          h: 24,
+          align_v: hmUI.align.TOP
+        }
+      : SUBTITLE_TEXT;
+    const bodyPanelY = isResumeState ? BODY_TEXT.y + 6 : BODY_TEXT.y - 8;
+    const bodyTextY = isResumeState ? BODY_TEXT.y + 24 : BODY_TEXT.y + 10;
+
     hmUI.createWidget(hmUI.widget.TEXT, {
-      ...TITLE_TEXT,
+      ...titleTextStyle,
       text: buildHomeTitle(scaffoldState, i18n)
     });
     hmUI.createWidget(hmUI.widget.TEXT, {
-      ...SUBTITLE_TEXT,
+      ...subtitleTextStyle,
       text: buildHomeSubtitle(scaffoldState, i18n)
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: BUTTONS[0].x,
-      y: BODY_TEXT.y - 8,
+      y: bodyPanelY,
       w: BUTTONS[0].w,
       h: 110,
       radius: 26,
@@ -116,7 +137,7 @@ Page({
       ...BODY_TEXT,
       x: BODY_TEXT.x + 14,
       w: BODY_TEXT.w - 28,
-      y: BODY_TEXT.y + 10,
+      y: bodyTextY,
       h: BODY_TEXT.h + 24,
       text: buildHomeBody(scaffoldState, i18n)
     });

@@ -554,14 +554,21 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
     height,
     compact
   });
-  const metric = (regularValue: number, compactValue: number) => compact ? compactValue : regularValue;
+  const tiny = width <= 430 || height <= 430;
+  const metric = (regularValue: number, compactValue: number, tinyValue = compactValue) => {
+    if (tiny) {
+      return tinyValue;
+    }
+
+    return compact ? compactValue : regularValue;
+  };
   const splitGap = metric(12, 10);
   const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
 
   if (page === "home") {
     const secondaryButton = createPreviewButtonStyle(layout, {
       theme: "secondary",
-      y: metric(308, 300),
+      y: metric(308, 292, 278),
       w: splitWidth,
       h: metric(40, 38),
       radius: metric(20, 19),
@@ -570,7 +577,7 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
     const accentButton = createPreviewButtonStyle(layout, {
       theme: "accent",
       x: layout.buttonX + splitWidth + splitGap,
-      y: metric(308, 300),
+      y: metric(308, 292, 278),
       w: splitWidth,
       h: metric(40, 38),
       radius: metric(20, 19),
@@ -578,10 +585,10 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
     });
     const primaryButton = createPreviewButtonStyle(layout, {
       theme: "primary",
-      y: metric(362, 350),
-      h: metric(64, 60),
-      radius: metric(32, 30),
-      text_size: metric(21, 20)
+      y: metric(362, 344, 326),
+      h: metric(64, 56, 54),
+      radius: metric(32, 28, 27),
+      text_size: metric(21, 20, 19)
     });
 
     return {
@@ -622,7 +629,7 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
         x: layout.buttonX - metric(16, 12),
         y: metric(112, 108),
         w: layout.buttonW + metric(32, 24),
-        h: metric(332, 320),
+        h: metric(332, 300, 282),
         itemHeight: metric(92, 88),
         itemSpace: metric(12, 10),
         itemRadius: metric(24, 22),
@@ -642,7 +649,7 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
     });
     const emptyButton = createPreviewButtonStyle(layout, {
       theme: "secondary",
-      y: metric(388, 378),
+      y: metric(388, 348, 338),
       h: metric(40, 38),
       radius: metric(20, 19)
     });
@@ -681,16 +688,16 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
   if (page === "recipe-detail") {
     const primaryButton = createPreviewButtonStyle(layout, {
       theme: "primary",
-      y: metric(380, 370),
-      h: metric(64, 60),
-      radius: metric(32, 30),
-      text_size: metric(21, 20)
+      y: metric(380, 348, 328),
+      h: metric(64, 56, 54),
+      radius: metric(32, 28, 27),
+      text_size: metric(21, 20, 19)
     });
     const detailPanel = createPreviewPanelStyle(layout, {
       x: layout.buttonX - metric(8, 6),
       y: metric(110, 104),
       w: layout.buttonW + metric(16, 12),
-      h: metric(246, 236)
+      h: metric(246, 228, 214)
     });
 
     return {
@@ -719,10 +726,10 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
   if (page === "brew-active") {
     const dockInset = metric(10, 8);
     const actionGap = metric(16, 14);
-    const dockY = metric(382, 372);
-    const dockHeight = metric(84, 78);
-    const actionBaseY = dockY + metric(8, 7);
-    const actionBaseH = dockHeight - metric(16, 14);
+    const dockY = metric(382, 342, 326);
+    const dockHeight = metric(84, 70, 62);
+    const actionBaseY = dockY + metric(8, 7, 6);
+    const actionBaseH = dockHeight - metric(16, 14, 12);
     const actionDockWidth = layout.buttonW - dockInset * 2;
     const actionButtonWidth = Math.floor((actionDockWidth - actionGap - metric(16, 14)) / 2);
     const centerX = layout.buttonX + Math.floor(layout.buttonW / 2);
@@ -733,7 +740,7 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
       w: actionButtonWidth,
       h: actionBaseH,
       radius: Math.floor(actionBaseH / 2),
-      text_size: metric(28, 26)
+      text_size: metric(28, 24, 22)
     });
     const secondaryButton = createPreviewButtonStyle(layout, {
       theme: "secondary",
@@ -742,7 +749,7 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
       w: actionButtonWidth,
       h: actionBaseH,
       radius: Math.floor(actionBaseH / 2),
-      text_size: metric(28, 26)
+      text_size: metric(28, 24, 22)
     });
 
     return {
@@ -751,7 +758,10 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
         ...layout.title,
         align_h: "CENTER_H"
       },
-      BODY_TEXT: layout.body,
+      BODY_TEXT: {
+        ...layout.body,
+        y: metric(134, 124, 116)
+      },
       FOOTER_TEXT: layout.footer,
       ACTION_DOCK: {
         x: layout.buttonX + dockInset,
@@ -767,7 +777,7 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
 
   const secondaryButton = createPreviewButtonStyle(layout, {
     theme: "secondary",
-    y: metric(324, 312),
+    y: metric(324, 292, 278),
     w: splitWidth,
     h: metric(40, 38),
     radius: metric(20, 19)
@@ -775,17 +785,17 @@ function createPreviewRoundLayoutMock(page: PreviewPage, width: number, height: 
   const accentButton = createPreviewButtonStyle(layout, {
     theme: "neutral",
     x: layout.buttonX + splitWidth + splitGap,
-    y: metric(324, 312),
+    y: metric(324, 292, 278),
     w: splitWidth,
     h: metric(40, 38),
     radius: metric(20, 19)
   });
   const primaryButton = createPreviewButtonStyle(layout, {
     theme: "primary",
-    y: metric(382, 370),
-    h: metric(64, 60),
-    radius: metric(32, 30),
-    text_size: metric(21, 20)
+    y: metric(382, 344, 326),
+    h: metric(64, 56, 54),
+    radius: metric(32, 28, 27),
+    text_size: metric(21, 20, 19)
   });
 
   return {
