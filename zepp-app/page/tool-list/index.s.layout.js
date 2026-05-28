@@ -13,7 +13,7 @@ export const LIST_FRAME = {
   x: px(18),
   y: px(112),
   w: px(344),
-  h: px(228),
+  h: px(296),
   itemHeight: px(92),
   itemSpace: px(10),
   itemRadius: px(20),

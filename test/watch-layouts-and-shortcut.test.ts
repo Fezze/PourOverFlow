@@ -121,7 +121,30 @@ describe("watch layouts and shortcut helpers", () => {
     expect(squareToolList.LIST_FRAME.x).toBeGreaterThanOrEqual(18);
     expect(squareToolList.LIST_FRAME.w).toBeGreaterThanOrEqual(344);
     expect(squareToolList.LIST_FRAME.h).toBeGreaterThan(210);
+    expect(squareToolList.LIST_FRAME.h).toBeGreaterThanOrEqual(
+      squareToolList.LIST_FRAME.itemHeight * 3 + squareToolList.LIST_FRAME.itemSpace * 2
+    );
     expect(squareToolList.LIST_FRAME.y).toBeGreaterThan(squareToolList.TITLE_TEXT.y + squareToolList.TITLE_TEXT.h);
+  });
+
+  it("keeps square chooser and detail screens from showing clipped partial content", async () => {
+    vi.doMock("@zos/device", () => ({
+      getDeviceInfo: () => ({
+        width: 390,
+        height: 450
+      })
+    }));
+
+    const squareRecipeList = await import("../zepp-app/page/recipe-list/index.s.layout.js");
+    const squareRecipeDetail = await import("../zepp-app/page/recipe-detail/index.s.layout.js");
+
+    expect(squareRecipeList.LIST_FRAME.h).toBeGreaterThanOrEqual(
+      squareRecipeList.LIST_FRAME.itemHeight * 3 + squareRecipeList.LIST_FRAME.itemSpace * 2
+    );
+    expect(squareRecipeDetail.DETAIL_PANEL.h).toBeGreaterThanOrEqual(200);
+    expect(squareRecipeDetail.BUTTONS[0].y).toBeGreaterThan(
+      squareRecipeDetail.DETAIL_PANEL.y + squareRecipeDetail.DETAIL_PANEL.h
+    );
   });
 
   it("keeps the brew-active dock as a simple paired-pill layout on both shapes", async () => {

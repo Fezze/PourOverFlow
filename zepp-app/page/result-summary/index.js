@@ -34,6 +34,19 @@ const createResultListFrame = (panel) => ({
   itemRadius: 18
 });
 
+function buildTitleStyle(lastResult) {
+  if (!lastResult) {
+    return TITLE_TEXT;
+  }
+
+  return {
+    ...TITLE_TEXT,
+    h: TITLE_TEXT.h + 16,
+    text_size: TITLE_TEXT.text_size > 24 ? 24 : TITLE_TEXT.text_size,
+    align_v: hmUI.align.TOP
+  };
+}
+
 function buildResultRows(lastResult, i18n) {
   if (!lastResult) {
     return [];
@@ -184,7 +197,7 @@ Page({
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
     hmUI.createWidget(hmUI.widget.TEXT, {
-      ...TITLE_TEXT,
+      ...buildTitleStyle(lastResult),
       text: lastResult ? lastResult.recipeName : i18n.t("watch.resultSummary.noResultYet")
     });
     if (lastResult) {

@@ -8,7 +8,7 @@ export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const LIST_PANEL = createPanelStyle(layout, {
   y: px(108),
-  h: px(228)
+  h: px(320)
 });
 export const LIST_FRAME = {
   x: LIST_PANEL.x + px(8),

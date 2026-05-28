@@ -9,7 +9,7 @@ import {
 const layout = createScaffoldLayout({ shape: "square" });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(302),
+  y: px(322),
   h: px(60),
   radius: px(30),
   text_size: px(20)
@@ -20,9 +20,9 @@ export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const DETAIL_PANEL = createPanelStyle(layout, {
   x: px(24),
-  y: px(100),
+  y: px(96),
   w: px(336),
-  h: px(176)
+  h: px(210)
 });
 export const BODY_TEXT = {
   ...layout.body,
@@ -31,7 +31,7 @@ export const BODY_TEXT = {
 };
 export const FOOTER_TEXT = {
   ...layout.footer,
-  y: px(262),
+  y: px(292),
   h: px(28)
 };
 export const ACTION_DOCK = createFloatingDockStyle({

@@ -877,7 +877,7 @@ function createPreviewSquareLayoutMock(page: PreviewPage, width: number, height:
         x: 18,
         y: 112,
         w: Math.min(344, width - 36),
-        h: 228,
+        h: 296,
         itemHeight: 92,
         itemSpace: 10,
         itemRadius: 20,
@@ -897,7 +897,7 @@ function createPreviewSquareLayoutMock(page: PreviewPage, width: number, height:
   if (page === "recipe-list") {
     const listPanel = createPreviewPanelStyle(layout, {
       y: 108,
-      h: 228
+      h: 320
     });
 
     return {
@@ -929,16 +929,16 @@ function createPreviewSquareLayoutMock(page: PreviewPage, width: number, height:
   if (page === "recipe-detail") {
     const primaryButton = createPreviewButtonStyle(layout, {
       theme: "primary",
-      y: 302,
+      y: 322,
       h: 60,
       radius: 30,
       text_size: 20
     });
     const detailPanel = createPreviewPanelStyle(layout, {
       x: 24,
-      y: 100,
+      y: 96,
       w: Math.min(336, width - 48),
-      h: 176
+      h: 210
     });
 
     return {
@@ -953,7 +953,7 @@ function createPreviewSquareLayoutMock(page: PreviewPage, width: number, height:
       },
       FOOTER_TEXT: {
         ...layout.footer,
-        y: 262,
+        y: 292,
         h: 28
       },
       ACTION_DOCK: createPreviewDockStyle(primaryButton),
