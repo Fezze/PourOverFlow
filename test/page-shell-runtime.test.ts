@@ -442,6 +442,10 @@ describe("page shell runtime coverage", () => {
       vi.advanceTimersByTime(1_000);
 
       expect(runtime.router.replace).not.toHaveBeenCalled();
+      expect(metaWidget?.setProperty).toHaveBeenCalledWith(
+        runtime.ui.prop.TEXT,
+        expect.stringContaining("0:04 left")
+      );
       expect(String(metaWidget?.text)).toContain("0:04 left");
 
       (pageDefinition.onDestroy as () => void).call(pageInstance);

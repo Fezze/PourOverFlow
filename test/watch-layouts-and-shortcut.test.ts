@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 beforeEach(() => {
@@ -145,6 +146,16 @@ describe("watch layouts and shortcut helpers", () => {
     expect(squareRecipeDetail.BUTTONS[0].y).toBeGreaterThan(
       squareRecipeDetail.DETAIL_PANEL.y + squareRecipeDetail.DETAIL_PANEL.h
     );
+  });
+
+  it("uses hmUI alignment constants in runtime layout sources", async () => {
+    const resultSummarySquareSource = await readFile(
+      "zepp-app/page/result-summary/index.s.layout.js",
+      "utf8"
+    );
+
+    expect(resultSummarySquareSource).toContain("hmUI.align.CENTER_H");
+    expect(resultSummarySquareSource).not.toMatch(/align_[hv]\s*=\s*["']/);
   });
 
   it("keeps the brew-active dock as a simple paired-pill layout on both shapes", async () => {

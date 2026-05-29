@@ -43,6 +43,13 @@ const settingsState = {
 const uiState = {
   widgets: [] as Array<Record<string, unknown>>
 };
+const uiProp = {
+  TEXT: "TEXT",
+  VISIBLE: "VISIBLE",
+  SRC: "SRC",
+  UPDATE_DATA: "UPDATE_DATA",
+  DELETE_ITEM: "DELETE_ITEM"
+};
 
 const localStorageState = new Map();
 const VIBRATOR_SCENE_SHORT_MIDDLE = 101;
@@ -84,14 +91,31 @@ const ui = {
     CENTER_V: "CENTER_V",
     TOP: "TOP"
   },
+  prop: uiProp,
   text_style: {
     WRAP: "WRAP"
   },
   createWidget: vi.fn((type, config = {}) => {
-    const widgetInstance = {
+    const widgetInstance: Record<string, unknown> = {
       type,
       ...config
     };
+    widgetInstance.setProperty = vi.fn((property, value) => {
+      if (property === uiProp.TEXT) {
+        widgetInstance.text = value;
+        return true;
+      }
+
+      widgetInstance[String(property)] = value;
+      return true;
+    });
+    widgetInstance.getProperty = vi.fn((property) => {
+      if (property === uiProp.TEXT) {
+        return widgetInstance.text;
+      }
+
+      return widgetInstance[String(property)];
+    });
     uiState.widgets.push(widgetInstance);
     return widgetInstance;
   })

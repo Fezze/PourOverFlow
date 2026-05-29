@@ -1,3 +1,4 @@
+import * as hmUI from "@zos/ui";
 import { px } from "@zos/utils";
 import {
   createFloatingDockStyle,
@@ -36,8 +37,8 @@ export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const BODY_TEXT = layout.body;
 export const FOOTER_TEXT = layout.footer;
-TITLE_TEXT.align_h = "CENTER_H";
-SUBTITLE_TEXT.align_h = "CENTER_H";
+TITLE_TEXT.align_h = hmUI.align.CENTER_H;
+SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
 export const ACTION_DOCK = createFloatingDockStyle({
   x: primaryButton.x,
   y: primaryButton.y,

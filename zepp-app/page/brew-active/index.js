@@ -99,6 +99,19 @@ function buildAssistText(activeSession) {
   return "";
 }
 
+function setWidgetText(widget, text) {
+  if (!widget) {
+    return;
+  }
+
+  if (typeof widget.setProperty === "function" && hmUI.prop && hmUI.prop.TEXT !== undefined) {
+    widget.setProperty(hmUI.prop.TEXT, text);
+    return;
+  }
+
+  widget.text = text;
+}
+
 function estimateInstructionLineCount(text, contentWidth = CONTENT_FRAME.w) {
   const approxCharsPerLine = Math.max(18, Math.floor(contentWidth / 10));
   return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
@@ -186,15 +199,18 @@ Page({
       return;
     }
 
-    this.progressWidget.text = buildProgressText(activeSession, this.i18n);
+    setWidgetText(this.progressWidget, buildProgressText(activeSession, this.i18n));
     const currentStep = getCurrentSessionStep(activeSession);
-    this.stepTitleWidget.text = currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep");
-    this.metaWidget.text = buildStepMetaText(activeSession, this.i18n);
+    setWidgetText(
+      this.stepTitleWidget,
+      currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep")
+    );
+    setWidgetText(this.metaWidget, buildStepMetaText(activeSession, this.i18n));
     if (this.descriptionWidget) {
-      this.descriptionWidget.text = buildDescriptionText(activeSession, this.i18n);
+      setWidgetText(this.descriptionWidget, buildDescriptionText(activeSession, this.i18n));
     }
     if (this.footerWidget) {
-      this.footerWidget.text = buildAssistText(activeSession);
+      setWidgetText(this.footerWidget, buildAssistText(activeSession));
     }
   },
   build() {
