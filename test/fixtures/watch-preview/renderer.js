@@ -107,7 +107,11 @@ function createButton(widget) {
   element.className = "widget button";
   applyBounds(element, widget);
   element.textContent = String(widget.text || "");
-  element.style.fontSize = `${Math.max(16, Math.floor(Number(widget.h || 48) / 2.8))}px`;
+  const fallbackTextSize = Math.max(16, Math.floor(Number(widget.h || 48) / 2.8));
+  element.style.fontSize = `${Number(widget.text_size || fallbackTextSize)}px`;
+  element.style.borderRadius = `${Number(widget.radius || 999)}px`;
+  element.style.background = toColor(widget.normal_color, "var(--watch-accent)");
+  element.style.color = toColor(widget.color, "var(--watch-text)");
   return element;
 }
 
