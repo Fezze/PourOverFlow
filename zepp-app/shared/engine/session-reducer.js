@@ -1,3 +1,7 @@
+function isTerminalSession(activeSession) {
+  return activeSession && ["completed", "aborted", "expired"].includes(activeSession.status);
+}
+
 function isTimedStep(step) {
   return Boolean(step && (step.kind === "timed_action" || step.kind === "timed_wait"));
 }
@@ -70,6 +74,10 @@ function markCurrentStepCompleted(activeSession, now, confirmedManually) {
 }
 
 export function advanceSession(activeSession, options = {}) {
+  if (isTerminalSession(activeSession)) {
+    return activeSession;
+  }
+
   if (!activeSession) {
     return null;
   }
@@ -108,6 +116,10 @@ export function advanceSession(activeSession, options = {}) {
 }
 
 export function tickSession(activeSession, options = {}) {
+  if (isTerminalSession(activeSession)) {
+    return activeSession;
+  }
+
   if (!activeSession) {
     return null;
   }
@@ -147,6 +159,10 @@ export function tickSession(activeSession, options = {}) {
 }
 
 export function abortSession(activeSession, options = {}) {
+  if (isTerminalSession(activeSession)) {
+    return activeSession;
+  }
+
   if (!activeSession) {
     return null;
   }
@@ -162,6 +178,10 @@ export function abortSession(activeSession, options = {}) {
 }
 
 export function resumeSession(activeSession, options = {}) {
+  if (isTerminalSession(activeSession)) {
+    return activeSession;
+  }
+
   if (!activeSession || !activeSession.recipeSnapshot || !Array.isArray(activeSession.recipeSnapshot.steps)) {
     return null;
   }

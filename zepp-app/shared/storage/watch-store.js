@@ -99,6 +99,10 @@ function normalizeLastResult(lastResult) {
 }
 
 function normalizeCatalogCache(catalogCache = {}) {
+  if (!catalogCache || typeof catalogCache !== "object" || Array.isArray(catalogCache)) {
+    return createDefaultCatalogCache();
+  }
+
   const tools =
     Array.isArray(catalogCache.tools) && catalogCache.tools.length ? catalogCache.tools : [...TOOL_CATALOG];
   const normalizedRecipesByTool = tools.reduce((accumulator, tool) => {
@@ -131,6 +135,10 @@ function createDefaultWatchSyncMeta() {
 }
 
 function normalizeWatchSyncMeta(syncMeta = {}) {
+  if (!syncMeta || typeof syncMeta !== "object" || Array.isArray(syncMeta)) {
+    return createDefaultWatchSyncMeta();
+  }
+
   return {
     ...createDefaultWatchSyncMeta(),
     ...syncMeta,

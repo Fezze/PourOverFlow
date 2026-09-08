@@ -177,3 +177,16 @@ test("advanceSession expires invalid step pointers and resumeSession handles inv
     status: "running"
   });
 });
+
+test.each(["completed", "aborted", "expired"])("terminal %s sessions cannot be resumed or advanced", (status) => {
+  const recipe = getSeedRecipeRecordById("seed_ap_daily_clean", 1000);
+  const session = {
+    ...advanceSession(createActiveBrewSession(recipe, { now: 1000 }), { now: 2000 }),
+    status,
+    sessionEndedAt: 3000,
+    elapsedSessionMs: 2000
+  };
+  for (const transition of [resumeSession, advanceSession, tickSession, abortSession]) {
+    expect(transition(session, { now: 100000 })).toEqual(session);
+  }
+});

@@ -11,6 +11,7 @@
 
 ### Real-device validation
 
+- Validate the review fixes on hardware: replay a result after editing its phone note/rating, and edit a recipe immediately before a history result arrives; confirm feedback survives and the watch receives the recipe update.
 - Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.
 - Use `npm run validation:logs` against the captured log file during hardware tests and write back concrete findings instead of leaving raw `[pof-validation]` lines in chat only.
 - Re-run the real-device smoke path on `Amazfit Balance` after the runtime floor change to `3.6`, and confirm that bootstrap sync, resume, and `brew-active` still behave correctly on Balance 1 hardware.
@@ -35,7 +36,7 @@
 - Re-run a clean Ubuntu 26 checkout with `npm ci`, `npm run doctor:ubuntu`, and `npm run verify` to confirm the new local-Zeus path is enough without any global Zeus install.
 - Keep the Parallax-style screenshot matrix current: every new watch screen or page must add at least one deterministic `verify:visual` scenario.
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.
-- Decide whether the Playwright module harness should stay focused on browser-safe shared modules or grow browser stubs for selected `@zos/*` modules.
+- Keep browser-safe module coverage separate from the existing watch preview with `@zos/*` stubs; use the mocked runtime suite and hardware checks for transport and lifecycle behavior.
 - Confirm that the new `zepp-app/` subtree plus root-level `coverage/` split stays comfortable on both Windows and Linux after a few normal `zeus dev` cycles.
 - Only keep pushing toward literal `100%` local coverage if it still matters; the main remaining hotspots are defensive branches in `sync-bridge`, storage helpers, validators, router edge paths, display-guard behavior, and the browser-harness copies of `session-reducer`, `recipe-engine`, and `phone-sync-plan`.
 
@@ -54,6 +55,7 @@
 
 - `npm test`
 - `npm run test:coverage`
+- `npm run verify:visual`
 - `npm run test:playwright:harness`
 - `npm run test:playwright:coverage:harness`
 - `npm run build`

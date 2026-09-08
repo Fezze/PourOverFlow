@@ -37,3 +37,8 @@ test("recipe validation rejects recipes without finish step at the end", () => {
 
   expect(issues, issues.join("\n")).toContain("Recipe must end with a finish step.");
 });
+
+test.each([{}, [null]])("recipe validation reports malformed steps %j without throwing", (steps) => {
+  const [recipe] = getSeedRecipeRecords(1000);
+  expect(validateRecipeRecord({ ...recipe, steps }).length).toBeGreaterThan(0);
+});

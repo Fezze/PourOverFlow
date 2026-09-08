@@ -229,6 +229,7 @@ Restore a sensible state without pretending a full background engine exists.
 
 ### What not to do
 
+- terminal sessions (`completed`, `aborted`, or `expired`) must retain their final status and timestamps when passed to resume or other reducer transitions,
 - do not resume by replaying the session "tick by tick",
 - do not depend on `AppService`,
 - do not block resume on a new bootstrap.

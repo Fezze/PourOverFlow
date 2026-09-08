@@ -324,3 +324,11 @@ describe("watch runtime helpers", () => {
     expect(readSelectedRecipeId()).toBeNull();
   });
 });
+
+it.each([WATCH_STORAGE_KEYS.catalogCache, WATCH_STORAGE_KEYS.syncMeta])("recovers from JSON null in %s", (key) => {
+  resetZeppRuntime();
+  setLocalStorageState({ [key]: "null" });
+  expect(() => getRuntimeState()).not.toThrow();
+  expect(getToolCatalog()).toHaveLength(6);
+  expect(getPendingHistoryQueue()).toEqual([]);
+});

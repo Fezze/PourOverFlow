@@ -111,6 +111,8 @@ export ZEPP_SIMULATOR_ROOT="$HOME/.config/simulator"
 
 ## Most important documents
 
+- [Project review and regression fixes](docs/REVIEW-2026-09-08.md)
+
 - [Start Here](docs/START-HERE.md)
 - [Product Goals](docs/00-product-goals.md)
 - [Zepp Architecture](docs/01-zepp-architecture.md)

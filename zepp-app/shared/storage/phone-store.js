@@ -459,6 +459,28 @@ export function saveHistoryEntry(settingsStorage, historyEntry) {
   };
 }
 
+// Watch results are immutable deliveries; phone feedback remains canonical on retries.
+export function saveWatchHistoryEntry(settingsStorage, historyEntry) {
+  const issues = validateHistoryEntry(historyEntry);
+
+  if (issues.length) {
+    return { ok: false, issues, historyEntry };
+  }
+
+  const existingEntry = readHistoryEntry(settingsStorage, historyEntry.historyId);
+
+  if (existingEntry) {
+    return {
+      ok: true,
+      issues: [],
+      historyEntry: existingEntry,
+      syncMeta: readPhoneSyncMeta(settingsStorage)
+    };
+  }
+
+  return saveHistoryEntry(settingsStorage, historyEntry);
+}
+
 export function updateHistoryEntryFeedback(settingsStorage, historyId, patch) {
   const historyEntry = readHistoryEntry(settingsStorage, historyId);
 

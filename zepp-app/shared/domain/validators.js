@@ -195,6 +195,8 @@ export function validateRecipeRecord(recipeRecord) {
   }
 
   if (
+    Array.isArray(recipeRecord.steps) &&
+    recipeRecord.steps.every((step) => step && typeof step === "object") &&
     Number.isFinite(recipeRecord.estimatedTotalDurationMs) &&
     recipeRecord.estimatedTotalDurationMs < sumRecipeStepDurations(recipeRecord.steps || [])
   ) {

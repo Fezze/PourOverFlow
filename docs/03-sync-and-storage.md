@@ -322,6 +322,8 @@ This remains separate from `seedCatalogVersion`:
 4. it sends `UPSERT_HISTORY_ENTRY`,
 5. after `ACK_HISTORY_ENTRY` it removes the entry from `pendingHistoryQueue`.
 
+History delivery is idempotent by `historyId`: when a valid watch result already exists on the phone, acknowledge the stored record at the current history revision without rewriting it. Retries must preserve phone-edited notes, ratings, and timestamps.
+
 ### Offline scenario
 
 1. the watch finishes a session,

@@ -1,7 +1,7 @@
 import {
   ensurePhoneStorage,
   readPhoneSnapshot,
-  saveHistoryEntry
+  saveWatchHistoryEntry
 } from "../shared/storage/phone-store";
 import { SETTINGS_UI_STORAGE_KEY } from "../shared/storage/keys";
 import { createSyncEnvelope } from "../shared/sync/contracts.js";
@@ -145,7 +145,7 @@ function createSnapshotPushScheduler() {
   return {
     flush(settingsStorage, options = {}) {
       clearPendingTimer();
-      const slices = getOrderedPhoneSyncSlices(options.slices || pendingSlices);
+      const slices = getOrderedPhoneSyncSlices([...pendingSlices, ...(options.slices || [])]);
       pendingSlices.clear();
       return pushSnapshotSlices(settingsStorage, {
         requestId: options.requestId,
@@ -228,7 +228,7 @@ function ensureAppSideRuntime(service) {
       }
 
       if (syncEnvelope.messageType === SYNC_MESSAGE_TYPES.UPSERT_HISTORY_ENTRY) {
-        const result = saveHistoryEntry(settingsStorage, syncEnvelope.payload.entry);
+        const result = saveWatchHistoryEntry(settingsStorage, syncEnvelope.payload?.entry);
 
         if (!result.ok) {
           console.log(`Rejected history entry: ${result.issues.join(" ")}`);

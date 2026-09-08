@@ -231,6 +231,8 @@ Helper phone key, non-canonical for sync:
 
 ## Nearest goal
 
+The [2026-09-08 review](REVIEW-2026-09-08.md) documents fixes for history replay, queued snapshot updates, malformed input, and terminal session recovery. The next validation should include the hardware sync cases listed in the backlog.
+
 Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live source of open work. Right now that mainly means real-device comfort validation plus confirming that the new Polish copy fits comfortably on both watch and phone surfaces.
 
 ## TODO and document maintenance
