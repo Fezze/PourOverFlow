@@ -33,6 +33,8 @@
 
 ### Tooling follow-up
 
+- Complete interactive brew and sync validation in the freshly deployed simulator; the automated simulator pass currently verifies round/square startup and deployment freshness only.
+
 - Re-run a clean Ubuntu 26 checkout with `npm ci`, `npm run doctor:ubuntu`, and `npm run verify` to confirm the new local-Zeus path is enough without any global Zeus install.
 - Keep the Parallax-style screenshot matrix current: every new watch screen or page must add at least one deterministic `verify:visual` scenario.
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.

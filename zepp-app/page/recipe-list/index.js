@@ -17,7 +17,7 @@ import {
   LIST_PANEL,
   SUBTITLE_TEXT,
   TITLE_TEXT
-} from "zosLoader:./index.[pf].layout.js";
+} from "./index.layout.js";
 
 function supportsHardwareListFocus() {
   try {
@@ -97,6 +97,7 @@ Page({
     }
   },
   build() {
+    hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const selectedTool = getSelectedTool();
     const recipes = getRecipeListForSelectedTool();

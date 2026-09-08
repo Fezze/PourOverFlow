@@ -78,6 +78,7 @@ const display = {
 };
 
 const ui = {
+  setStatusBarVisible: vi.fn(),
   widget: {
     FILL_RECT: "FILL_RECT",
     TEXT: "TEXT",
@@ -322,6 +323,7 @@ export function resetZeppRuntime() {
   display.setPageBrightTime.mockClear();
   display.resetPageBrightTime.mockClear();
   ui.createWidget.mockClear();
+  ui.setStatusBarVisible.mockClear();
   device.getDeviceInfo.mockClear();
   interaction.onKey.mockClear();
   settings.getLanguage.mockClear();

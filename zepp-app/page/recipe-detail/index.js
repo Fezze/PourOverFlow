@@ -17,7 +17,7 @@ import {
   DETAIL_PANEL,
   FOOTER_TEXT,
   TITLE_TEXT
-} from "zosLoader:./index.[pf].layout.js";
+} from "./index.layout.js";
 
 const DETAIL_LIST_FRAME = {
   x: DETAIL_PANEL.x + 8,
@@ -176,6 +176,7 @@ Page({
     }
   },
   build() {
+    hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const selectedRecipe = getSelectedRecipe();
     const snapshot = selectedRecipe ? selectedRecipe.recipeSnapshot : null;

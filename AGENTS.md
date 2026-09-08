@@ -146,6 +146,9 @@ The first implementation task from the current repo state is the nearest sensibl
 
 ## Discovered toolchain nuances
 
+- With the explicit `deviceSource` target matrix, ZPM 3.4.0 leaves `zosLoader:` imports unresolved. Pages now use `index.layout.js` facades with runtime round/square selection. Keep this routing and the build wrapper's unresolved-import failure check.
+- Every watch page hides the native status bar before creating widgets; otherwise square firmware covers the app's custom title.
+
 - For target-based scaffolding with `configVersion: "v3"`, Zeus expects icons under target asset folders, not only the logical `icon.png` name in `app.json`. In this repo those folders include `zepp-app/assets/round-416`, `round-454`, `round-466`, `round-480`, and `square-390x450`, while `common.r` and `common.s` remain shared fallbacks.
 - The `setting.path` entry is safest when exposed through `setting/index.js`; if the source lives in `.jsx`, keep a thin JS shim instead of relying only on `index.jsx`. In this repo that shim lives under `zepp-app/setting/index.js`.
 - Timestamp-based resume reconciliation and active-brew display guard handling are implemented, and real-watch logs already confirmed the core wake, resume, and queue replay paths.
@@ -187,7 +190,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - `npm test` now runs the unified Vitest suite, and `npm run test:coverage` is the repo-standard JS coverage command.
 - Coverage reports should stay repo-local in the normal root-level `coverage/` directory, while Zeus watches only `zepp-app/`. Use `POF_REPORTS_ROOT` only when you need to override that root intentionally.
 - The current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`; if a later agent pushes for literal 100%, the remaining hotspots are mostly defensive Zepp-runtime branches in `sync-bridge`, `phone-store`, `validators`, `tool-list`, `home`, `recipe-list`, `brew-active`, locale data modules, and the browser-harness copies of `session-reducer` and `recipe-engine`.
-- The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks `zosLoader:./index.[pf].layout.js`, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
+- The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks each page's `index.layout.js` facade, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
 - The repo includes `npm run test:playwright` and `npm run test:playwright:harness` as no-coverage Playwright smoke runs, so the simulator path and the browser module harness can both be exercised without writing coverage reports.
 - Parallax-compatible aliases are available: `npm run dev`, `npm run sim:doctor`, `npm run sim:smoke`, and `npm run test:playwright:screens`.
 - The Parallax-style simulator workflow is `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build`.

@@ -22,7 +22,7 @@ import {
   FOOTER_TEXT,
   SUBTITLE_TEXT,
   TITLE_TEXT
-} from "zosLoader:./index.[pf].layout.js";
+} from "./index.layout.js";
 
 const PANEL_COLOR = 0x171d26;
 const MUTED_TEXT = 0xaab4c2;
@@ -79,6 +79,7 @@ Page({
     }
   },
   build() {
+    hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     primeWatchSyncBridge();
     const reconcileResult = reconcileActiveSessionOnEntry();

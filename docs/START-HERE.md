@@ -269,7 +269,7 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - The current sync path is no longer full-bootstrap-only: the phone side now classifies storage changes by slice and answers `REQUEST_BOOTSTRAP` only for stale revisions.
 - Watch-side bootstrap and queue replay should now fail fast when the phone bridge is offline instead of repeatedly attempting transport during offline startup.
 - The repo now includes a Vitest-backed mocked Zepp runtime harness under `test/zeus-runtime/` plus flow-level integration coverage under `test/runtime/`.
-- The mocked Zepp runtime harness now also exercises page shells by aliasing `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocking `zosLoader:` layout modules, and asserting widget creation plus runtime-event refresh behavior from captured `Page(...)` definitions.
+- The mocked Zepp runtime harness now also exercises page shells by aliasing `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocking each page's `index.layout.js` facade, and asserting widget creation plus runtime-event refresh behavior from captured `Page(...)` definitions.
 - The watch no longer keeps a dedicated hardware-check page. Real-device feedback validation should happen through the normal brew flow and log inspection instead of a separate on-watch debug surface.
 - The repo now uses `scripts/playwright-simulator-coverage.mjs` for two meaningful Playwright roles only: simulator smoke without coverage and module-harness smoke or coverage for browser-safe shared code.
 - Simulator-side V8 coverage was intentionally removed from the repo-standard test menu because the current simulator exposes shell/framework/preload scripts more reliably than PourOverFlow app code.

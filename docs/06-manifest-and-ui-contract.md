@@ -155,9 +155,29 @@ zepp-app/
   app-side/index.js
 ```
 
+## Layout selection with explicit device targets
+
+Keep the existing `index.r.layout.js` and `index.s.layout.js` files. Each page imports
+its `index.layout.js` facade, which chooses between them using the documented
+`getDeviceInfo()` screen-shape constants, with a dimensions fallback for older
+simulator profiles and a round fallback when device info is unavailable.
+
+The installed Zeus/ZPM toolchain does not add a screen qualifier to explicit
+`deviceSource` targets. Its `zosLoader:` resolver therefore leaves an unresolved
+runtime import under this manifest, even though Zeus exits successfully. This
+was reproduced as `API NOT EXIST zosLoader:./index.[pf].layout.js` and a black
+emulator screen. Do not restore that import form without validating the actual
+packaged runtime. The build wrapper now fails on unresolved-import diagnostics.
+
+Sources: [screen adaptation](https://docs.zepp.com/docs/guides/framework/device/screen-adaption/),
+[device information](https://docs.zepp.com/docs/reference/device-app-api/newAPI/device/getDeviceInfo/),
+and local `@zeppos/zpm` 3.4.0 resolver inspection.
+
 ## Watch UI contract
 
 The watch UI now follows these repo-level rules:
+
+- call `setStatusBarVisible(false)` at the start of each page build because the layouts already provide their own headers; the default square-device bar otherwise covers the top 64 px ([official API](https://docs.zepp.com/docs/v2/reference/device-app-api/newAPI/ui/setStatusBarVisible/)),
 
 - populated chooser pages stay quiet and selection-focused,
 - `tool-list` and `recipe-list` rely on native scrolling instead of piling extra footer actions onto list screens,

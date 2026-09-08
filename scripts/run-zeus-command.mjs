@@ -32,7 +32,7 @@ if (zeusArgs.length === 0) {
 
 const child = spawn(zeusCommand, zeusArgs, {
   cwd: zeppAppRoot,
-  stdio: "inherit",
+  stdio: zeusArgs[0] === "build" ? ["inherit", "pipe", "pipe"] : "inherit",
   shell: process.platform === "win32",
   env: {
     ...process.env,
@@ -45,11 +45,28 @@ const child = spawn(zeusCommand, zeusArgs, {
   }
 });
 
-child.on("exit", (code, signal) => {
+let unresolvedImport = false;
+if (zeusArgs[0] === "build") {
+  for (const [source, destination] of [[child.stdout, process.stdout], [child.stderr, process.stderr]]) {
+    let recentOutput = "";
+    source.on("data", (chunk) => {
+      destination.write(chunk);
+      recentOutput = (recentOutput + chunk.toString()).slice(-8192);
+      if (recentOutput.includes("could not be resolved") || recentOutput.includes("UNRESOLVED_IMPORT")) {
+        unresolvedImport = true;
+      }
+    });
+  }
+}
+
+child.on("close", (code, signal) => {
   if (signal) {
     process.kill(process.pid, signal);
     return;
   }
 
-  process.exit(code ?? 1);
+  if (unresolvedImport) {
+    console.error("Zeus left an unresolved import in the build; refusing to report success.");
+  }
+  process.exit(code === 0 && unresolvedImport ? 1 : (code ?? 1));
 });

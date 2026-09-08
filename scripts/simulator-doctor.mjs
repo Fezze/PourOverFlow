@@ -129,5 +129,6 @@ async function readMtimeMs(targetPath) {
 async function readNewestChildMtimeMs(directoryPath) {
   const entries = await readdir(directoryPath, { withFileTypes: true });
   const mtimes = await Promise.all(entries.map((entry) => readMtimeMs(path.join(directoryPath, entry.name))));
-  return Math.max(...mtimes.filter(Number.isFinite), Number.NaN);
+  const finiteMtimes = mtimes.filter(Number.isFinite);
+  return finiteMtimes.length ? Math.max(...finiteMtimes) : Number.NaN;
 }

@@ -750,3 +750,12 @@ describe("page shell runtime coverage", () => {
     });
   });
 });
+
+it.each(["home", "tool-list", "recipe-list", "recipe-detail", "brew-active", "result-summary"])("hides the native title bar before building %s", async (page) => {
+  const { runtime, pageDefinition } = await loadPageHarness(`../zepp-app/page/${page}/index.js`, createLayoutMock());
+  const instance = buildPage(pageDefinition);
+  expect(runtime.ui.setStatusBarVisible).toHaveBeenCalledWith(false);
+  const firstWidgetCall = runtime.ui.createWidget.mock.invocationCallOrder[0];
+  if (firstWidgetCall) expect(runtime.ui.setStatusBarVisible.mock.invocationCallOrder[0]).toBeLessThan(firstWidgetCall);
+  if (typeof instance.onDestroy === "function") instance.onDestroy();
+});

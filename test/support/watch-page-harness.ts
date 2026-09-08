@@ -1196,7 +1196,8 @@ function createPreviewPanelStyle(
 
 export async function loadPageHarness(modulePath: string, layoutMock: Record<string, unknown>) {
   vi.resetModules();
-  vi.doMock("zosLoader:./index.[pf].layout.js", () => layoutMock);
+  const layoutPath = new URL(modulePath.replace(/index\.js$/, "index.layout.js"), new URL("../", import.meta.url)).pathname;
+  vi.doMock(layoutPath, () => layoutMock);
 
   const runtime = await import("../zeus-runtime/runtime.ts");
   runtime.resetZeppRuntime();

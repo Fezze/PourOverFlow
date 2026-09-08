@@ -216,7 +216,7 @@ The project should use the `app.json v3+` mechanism and layout files:
 
 - `index.r.layout.js` for round,
 - `index.s.layout.js` for square,
-- `zosLoader:./index.[pf].layout.js` for layout selection,
+- `index.layout.js` facades for runtime selection through `shared/watch/select-layout.js` (explicit device targets do not acquire the qualifier required by Zeus's `zosLoader` resolver),
 - target asset folders such as `zepp-app/assets/round-480` and `zepp-app/assets/square-390x450`, with `common.r` and `common.s` retained as shared fallback asset locations.
 
 ### `designWidth` decision

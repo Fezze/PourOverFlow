@@ -5,3 +5,5 @@ export const widget = ui.widget;
 export const align = ui.align;
 export const prop = ui.prop;
 export const text_style = ui.text_style;
+
+export const setStatusBarVisible = ui.setStatusBarVisible;

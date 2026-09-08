@@ -29,7 +29,7 @@ import {
   BUTTONS,
   FOOTER_TEXT,
   TITLE_TEXT
-} from "zosLoader:./index.[pf].layout.js";
+} from "./index.layout.js";
 
 const CONTENT_PANEL = {
   x: BODY_TEXT.x,
@@ -214,6 +214,7 @@ Page({
     }
   },
   build() {
+    hmUI.setStatusBarVisible(false);
     this.i18n = createWatchTranslator();
     const reconcileResult = reconcileActiveSessionOnEntry();
 

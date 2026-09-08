@@ -10,7 +10,7 @@ import {
   PRIMARY_BUTTON,
   SUBTITLE_TEXT,
   TITLE_TEXT
-} from "zosLoader:./index.[pf].layout.js";
+} from "./index.layout.js";
 
 function supportsHardwareListFocus() {
   try {
@@ -101,6 +101,7 @@ Page({
     }
   },
   build() {
+    hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const tools = getToolList();
     const rows = buildToolRows(tools, i18n);
