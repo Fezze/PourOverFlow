@@ -42,6 +42,9 @@ const CONTENT_PANEL = {
   radius: 22,
   color: SHARED_COLORS.surface
 };
+const INSTRUCTION_TEXT_SIZE = 20;
+const INSTRUCTION_ROW_PADDING_X = 10;
+const INSTRUCTION_ROW_PADDING_Y = 8;
 const CONTENT_FRAME = {
   x: CONTENT_PANEL.x + 16,
   y: CONTENT_PANEL.y + 10,
@@ -113,23 +116,13 @@ function setWidgetText(widget, text) {
   widget.text = text;
 }
 
-function estimateInstructionLineCount(text, contentWidth = CONTENT_FRAME.w) {
-  const approxCharsPerLine = Math.max(18, Math.floor(contentWidth / 10.5));
-  return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
-}
-
-function buildStaticInstructionFrame(instructionText) {
-  const lineCount = estimateInstructionLineCount(instructionText);
-  return {
-    x: CONTENT_FRAME.x,
-    y: CONTENT_FRAME.y,
-    w: CONTENT_FRAME.w,
-    h: Math.max(CONTENT_FRAME.h, lineCount * 24)
-  };
-}
-
-function canRenderStaticInstruction(instructionText) {
-  return buildStaticInstructionFrame(instructionText).h <= CONTENT_FRAME.h;
+function measureInstructionHeight(text, width) {
+  const { height } = hmUI.getTextLayout(text, {
+    text_size: INSTRUCTION_TEXT_SIZE,
+    text_width: width,
+    wrapped: 1
+  });
+  return Math.max(INSTRUCTION_TEXT_SIZE, Math.ceil(height));
 }
 
 function createInstructionScrollConfig(itemHeight) {
@@ -141,13 +134,13 @@ function createInstructionScrollConfig(itemHeight) {
       item_press_effect: false,
       text_view: [
         {
-          x: 10,
-          y: 8,
-          w: CONTENT_FRAME.w - 20,
-          h: itemHeight - 16,
+          x: INSTRUCTION_ROW_PADDING_X,
+          y: INSTRUCTION_ROW_PADDING_Y,
+          w: CONTENT_FRAME.w - INSTRUCTION_ROW_PADDING_X * 2,
+          h: itemHeight - INSTRUCTION_ROW_PADDING_Y * 2,
           key: "body",
           color: SHARED_COLORS.text,
-          text_size: 20,
+          text_size: INSTRUCTION_TEXT_SIZE,
           text_style: hmUI.text_style.WRAP,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.TOP
@@ -309,21 +302,22 @@ Page({
     }, CONTENT_PANEL));
 
     const descriptionText = buildDescriptionText(activeSession, this.i18n);
-    if (canRenderStaticInstruction(descriptionText)) {
-      const staticInstructionFrame = buildStaticInstructionFrame(descriptionText);
+    if (measureInstructionHeight(descriptionText, CONTENT_FRAME.w) <= CONTENT_FRAME.h) {
       this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
-        x: staticInstructionFrame.x,
-        y: staticInstructionFrame.y,
-        w: staticInstructionFrame.w,
+        x: CONTENT_FRAME.x,
+        y: CONTENT_FRAME.y,
+        w: CONTENT_FRAME.w,
         h: CONTENT_FRAME.h,
         align_v: hmUI.align.CENTER_V,
-        text_size: 20,
+        text_size: INSTRUCTION_TEXT_SIZE,
         text_style: hmUI.text_style.WRAP,
         text: descriptionText
       });
     } else {
-      const scrollItemHeight = Math.max(CONTENT_FRAME.h + 28, estimateInstructionLineCount(descriptionText) * 24 + 18);
+      const scrollTextWidth = CONTENT_FRAME.w - INSTRUCTION_ROW_PADDING_X * 2;
+      const scrollItemHeight = measureInstructionHeight(descriptionText, scrollTextWidth) +
+        INSTRUCTION_ROW_PADDING_Y * 2;
       hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
         x: CONTENT_FRAME.x,
         y: CONTENT_FRAME.y,

@@ -321,6 +321,7 @@ describe("page shell runtime coverage", () => {
 
   it("falls back to an internal scroll area when the active-brew instruction body overflows", async () => {
     const fixture = createCatalogFixture();
+    const body = "Pour slowly from the center.\n".repeat(12) + "Keep pouring throughout the spiral.";
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
     const now = 260_000;
     const longSnapshot = {
@@ -329,7 +330,7 @@ describe("page shell runtime coverage", () => {
         index === 1
           ? {
               ...step,
-              body: "Pour slowly from the center, keep the kettle low, and stay steady through the spiral. ".repeat(12)
+              body
             }
           : { ...step }
       ))
@@ -355,6 +356,18 @@ describe("page shell runtime coverage", () => {
       expect(scrollList).toBeTruthy();
       expect(scrollList.enable_scroll_bar).toBe(false);
       expect(scrollList.data_count).toBe(1);
+      expect(scrollList.data_array[0].body).toBe(body);
+      const [row] = scrollList.item_config;
+      const [text] = row.text_view;
+      const { getTextLayout } = await import("@zos/ui");
+      const { height } = getTextLayout(body, {
+        text_size: text.text_size,
+        text_width: text.w,
+        wrapped: 1
+      });
+      expect(text.h).toBeGreaterThanOrEqual(height);
+      expect(row.item_height).toBeGreaterThanOrEqual(text.y + text.h);
+      expect(row.item_height).toBeGreaterThan(scrollList.h);
     } finally {
       vi.useRealTimers();
     }

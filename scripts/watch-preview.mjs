@@ -90,6 +90,27 @@ async function main() {
         }
         return changed;
       });
+      if (scenario.page === "brew-active" && scenario.state === "overflow") {
+        const tailVisible = await page.locator(".scroll-card .text > span").evaluate(text => {
+          const lastLine = document.createRange();
+          const content = text.firstChild;
+          lastLine.setStart(content, content.textContent.lastIndexOf("\n") + 1);
+          lastLine.setEndAfter(content);
+          const list = text.closest(".scroll-list");
+          const textFrame = text.parentElement.getBoundingClientRect();
+          const tail = lastLine.getBoundingClientRect();
+          if (tail.height <= 0 || tail.bottom > textFrame.bottom + 1) {
+            return false;
+          }
+          list.scrollTop += tail.bottom - list.getBoundingClientRect().bottom + 4;
+          const visibleTail = lastLine.getBoundingClientRect();
+          const viewport = list.getBoundingClientRect();
+          return visibleTail.top >= viewport.top - 1 && visibleTail.bottom <= viewport.bottom + 1;
+        });
+        if (!scrolled || !tailVisible) {
+          throw new Error(`Final instruction line is clipped in ${scenario.name}.`);
+        }
+      }
       if (scrolled) {
         const root = captureOptions[0].root;
         await page.locator("body").evaluate(body => { body.dataset.framed = "false"; });

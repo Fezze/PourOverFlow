@@ -545,7 +545,8 @@ function createBrewActiveScenario(options: {
               index === 1
                 ? {
                     ...step,
-                    body: "Pour slowly from the center, keep the kettle low, and stay steady through the spiral. ".repeat(12)
+                    body: "Pour slowly from the center, keep the kettle low, and stay steady through the spiral. ".repeat(12) +
+                      "\nFinish pouring at the outer edge."
                   }
                 : { ...step }
             ))

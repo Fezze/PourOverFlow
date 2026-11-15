@@ -6,7 +6,7 @@ The redesign preserves the six watch pages, six phone views, closed brewer catal
 
 The watch uses an espresso background (#11100E), warm surfaces (#211E19), cream text (#F4EEE3), and a caramel primary action (#E6B877). Main actions use dark text for contrast. Phone Settings uses warm paper with matching espresso and caramel accents.
 
-The brewing screen prioritizes the large step countdown; the elapsed session time and water target remain visible. Manual steps show elapsed time. Long instructions and recipe details use native vertical lists with sufficient row height. Recipe list names have room for two lines; long detail titles retain native marquee behavior. Result summaries emphasize total duration while keeping status and timing delta.
+The brewing screen prioritizes the large step countdown; the elapsed session time and water target remain visible. Manual steps show elapsed time. Long instructions and recipe details use native vertical lists. Active brew measures wrapped instructions at the actual text width, including the narrower width inside a scroll row, so the last lines remain reachable. Recipe list names have room for two lines; long detail titles retain native marquee behavior. Result summaries emphasize total duration while keeping status and timing delta.
 
 Brewers and Latest Result are two horizontal browsing tabs. Swipe left from Brewers to Latest Result; swipe right to return. Two position marks identify the active tab. Vertical gestures and the outer system-back gesture remain native. Existing navigation buttons remain available. The active brew does not register these tab gestures.
 
