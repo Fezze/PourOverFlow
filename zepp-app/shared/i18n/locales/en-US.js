@@ -152,6 +152,7 @@ export default {
         skip: "Skip",
         stop: "Stop"
       },
+      stopConfirmation: "Stop brewing?",
       meta: {
         targetMl: ({ value }) => `Target ${value} ml`,
         pourMl: ({ value }) => `Pour ${value} ml`,

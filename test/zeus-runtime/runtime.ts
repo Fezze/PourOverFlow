@@ -133,6 +133,14 @@ const device = {
 };
 
 const interaction = {
+  MODAL_CONFIRM: 1,
+  MODAL_CANCEL: 0,
+  createModal: vi.fn((_options: {
+    content: string;
+    show: boolean;
+    autoHide: boolean;
+    onClick: (event: { type: number }) => void;
+  }) => ({ show: vi.fn() })),
   GESTURE_LEFT: "GESTURE_LEFT",
   GESTURE_RIGHT: "GESTURE_RIGHT",
   GESTURE_UP: "GESTURE_UP",
@@ -340,6 +348,7 @@ export function resetZeppRuntime() {
   ui.createWidget.mockClear();
   ui.setStatusBarVisible.mockClear();
   device.getDeviceInfo.mockClear();
+  interaction.createModal.mockClear();
   interaction.onKey.mockClear();
   interaction.onGesture.mockClear();
   interaction.offGesture.mockClear();

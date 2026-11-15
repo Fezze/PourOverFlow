@@ -169,6 +169,7 @@ export default {
         skip: "Pomiń",
         stop: "Stop"
       },
+      stopConfirmation: "Przerwać parzenie?",
       meta: {
         targetMl: ({ value }) => `Cel ${value} ml`,
         pourMl: ({ value }) => `Wlej ${value} ml`,

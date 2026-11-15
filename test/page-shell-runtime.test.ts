@@ -373,25 +373,65 @@ describe("page shell runtime coverage", () => {
     }
   });
 
-  it("aborts the active brew from the dock and returns home", async () => {
+  it.each([
+    { languageCode: 2, prompt: "Stop brewing?" },
+    { languageCode: 9, prompt: "Przerwać parzenie?" }
+  ])("confirms or cancels an active brew stop in language $languageCode", async ({ languageCode, prompt }) => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
     const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
     const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now: 310_000 });
-
+    runtime.setLanguageCode(languageCode);
     runtime.setLocalStorageState({
       [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
     });
 
-    buildPage(pageDefinition);
-    const buttons = runtime.getCreatedWidgets().filter((widget) => widget.type === "BUTTON");
+    const page = buildPage(pageDefinition);
+    try {
+      const stop = runtime.findCreatedWidgetsByType("BUTTON").find((button) => button.text === "Stop");
+      stop.click_func();
 
-    buttons[1].click_func();
+      const { createModal, MODAL_CANCEL, MODAL_CONFIRM } = runtime.interaction;
+      const [options] = createModal.mock.calls[0];
+      const modal = createModal.mock.results[0].value;
+      expect(options.content).toBe(prompt);
+      expect(modal.show).toHaveBeenLastCalledWith(true);
+      expect(watchStore.readActiveSession()).not.toBeNull();
+      expect(runtime.router.replace).not.toHaveBeenCalled();
 
-    expect(runtime.router.replace).toHaveBeenCalledWith({
-      url: "page/home/index"
-    });
-    expect(watchStore.readActiveSession()).toBeNull();
+      options.onClick({ type: MODAL_CANCEL });
+      expect(modal.show).toHaveBeenLastCalledWith(false);
+      expect(watchStore.readActiveSession()).not.toBeNull();
+
+      stop.click_func();
+      expect(createModal).toHaveBeenCalledTimes(1);
+      options.onClick({ type: MODAL_CONFIRM });
+      expect(modal.show).toHaveBeenLastCalledWith(false);
+      expect(runtime.router.replace).toHaveBeenCalledWith({ url: "page/home/index" });
+      expect(watchStore.readActiveSession()).toBeNull();
+      expect(watchStore.readLastResult()?.status).toBe("aborted");
+    } finally {
+      pageDefinition.onDestroy.call(page);
+    }
+  });
+
+  it("closes the stop confirmation when the active brew page is destroyed", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const activeSession = createActiveBrewSession(fixture.primarySnapshot, { now: 310_000 });
+    runtime.setLocalStorageState({ [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession) });
+
+    const page = buildPage(pageDefinition);
+    const stop = runtime.findCreatedWidgetsByType("BUTTON").find((button) => button.text === "Stop");
+    stop.click_func();
+    const { createModal, MODAL_CONFIRM } = runtime.interaction;
+    const [options] = createModal.mock.calls[0];
+    const modal = createModal.mock.results[0].value;
+
+    pageDefinition.onDestroy.call(page);
+    options.onClick({ type: MODAL_CONFIRM });
+    expect(modal.show).toHaveBeenLastCalledWith(false);
+    expect(runtime.router.replace).not.toHaveBeenCalled();
   });
 
   it("replaces the active-brew page when a timed tick advances the session", async () => {

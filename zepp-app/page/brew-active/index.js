@@ -1,3 +1,4 @@
+import { createModal, MODAL_CONFIRM } from "@zos/interaction";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import {
@@ -180,6 +181,25 @@ Page({
       clearInterval(this.activeTimer);
       this.activeTimer = null;
     }
+    if (this.stopConfirmation) {
+      this.stopConfirmation.show(false);
+      this.stopConfirmation = null;
+    }
+  },
+  confirmStop() {
+    if (!this.stopConfirmation) {
+      this.stopConfirmation = createModal({
+        content: this.i18n.t("watch.brewActive.stopConfirmation"),
+        show: false,
+        autoHide: false,
+        onClick: ({ type }) => {
+          if (!this.stopConfirmation) return;
+          this.stopConfirmation.show(false);
+          if (type === MODAL_CONFIRM) abortActiveBrew();
+        }
+      });
+    }
+    this.stopConfirmation.show(true);
   },
   refreshWidgets() {
     const activeSession = readActiveSession();
@@ -379,7 +399,7 @@ Page({
       text: this.i18n.t("watch.brewActive.actions.stop"),
       text_size: BUTTONS[1].text_size,
       click_func: () => {
-        abortActiveBrew();
+        this.confirmStop();
       }
     });
     const assistText = buildAssistText(activeSession);

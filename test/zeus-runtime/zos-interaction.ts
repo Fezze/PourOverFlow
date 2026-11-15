@@ -8,3 +8,6 @@ export const GESTURE_UP = interaction.GESTURE_UP;
 export const GESTURE_DOWN = interaction.GESTURE_DOWN;
 export const onGesture = interaction.onGesture;
 export const offGesture = interaction.offGesture;
+
+export const MODAL_CONFIRM = interaction.MODAL_CONFIRM;
+export const createModal = interaction.createModal;

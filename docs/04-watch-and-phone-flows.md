@@ -256,6 +256,8 @@ Runtime note:
 
 ### Aborted
 
+The active brew Stop button opens a native confirmation. Cancel keeps the current session running. Confirm stops the brew and returns to Home.
+
 Abort creates a `HistoryEntry` with status `aborted` only if the session was actually started. Do not save empty aborted entries if the user never moved past the recipe start screen.
 
 ## Watch flow 9 - result screen
