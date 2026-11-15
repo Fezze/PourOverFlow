@@ -9,7 +9,7 @@ import {
 const layout = createScaffoldLayout({ shape: "square" });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(322),
+  y: px(366),
   h: px(60),
   radius: px(30),
   text_size: px(20)
@@ -20,9 +20,9 @@ export const TITLE_TEXT = layout.title;
 export const SUBTITLE_TEXT = layout.subtitle;
 export const DETAIL_PANEL = createPanelStyle(layout, {
   x: px(24),
-  y: px(96),
+  y: px(108),
   w: px(336),
-  h: px(210)
+  h: px(238)
 });
 export const BODY_TEXT = {
   ...layout.body,

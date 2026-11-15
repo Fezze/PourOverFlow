@@ -1,19 +1,18 @@
 import path from "node:path";
 import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { beforeAll, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, expect, it, vi } from "vitest";
 
 import { createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
+import { getSupportedTools } from "../zepp-app/shared/constants/tool-catalog.js";
 import { WATCH_STORAGE_KEYS } from "../zepp-app/shared/storage/keys.js";
 import {
   buildPage,
   createCatalogFixture,
   createExpandedCatalogFixture,
-  createPreviewLayoutMock,
-  loadPageHarness,
   type PreviewPage
 } from "./support/watch-page-harness.ts";
 
-const OUTPUT_ROOT = path.resolve(process.cwd(), "output", "playwright", "watch-preview");
+const OUTPUT_ROOT = path.resolve(process.env.WATCH_PREVIEW_OUTPUT || "output/playwright/watch-preview");
 const FIXTURE_ROOT = path.join(OUTPUT_ROOT, "fixtures");
 type PreviewLocale = "en-US" | "pl-PL";
 type PreviewShape = "round" | "square";
@@ -23,12 +22,24 @@ type PreviewState =
   | "empty"
   | "resume"
   | "populated"
+  | "no-catalog"
+  | "no-session"
   | "empty-brewer"
   | "normal"
   | "overflow"
+  | "long-title"
   | "timed"
   | "waiting"
+  | "confirm"
+  | "finish"
+  | "aborted"
+  | "expired"
   | "empty-result";
+
+const LONG_RECIPE_TITLES = {
+  "en-US": "AeroPress Honey and Apricot with a Floral Finish",
+  "pl-PL": "AeroPress z miodem i morelą oraz kwiatowym finiszem"
+};
 
 type PreviewScenario = {
   name: string;
@@ -44,7 +55,7 @@ type PreviewScenario = {
   modulePath: string;
   expectedButtonCount: number;
   requiredTextSnippets: string[];
-  prepare: (runtime: any) => Promise<void>;
+  prepare: (runtime: typeof import("./zeus-runtime/runtime.ts")) => Promise<void>;
 };
 
 type PreviewTarget = {
@@ -70,15 +81,22 @@ const previewScenarios: PreviewScenario[] = PREVIEW_LOCALES.flatMap((locale) => 
     createHomeScenario({ locale, state: "ready", target }),
     createHomeScenario({ locale, state: "empty", target }),
     createHomeScenario({ locale, state: "resume", target }),
-    createToolListScenario({ locale, target }),
+    createToolListScenario({ locale, state: "populated", target }),
+    createToolListScenario({ locale, state: "no-catalog", target }),
     createRecipeListScenario({ locale, state: "populated", target }),
     createRecipeListScenario({ locale, state: "empty-brewer", target }),
     createRecipeDetailScenario({ locale, state: "normal", target }),
     createRecipeDetailScenario({ locale, state: "overflow", target }),
+    createRecipeDetailScenario({ locale, state: "long-title", target }),
     createBrewActiveScenario({ locale, state: "timed", target }),
     createBrewActiveScenario({ locale, state: "waiting", target }),
+    createBrewActiveScenario({ locale, state: "confirm", target }),
+    createBrewActiveScenario({ locale, state: "finish", target }),
+    createBrewActiveScenario({ locale, state: "no-session", target }),
     createBrewActiveScenario({ locale, state: "overflow", target }),
     createResultSummaryScenario({ locale, state: "normal", target }),
+    createResultSummaryScenario({ locale, state: "aborted", target }),
+    createResultSummaryScenario({ locale, state: "expired", target }),
     createResultSummaryScenario({ locale, state: "empty-result", target })
   ])
 ));
@@ -88,19 +106,34 @@ beforeAll(async () => {
   await mkdir(FIXTURE_ROOT, { recursive: true });
 });
 
+afterEach(() => vi.useRealTimers());
+
 it("exports deterministic watch-preview fixture payloads with structural checks", async () => {
   const manifest = [] as Array<Record<string, unknown>>;
 
   for (const scenario of previewScenarios) {
-    const layoutMock = createPreviewLayoutMock(scenario.page, {
-      shape: scenario.shape,
+    // Layout modules read the device dimensions and select their shape at import time.
+    vi.resetModules();
+    const runtime = await import("./zeus-runtime/runtime.ts");
+    const device = await import("./zeus-runtime/zos-device.ts");
+    runtime.resetZeppRuntime();
+    runtime.setLanguageCode(scenario.locale === "pl-PL" ? 9 : 2);
+    runtime.setDeviceInfo({
       width: scenario.width,
-      height: scenario.height
+      height: scenario.height,
+      screenShape: scenario.shape === "square" ? device.SCREEN_SHAPE_SQUARE : device.SCREEN_SHAPE_ROUND,
+      keyNumber: 3,
+      keyType: "sport"
     });
-    const { runtime, pageDefinition } = await loadPageHarness(scenario.modulePath, layoutMock);
-
-    expect(pageDefinition).toBeTruthy();
+    vi.useFakeTimers();
+    vi.setSystemTime(4_000);
     await scenario.prepare(runtime);
+    const moduleUrl = new URL(scenario.modulePath, import.meta.url);
+    await import(moduleUrl.href);
+    const pageDefinition = runtime.getLastPageDefinition();
+    if (!pageDefinition) {
+      throw new Error(`Preview page did not register: ${scenario.modulePath}`);
+    }
 
     const pageInstance = buildPage(pageDefinition);
     const widgets = serializeWidgets(runtime.getCreatedWidgets());
@@ -146,8 +179,6 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
     if (typeof pageDefinition.onDestroy === "function") {
       pageDefinition.onDestroy.call(pageInstance);
     }
-
-    vi.useRealTimers();
   }
 
   await writeFile(path.join(FIXTURE_ROOT, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
@@ -174,6 +205,14 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
     fixturePayload.scenario,
     "scenario name should match page/state/locale/shape/size metadata"
   ).toBe(buildScenarioName(fixturePayload.page, fixturePayload.state, fixturePayload.locale, fixturePayload.device.shape, fixturePayload.device.width, fixturePayload.device.height));
+
+  expect(widgets[0], `${fixturePayload.scenario} should use the target-sized background`).toMatchObject({
+    type: "FILL_RECT",
+    x: 0,
+    y: 0,
+    w: device.width,
+    h: device.height
+  });
 
   widgets.forEach((widget, index) => {
     if (Number.isFinite(widget.w)) {
@@ -219,12 +258,45 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
 
   expect(buttonWidgets.length, `${fixturePayload.scenario} should have the expected button count`).toBe(expectedButtonCount);
 
+  const listText = scrollListWidgets.flatMap((widget) =>
+    widget.data_array.flatMap((row) => widget.item_config.flatMap((config) =>
+      (config.text_view ?? []).map((view) => row[view.key])
+    ))
+  );
+  const renderedText = [...textWidgets, ...buttonWidgets].map((widget) => widget.text).concat(listText);
   requiredTextSnippets.forEach((snippet) => {
     expect(
-      widgets.some((widget) => String(widget.text || "").includes(snippet)),
+      renderedText.some((text) => String(text ?? "").includes(snippet)),
       `${fixturePayload.scenario} should include text snippet: ${snippet}`
     ).toBe(true);
   });
+
+  if (fixturePayload.page === "tool-list") {
+    const rows = scrollListWidgets[0]?.data_array;
+    expect(rows.map((row) => row.toolId)).toEqual(getSupportedTools().map((tool) => tool.toolId));
+    if (fixturePayload.state === "no-catalog") {
+      expect(rows.every((row) => String(row.meta).startsWith("0"))).toBe(true);
+    }
+  }
+
+  if (["tool-list", "result-summary"].includes(fixturePayload.page)) {
+    const marks = widgets.slice(1, 3);
+    expect(marks).toHaveLength(2);
+    marks.forEach((mark) => {
+      expect(mark).toMatchObject({ type: "FILL_RECT", w: 16, h: 4 });
+    });
+    expect(marks[0].color).not.toBe(marks[1].color);
+  }
+
+  if (fixturePayload.page === "brew-active" && fixturePayload.state !== "no-session") {
+    const timer = textWidgets.find((widget) => /^\d+:\d{2}$/.test(widget.text) && widget.text_size >= 48);
+    const elapsed = textWidgets.find((widget) => /(?:Session|Sesja) \d+:\d{2}/.test(widget.text));
+    const instructionsTop = scrollListWidgets[0]?.y ?? buttonWidgets[0].y;
+    expect(timer, `${fixturePayload.scenario} should have a prominent timer`).toBeDefined();
+    expect(elapsed, `${fixturePayload.scenario} should keep elapsed session time visible`).toBeDefined();
+    expect(timer.y + timer.h).toBeLessThanOrEqual(elapsed.y);
+    expect(elapsed.y + elapsed.h).toBeLessThanOrEqual(instructionsTop);
+  }
 }
 
 function serializeWidgets(widgets: Array<Record<string, unknown>>) {
@@ -288,9 +360,7 @@ function createHomeScenario(options: {
         ? ["Resume", "Discard"]
         : ["Browse", "Last"],
     async prepare(runtime) {
-      const fixture = createCatalogFixture();
-      runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
+      const fixture = createCatalogFixture(options.locale);
 
       if (options.state === "empty") {
         runtime.setLocalStorageState({});
@@ -317,13 +387,14 @@ function createHomeScenario(options: {
 
 function createToolListScenario(options: {
   locale: PreviewLocale;
+  state: "populated" | "no-catalog";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
-    name: buildScenarioName("tool-list", "populated", options.locale, options.target.shape, options.target.width, options.target.height),
+    name: buildScenarioName("tool-list", options.state, options.locale, options.target.shape, options.target.width, options.target.height),
     targetName: options.target.targetName,
     page: "tool-list",
-    state: "populated",
+    state: options.state,
     locale: options.locale,
     shape: options.target.shape,
     layoutVariant: options.target.layoutVariant,
@@ -334,9 +405,11 @@ function createToolListScenario(options: {
     expectedButtonCount: 0,
     requiredTextSnippets: options.locale === "pl-PL" ? ["Zaparzacze"] : ["Brewers"],
     async prepare(runtime) {
-      const fixture = createExpandedCatalogFixture();
-      runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
+      if (options.state === "no-catalog") {
+        runtime.setLocalStorageState({});
+        return;
+      }
+      const fixture = createExpandedCatalogFixture(options.locale);
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
       });
@@ -369,11 +442,9 @@ function createRecipeListScenario(options: {
       : ["V60"],
     async prepare(runtime) {
       const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
-      runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
 
       if (options.state === "empty-brewer") {
-        const fixture = createCatalogFixture();
+        const fixture = createCatalogFixture(options.locale);
         runtime.setLocalStorageState({
           [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
         });
@@ -381,7 +452,7 @@ function createRecipeListScenario(options: {
         return;
       }
 
-      const fixture = createExpandedCatalogFixture();
+      const fixture = createExpandedCatalogFixture(options.locale);
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
       });
@@ -392,7 +463,7 @@ function createRecipeListScenario(options: {
 
 function createRecipeDetailScenario(options: {
   locale: PreviewLocale;
-  state: "normal" | "overflow";
+  state: "normal" | "overflow" | "long-title";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
@@ -408,24 +479,21 @@ function createRecipeDetailScenario(options: {
     assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/recipe-detail/index.js",
     expectedButtonCount: 1,
-    requiredTextSnippets: options.state === "overflow"
-      ? []
-      : options.locale === "pl-PL"
-        ? []
-        : ["Start brew"],
+    requiredTextSnippets: [
+      options.locale === "pl-PL" ? "Start" : "Start brew",
+      ...(options.state === "long-title" ? [LONG_RECIPE_TITLES[options.locale]] : [])
+    ],
     async prepare(runtime) {
-      const fixture = createCatalogFixture();
+      const fixture = createCatalogFixture(options.locale);
       const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
-
-      runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
-
-      const snapshot = options.state === "overflow"
-        ? {
-            ...fixture.primarySnapshot,
-            description: "This is a much longer tasting note intended to force the recipe detail surface into a real overflow case so the page keeps scrolling only when it genuinely needs more vertical space than the round layout can offer."
-          }
-        : fixture.primarySnapshot;
+      const snapshot = { ...fixture.primarySnapshot };
+      if (options.state === "overflow") {
+        snapshot.description = "This is a much longer tasting note intended to force the recipe detail surface into a real overflow case so the page keeps scrolling only when it genuinely needs more vertical space than the round layout can offer.";
+      }
+      if (options.state === "long-title") {
+        snapshot.name = LONG_RECIPE_TITLES[options.locale];
+        fixture.primarySummary.name = snapshot.name;
+      }
 
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify({
@@ -444,7 +512,7 @@ function createRecipeDetailScenario(options: {
 
 function createBrewActiveScenario(options: {
   locale: PreviewLocale;
-  state: "timed" | "waiting" | "overflow";
+  state: "timed" | "waiting" | "overflow" | "confirm" | "finish" | "no-session";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
@@ -459,18 +527,16 @@ function createBrewActiveScenario(options: {
     height: options.target.height,
     assetDirectory: options.target.assetDirectory,
     modulePath: "../zepp-app/page/brew-active/index.js",
-    expectedButtonCount: 2,
-    requiredTextSnippets: options.locale === "pl-PL"
-      ? options.state === "waiting"
-        ? ["Dalej", "Stop"]
-        : ["Stop"]
-      : options.state === "waiting"
-        ? ["Next", "Stop"]
-        : options.state === "overflow"
-          ? ["Stop"]
-          : ["Skip", "Stop"],
+    expectedButtonCount: options.state === "no-session" ? 1 : 2,
+    requiredTextSnippets: options.state === "no-session"
+      ? [options.locale === "pl-PL" ? "Do domu" : "Go home"]
+      : [options.locale === "pl-PL" ? "Stop" : "Stop"],
     async prepare(runtime) {
-      const fixture = createCatalogFixture();
+      if (options.state === "no-session") {
+        runtime.setLocalStorageState({});
+        return;
+      }
+      const fixture = createCatalogFixture(options.locale);
       const now = options.state === "waiting" ? 240_000 : 250_000;
       const snapshot = options.state === "overflow"
         ? {
@@ -487,8 +553,9 @@ function createBrewActiveScenario(options: {
         : fixture.primarySnapshot;
       const activeSession = createActiveBrewSession(snapshot, { now });
 
-      if (options.state === "waiting") {
-        activeSession.currentStepIndex = 0;
+      if (["waiting", "confirm", "finish"].includes(options.state)) {
+        activeSession.currentStepIndex = options.state === "finish" ? snapshot.steps.length - 1 : 0;
+        if (options.state === "confirm") activeSession.recipeSnapshot.steps[0].kind = "confirm";
         activeSession.status = "waiting_for_confirm";
         activeSession.currentStepStartedAt = now;
         activeSession.expectedStepEndAt = null;
@@ -499,12 +566,9 @@ function createBrewActiveScenario(options: {
         activeSession.expectedStepEndAt = now + 15_000;
       }
 
-      runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(activeSession)
       });
-      vi.useFakeTimers();
       vi.setSystemTime(now);
     }
   };
@@ -512,7 +576,7 @@ function createBrewActiveScenario(options: {
 
 function createResultSummaryScenario(options: {
   locale: PreviewLocale;
-  state: "normal" | "empty-result";
+  state: "normal" | "aborted" | "expired" | "empty-result";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
@@ -536,17 +600,15 @@ function createResultSummaryScenario(options: {
         ? ["Status", "Dom"]
         : ["Status", "Home"],
     async prepare(runtime) {
-      runtime.setLanguageCode(options.locale === "pl-PL" ? 9 : 2);
-      runtime.setDeviceInfo({ width: options.target.width, height: options.target.height, keyNumber: 3, keyType: "sport" });
 
       if (options.state === "empty-result") {
         runtime.setLocalStorageState({});
         return;
       }
 
-      const fixture = createCatalogFixture();
+      const fixture = createCatalogFixture(options.locale);
       runtime.setLocalStorageState({
-        [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify(fixture.lastResult)
+        [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify({ ...fixture.lastResult, status: options.state === "normal" ? "completed" : options.state })
       });
     }
   };

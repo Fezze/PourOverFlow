@@ -35,21 +35,22 @@ const IS_COMPACT_ROUND_DEVICE = DEVICE_WIDTH < DEFAULT_LAYOUT_SIZE.width || DEVI
 const IS_TINY_ROUND_DEVICE = DEVICE_WIDTH <= 430 || DEVICE_HEIGHT <= 430;
 
 export const SHARED_COLORS = {
-  background: 0x0e1218,
-  surface: 0x171d26,
-  surfaceMuted: 0x202833,
-  text: 0xf5f7fa,
-  muted: 0xaab4c2,
-  primary: 0x0986d4,
-  primaryPress: 0x06649f,
-  secondary: 0x2a3340,
-  secondaryPress: 0x202733,
-  accent: 0xd9922e,
-  accentPress: 0xaf6f19,
+  background: 0x11100e,
+  surface: 0x211e19,
+  surfaceMuted: 0x2c2822,
+  text: 0xf4eee3,
+  muted: 0xb9b0a0,
+  primary: 0xe6b877,
+  primaryPress: 0xc99b60,
+  secondary: 0x302b24,
+  secondaryPress: 0x42392e,
+  accent: 0xe6b877,
+  accentPress: 0xc99b60,
+  success: 0xa9bfa7,
   danger: 0xd6675a,
   dangerPress: 0xa14c43,
-  neutral: 0x434f5f,
-  neutralPress: 0x303947
+  neutral: 0x302b24,
+  neutralPress: 0x42392e
 };
 
 export function isCompactRoundDevice() {
@@ -177,7 +178,7 @@ export function createButtonStyle(layout, index, theme = "primary") {
     text_size: px(18),
     normal_color: palette.normal,
     press_color: palette.press,
-    color: SHARED_COLORS.text
+    color: theme === "primary" || theme === "accent" ? SHARED_COLORS.background : SHARED_COLORS.text
   };
 }
 

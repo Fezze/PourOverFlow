@@ -10,16 +10,16 @@ const splitGap = px(12);
 const splitWidth = Math.floor((layout.buttonW - splitGap) / 2);
 const secondaryButton = createFloatingButtonStyle(layout, {
   theme: "secondary",
-  y: px(238),
+  y: px(294),
   w: splitWidth,
   h: px(40),
   radius: px(20),
   text_size: px(18)
 });
 const accentButton = createFloatingButtonStyle(layout, {
-  theme: "accent",
+  theme: "secondary",
   x: layout.buttonX + splitWidth + splitGap,
-  y: px(238),
+  y: px(294),
   w: splitWidth,
   h: px(40),
   radius: px(20),
@@ -27,7 +27,7 @@ const accentButton = createFloatingButtonStyle(layout, {
 });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: px(286),
+  y: px(352),
   h: px(60),
   radius: px(30),
   text_size: px(20)

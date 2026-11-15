@@ -275,7 +275,7 @@ describe("page shell runtime coverage", () => {
     expect(scrollList.data_count).toBeGreaterThanOrEqual(4);
   });
 
-  it("renders the active-brew dock with Zepp-safe labels and ASCII step meta", async () => {
+  it("renders the active-brew dock with Zepp-safe labels and separate countdown and session time", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
     const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
@@ -302,7 +302,7 @@ describe("page shell runtime coverage", () => {
 
       expect(buttons.map((widget) => widget.text)).toEqual(["Skip", "Stop"]);
       expect(buttons.every((widget) => /^[\x20-\x7E]+$/.test(String(widget.text)))).toBe(true);
-      expect(textWidgets.some((widget) => String(widget.text).includes("Target 50 ml /"))).toBe(true);
+      expect(textWidgets.some((widget) => String(widget.text).includes("Target 50 ml"))).toBe(true);
       expect(textWidgets.some((widget) => String(widget.text).includes("Timed step."))).toBe(false);
       expect(textWidgets.some((widget) => String(widget.text).includes("Shortcut button"))).toBe(false);
       expect(fillRects.length).toBeGreaterThanOrEqual(2);
@@ -436,17 +436,16 @@ describe("page shell runtime coverage", () => {
     try {
       const pageInstance = buildPage(pageDefinition);
       const textWidgets = runtime.getCreatedWidgets().filter((widget) => widget.type === "TEXT");
-      const metaWidget = textWidgets.find((widget) => String(widget.text).includes("left"));
+      const timerWidget = textWidgets.find((widget) => widget.text === "00:05");
+      const sessionWidget = textWidgets.find((widget) => String(widget.text).includes("Session"));
 
       runtime.router.replace.mockClear();
       vi.advanceTimersByTime(1_000);
 
       expect(runtime.router.replace).not.toHaveBeenCalled();
-      expect(metaWidget?.setProperty).toHaveBeenCalledWith(
-        runtime.ui.prop.TEXT,
-        expect.stringContaining("0:04 left")
-      );
-      expect(String(metaWidget?.text)).toContain("0:04 left");
+      expect(timerWidget?.setProperty).toHaveBeenCalledWith(runtime.ui.prop.TEXT, "00:04");
+      expect(timerWidget?.text).toBe("00:04");
+      expect(String(sessionWidget?.text)).toContain("Session 00:01");
 
       (pageDefinition.onDestroy as () => void).call(pageInstance);
     } finally {

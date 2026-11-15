@@ -1,3 +1,6 @@
+import { formatDurationLabel } from "../../shared/engine/recipe-engine";
+import { SHARED_COLORS } from "../../shared/watch/layouts";
+import { drawBrowseTabs, registerBrowseTabs } from "../../shared/watch/browse-tabs";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import { getToolById, getLocalizedToolLabel } from "../../shared/constants/tool-catalog";
@@ -15,8 +18,8 @@ import {
   TITLE_TEXT
 } from "./index.layout.js";
 
-const PANEL_COLOR = 0x171d26;
-const MUTED_TEXT = 0xaab4c2;
+const PANEL_COLOR = SHARED_COLORS.surface;
+const MUTED_TEXT = SHARED_COLORS.muted;
 const RESULT_PANEL = lastResult => ({
   x: lastResult ? TITLE_TEXT.x - 4 : BUTTONS[0].x,
   y: lastResult ? SUBTITLE_TEXT.y + SUBTITLE_TEXT.h + 12 : BODY_TEXT.y - 8,
@@ -26,11 +29,11 @@ const RESULT_PANEL = lastResult => ({
 });
 const createResultListFrame = (panel) => ({
   x: panel.x + 10,
-  y: panel.y + 18,
+  y: panel.y + 10,
   w: panel.w - 20,
-  h: panel.h - 28,
+  h: panel.h - 20,
   itemHeight: 62,
-  itemSpace: 8,
+  itemSpace: 4,
   itemRadius: 18
 });
 
@@ -43,7 +46,8 @@ function buildTitleStyle(lastResult) {
     ...TITLE_TEXT,
     h: TITLE_TEXT.h + 16,
     text_size: TITLE_TEXT.text_size > 24 ? 24 : TITLE_TEXT.text_size,
-    align_v: hmUI.align.TOP
+    align_v: hmUI.align.CENTER_V,
+    text_style: hmUI.text_style.NONE
   };
 }
 
@@ -59,9 +63,7 @@ function buildResultRows(lastResult, i18n) {
     },
     {
       title: i18n.t("watch.resultSummary.rows.totalTime"),
-      meta: i18n.t("watch.resultSummary.rows.totalTimeValue", {
-        seconds: Math.round(lastResult.elapsedMs / 1000)
-      })
+      meta: formatDurationLabel(lastResult.elapsedMs)
     },
     {
       title: i18n.t("watch.resultSummary.rows.timingDelta"),
@@ -86,7 +88,7 @@ function createResultListConfig(resultListFrame) {
           w: resultListFrame.w - 32,
           h: 20,
           key: "title",
-          color: 0xf5f7fa,
+          color: SHARED_COLORS.text,
           text_size: 17,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
@@ -97,7 +99,7 @@ function createResultListConfig(resultListFrame) {
           w: resultListFrame.w - 32,
           h: 22,
           key: "meta",
-          color: 0xaab4c2,
+          color: SHARED_COLORS.muted,
           text_size: 15,
           text_style: hmUI.text_style.WRAP,
           align_h: hmUI.align.LEFT,
@@ -121,7 +123,7 @@ function buildStaticResultRows(resultRows, resultListFrame) {
 
   resultRows.forEach((row, index) => {
     const lineCount = estimateResultLineCount(row.meta, resultListFrame);
-    const rowHeight = 38 + (lineCount - 1) * 14;
+    const rowHeight = (index === 1 ? 76 : 38) + (lineCount - 1) * 18;
 
     items.push({
       frame: {
@@ -134,25 +136,25 @@ function buildStaticResultRows(resultRows, resultListFrame) {
       },
       title: {
         x: resultListFrame.x + 16,
-        y: currentY + 7,
+        y: currentY + 1,
         w: resultListFrame.w - 32,
-        h: 18,
+        h: 16,
         text: row.title,
-        color: 0xf5f7fa,
-        text_size: 17,
-        align_h: hmUI.align.LEFT,
+        color: SHARED_COLORS.muted,
+        text_size: 13,
+        align_h: hmUI.align.CENTER_H,
         align_v: hmUI.align.CENTER_V
       },
       meta: {
         x: resultListFrame.x + 16,
-        y: currentY + 24,
+        y: currentY + 17,
         w: resultListFrame.w - 32,
-        h: Math.max(16, lineCount * 14),
+        h: index === 1 ? 58 : Math.max(21, lineCount * 18),
         text: row.meta,
-        color: MUTED_TEXT,
-        text_size: 15,
+        color: index === 1 ? SHARED_COLORS.accent : (index === 0 ? SHARED_COLORS.success : SHARED_COLORS.text),
+        text_size: index === 1 ? 50 : 18,
         text_style: hmUI.text_style.WRAP,
-        align_h: hmUI.align.LEFT,
+        align_h: hmUI.align.CENTER_H,
         align_v: hmUI.align.CENTER_V
       }
     });
@@ -176,6 +178,7 @@ function canRenderStaticResultRows(resultRows, resultListFrame) {
 
 Page({
   onDestroy() {
+    if (this.removeTabs) this.removeTabs();
     if (this.unsubscribeRuntime) {
       this.unsubscribeRuntime();
       this.unsubscribeRuntime = null;
@@ -197,6 +200,8 @@ Page({
     });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
+    this.removeTabs = registerBrowseTabs(1);
+    drawBrowseTabs(BACKGROUND.w, 1, BACKGROUND.w === BACKGROUND.h);
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...buildTitleStyle(lastResult),
       text: lastResult ? lastResult.recipeName : i18n.t("watch.resultSummary.noResultYet")

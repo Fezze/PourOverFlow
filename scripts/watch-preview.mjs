@@ -7,24 +7,35 @@ import { chromium } from "playwright-core";
 import { getMockBrowserExecutableCandidates } from "./playwright-coverage-helpers.mjs";
 
 const PROJECT_ROOT = process.cwd();
-const PREVIEW_ROOT = path.join(PROJECT_ROOT, "output", "playwright", "watch-preview");
+const PREVIEW_ROOT = path.resolve(process.env.WATCH_PREVIEW_OUTPUT || "output/playwright/watch-preview");
 const FIXTURE_ROOT = path.join(PREVIEW_ROOT, "fixtures");
 const SCREENSHOT_ROOT = path.join(PREVIEW_ROOT, "screenshots");
 const VERIFY_SCREENSHOT_ROOT = path.join(PREVIEW_ROOT, "verify");
 const VERIFY_MODE = process.argv.includes("--verify");
-const ACTIVE_SCREENSHOT_ROOT = VERIFY_MODE ? VERIFY_SCREENSHOT_ROOT : SCREENSHOT_ROOT;
+const INCLUDE_FRAMES = process.argv.includes("--framed");
+const captureOptions = [
+  {
+    root: VERIFY_MODE ? VERIFY_SCREENSHOT_ROOT : SCREENSHOT_ROOT,
+    selector: "#watch-face"
+  }
+];
+if (INCLUDE_FRAMES) {
+  captureOptions.push({
+    root: path.join(PREVIEW_ROOT, VERIFY_MODE ? "verify-framed" : "framed"),
+    selector: "#watch-shell"
+  });
+}
 const MIN_SCREENSHOT_BYTES = 4_096;
 
 await main();
 
 async function main() {
   await exportPreviewFixtures();
-  await rm(ACTIVE_SCREENSHOT_ROOT, { recursive: true, force: true });
-  await mkdir(ACTIVE_SCREENSHOT_ROOT, { recursive: true });
+  await Promise.all(captureOptions.map(({ root }) => rm(root, { recursive: true, force: true })));
 
   const executablePath = await resolveBrowserExecutable();
-  const server = await startStaticServer(PROJECT_ROOT);
-  const browser = await chromium.launch({ executablePath, headless: true });
+  const server = await startStaticServer();
+  let browser;
 
   try {
     const scenarios = JSON.parse(await readFile(path.join(FIXTURE_ROOT, "manifest.json"), "utf8"));
@@ -32,68 +43,116 @@ async function main() {
       throw new Error("Watch preview manifest is empty. Preview export did not produce any scenarios.");
     }
 
+    browser = await chromium.launch({ executablePath, headless: true });
+    const page = await browser.newPage({ viewport: { width: 760, height: 760 } });
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        errors.push(`console.error: ${message.text()}`);
+      }
+    });
+
     for (const scenario of scenarios) {
-      const page = await browser.newPage({ viewport: { width: 760, height: 760 } });
+      errors.length = 0;
       const previewUrl = `${server.baseUrl}/test/fixtures/watch-preview/index.html?scenario=${encodeURIComponent(scenario.name)}`;
-      const pageErrors = [];
-      const consoleErrors = [];
+      await page.goto(previewUrl, { waitUntil: "domcontentloaded" });
+      await page.waitForFunction(() => window.__POF_WATCH_PREVIEW_READY__ || window.__POF_WATCH_PREVIEW_ERROR__);
+      const bootstrapError = await page.evaluate(() => window.__POF_WATCH_PREVIEW_ERROR__);
+      if (bootstrapError) {
+        errors.push(bootstrapError);
+      }
+      if (errors.length) {
+        throw new Error([`Preview scenario ${scenario.name} emitted runtime errors.`, ...errors].join("\n"));
+      }
 
-      page.on("pageerror", (error) => {
-        pageErrors.push(error instanceof Error ? error.message : String(error));
-      });
-      page.on("console", (message) => {
-        if (message.type() === "error") {
-          consoleErrors.push(message.text());
-        }
-      });
+      if (scenario.page === "tool-list" && scenario.state === "populated") {
+        const fixture = JSON.parse(await readFile(path.join(FIXTURE_ROOT, scenario.fixtureFile), "utf8"));
+        await verifyBrewerRow(page, fixture);
+      }
 
-      try {
-        await page.goto(previewUrl, { waitUntil: "networkidle" });
-        await page.waitForFunction(() => window.__POF_WATCH_PREVIEW_READY__ === true, undefined, {
-          timeout: 30_000
-        });
-
-        if (pageErrors.length > 0 || consoleErrors.length > 0) {
-          throw new Error(
-            [
-              `Preview scenario ${scenario.name} emitted runtime errors.`,
-              ...pageErrors.map((entry) => `pageerror: ${entry}`),
-              ...consoleErrors.map((entry) => `console.error: ${entry}`)
-            ].join("\n")
-          );
-        }
-
-        const screenshotPath = resolveScreenshotPath(scenario);
+      for (const { root, selector } of captureOptions) {
+        await page.locator("body").evaluate((body, framed) => {
+          body.dataset.framed = String(framed);
+        }, selector === "#watch-shell");
+        const screenshotPath = resolveScreenshotPath(scenario, root);
         await mkdir(path.dirname(screenshotPath), { recursive: true });
-        await page.locator("#watch-shell").screenshot({ path: screenshotPath });
-        await access(screenshotPath);
-        const screenshotStat = await stat(screenshotPath);
-        if (screenshotStat.size < MIN_SCREENSHOT_BYTES) {
-          throw new Error(
-            `Preview screenshot for ${scenario.name} looks suspiciously small (${screenshotStat.size} bytes).`
-          );
+        const screenshot = await page.locator(selector).screenshot({ path: screenshotPath });
+        validateScreenshot(scenario, screenshot, selector === "#watch-face");
+      }
+      const scrolled = await page.locator(".scroll-list").evaluateAll(lists => {
+        let changed = false;
+        for (const list of lists) {
+          if (list.scrollHeight > list.clientHeight + 1) {
+            list.scrollTop = list.scrollHeight;
+            changed = true;
+          }
         }
-
-        if (!VERIFY_MODE) {
-          console.log(`Saved watch preview screenshot: ${path.relative(ACTIVE_SCREENSHOT_ROOT, screenshotPath)}`);
-        }
-      } finally {
-        await page.close();
+        return changed;
+      });
+      if (scrolled) {
+        const root = captureOptions[0].root;
+        await page.locator("body").evaluate(body => { body.dataset.framed = "false"; });
+        const screenshotPath = resolveScreenshotPath(scenario, root).replace(/\.png$/, "-scrolled.png");
+        await page.locator("#watch-face").screenshot({ path: screenshotPath });
       }
     }
+    console.log(`Rendered ${scenarios.length} watch states to ${captureOptions.map(({ root }) => root).join(", ")}`);
   } finally {
-    await browser.close();
+    await browser?.close();
     await stopStaticServer(server.server);
   }
 }
 
-function resolveScreenshotPath(scenario) {
+async function verifyBrewerRow(page, fixture) {
+  const list = fixture.widgets.find((widget) => widget.type === "SCROLL_LIST");
+  const firstType = list.data_type_config?.find(({ start, end }) => start <= 0 && end >= 0);
+  const firstConfig = firstType
+    ? list.item_config.find(({ type_id }) => type_id === firstType.type_id)
+    : list.item_config[0];
+  const actual = await page.locator(".scroll-list .scroll-card").first().evaluate((row) => {
+    const rowBounds = row.getBoundingClientRect();
+    return Array.from(row.children, (element) => {
+      const bounds = element.getBoundingClientRect();
+      return [
+        bounds.x - rowBounds.x,
+        bounds.y - rowBounds.y,
+        bounds.width,
+        bounds.height,
+        element instanceof HTMLImageElement ? decodeURIComponent(new URL(element.src).pathname.split("/").at(-1)) : element.textContent
+      ];
+    });
+  });
+  const row = list.data_array[0];
+  const expected = [...(firstConfig.image_view ?? []), ...firstConfig.text_view].map((view) => [
+    view.x, view.y, view.w, view.h, row[view.key]
+  ]);
+
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`${fixture.scenario} row differs from the app widget configuration.\nExpected ${JSON.stringify(expected)}\nRendered ${JSON.stringify(actual)}`);
+  }
+}
+
+function validateScreenshot(scenario, screenshot, isScreenOnly) {
+  if (screenshot.length < MIN_SCREENSHOT_BYTES) {
+    throw new Error(`Preview screenshot for ${scenario.name} is ${screenshot.length} bytes.`);
+  }
+  if (isScreenOnly) {
+    const width = screenshot.readUInt32BE(16);
+    const height = screenshot.readUInt32BE(20);
+    if (width !== scenario.width || height !== scenario.height) {
+      throw new Error(`Expected ${scenario.width}×${scenario.height} for ${scenario.name}, got ${width}×${height}.`);
+    }
+  }
+}
+
+function resolveScreenshotPath(scenario, root) {
   const relativeScreenshotPath = typeof scenario.screenshotFile === "string" && scenario.screenshotFile
     ? scenario.screenshotFile
     : buildFallbackScreenshotPath(scenario);
 
-  const absoluteScreenshotPath = path.resolve(ACTIVE_SCREENSHOT_ROOT, relativeScreenshotPath);
-  const relativeToRoot = path.relative(ACTIVE_SCREENSHOT_ROOT, absoluteScreenshotPath);
+  const absoluteScreenshotPath = path.resolve(root, relativeScreenshotPath);
+  const relativeToRoot = path.relative(root, absoluteScreenshotPath);
   if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
     throw new Error(`Preview scenario ${scenario.name} resolved outside the screenshot root.`);
   }
@@ -171,7 +230,12 @@ async function runNodeCommand(args) {
   });
 }
 
-async function startStaticServer(rootDir) {
+async function startStaticServer() {
+  const mounts = new Map([
+    ["/watch-preview-fixtures/", FIXTURE_ROOT],
+    ["/test/fixtures/watch-preview/", path.join(PROJECT_ROOT, "test", "fixtures", "watch-preview")],
+    ["/zepp-app/assets/", path.join(PROJECT_ROOT, "zepp-app", "assets")]
+  ]);
   const server = http.createServer(async (request, response) => {
     try {
       const requestUrl = new URL(request.url || "/", "http://127.0.0.1");
@@ -181,8 +245,16 @@ async function startStaticServer(rootDir) {
         return;
       }
 
-      const relativePath = decodeURIComponent(requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname);
-      const absolutePath = path.resolve(rootDir, `.${relativePath}`);
+      const mount = [...mounts].find(([prefix]) => requestUrl.pathname.startsWith(prefix));
+      if (!mount) {
+        response.writeHead(404);
+        response.end("Not found");
+        return;
+      }
+
+      const [prefix, rootDir] = mount;
+      const relativePath = decodeURIComponent(requestUrl.pathname.slice(prefix.length));
+      const absolutePath = path.resolve(rootDir, relativePath);
       const relativeToRoot = path.relative(rootDir, absolutePath);
       if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
         response.writeHead(403);
@@ -203,7 +275,8 @@ async function startStaticServer(rootDir) {
     }
   });
 
-  await new Promise((resolve) => {
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
   });
 

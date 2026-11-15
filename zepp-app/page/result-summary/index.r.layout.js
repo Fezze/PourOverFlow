@@ -27,8 +27,10 @@ const accentButton = createFloatingButtonStyle(layout, {
 });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: pickRoundSizeMetric(382, 344, 326),
-  h: pickRoundSizeMetric(64, 56, 54),
+  x: (layout.background.w - pickRoundSizeMetric(280, 280, 268)) / 2,
+  w: pickRoundSizeMetric(280, 280, 268),
+  y: pickRoundSizeMetric(360, 344, 320),
+  h: pickRoundSizeMetric(60, 56, 54),
   radius: pickRoundSizeMetric(32, 28, 27),
   text_size: pickRoundSizeMetric(21, 20, 19)
 });
@@ -41,10 +43,11 @@ export const FOOTER_TEXT = layout.footer;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
 TITLE_TEXT.x = layout.buttonX - pickRoundMetric(16, 12);
-TITLE_TEXT.y = pickRoundMetric(68, 62);
+TITLE_TEXT.y = pickRoundMetric(48, 42);
 TITLE_TEXT.w = layout.buttonW + pickRoundMetric(32, 24);
 SUBTITLE_TEXT.x = layout.buttonX - pickRoundMetric(8, 6);
-SUBTITLE_TEXT.y = pickRoundMetric(106, 98);
+SUBTITLE_TEXT.y = pickRoundMetric(100, 90);
+SUBTITLE_TEXT.h = 22;
 SUBTITLE_TEXT.w = layout.buttonW + pickRoundMetric(16, 12);
 export const ACTION_DOCK = createFloatingDockStyle({
   x: primaryButton.x,

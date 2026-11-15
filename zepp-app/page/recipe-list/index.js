@@ -1,3 +1,5 @@
+import { getColorNumber } from "../../shared/constants/color-palette";
+import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { getDeviceInfo } from "@zos/device";
 import { replace } from "@zos/router";
@@ -29,6 +31,12 @@ function supportsHardwareListFocus() {
   }
 }
 
+function readableRecipeColor(token) {
+  const color = getColorNumber(token);
+  const lift = shift => Math.round((((color >> shift) & 255) + 255) / 2);
+  return (lift(16) << 16) | (lift(8) << 8) | lift(0);
+}
+
 function buildRecipeRows(recipes, i18n) {
   return recipes.map((recipe) => {
     const snapshot = recipe.recipeSnapshot;
@@ -39,22 +47,22 @@ function buildRecipeRows(recipes, i18n) {
       meta: snapshot
         ? `${snapshot.coffeeDoseG}g / ${snapshot.totalWaterMl}ml / ${totalSeconds}s`
         : i18n.t("watch.recipeList.snapshotMissing"),
-      recipeId: recipe.recipeId
+      recipeId: recipe.recipeId,
+      color: readableRecipeColor(snapshot ? snapshot.colorToken : "amber")
     };
   });
 }
 
-function createRecipeListConfig() {
+function createRecipeListConfig(rows) {
   const textInset = 20;
-  const titleY = Math.max(14, Math.floor((LIST_FRAME.itemHeight - LIST_FRAME.titleHeight - LIST_FRAME.metaHeight) / 2));
-  const titleTextSize = Math.max(19, LIST_FRAME.titleHeight - 22);
-  const metaY = titleY + LIST_FRAME.titleHeight - 6;
-  const metaTextSize = Math.max(14, LIST_FRAME.metaHeight - 11);
+  const titleY = Math.max(10, Math.floor((LIST_FRAME.itemHeight - LIST_FRAME.titleHeight - LIST_FRAME.metaHeight) / 2));
+  const titleTextSize = 22;
+  const metaY = titleY + LIST_FRAME.titleHeight + 2;
+  const metaTextSize = 16;
 
-  return [
-    {
-      type_id: 1,
-      item_bg_color: 0x171d26,
+  return rows.map((row, index) => ({
+      type_id: index + 1,
+      item_bg_color: SHARED_COLORS.surface,
       item_bg_radius: LIST_FRAME.itemRadius,
       item_press_effect: true,
       text_view: [
@@ -64,9 +72,10 @@ function createRecipeListConfig() {
           w: LIST_FRAME.w - textInset * 2,
           h: LIST_FRAME.titleHeight,
           key: "title",
-          color: 0xf5f7fa,
+          color: SHARED_COLORS.text,
           text_size: titleTextSize,
           action: true,
+          text_style: hmUI.text_style.WRAP,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
         },
@@ -76,7 +85,7 @@ function createRecipeListConfig() {
           w: LIST_FRAME.w - textInset * 2,
           h: LIST_FRAME.metaHeight,
           key: "meta",
-          color: 0xaab4c2,
+          color: row.color,
           text_size: metaTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
@@ -85,8 +94,7 @@ function createRecipeListConfig() {
       ],
       text_view_count: 2,
       item_height: LIST_FRAME.itemHeight
-    }
-  ];
+    }));
 }
 
 Page({
@@ -122,25 +130,19 @@ Page({
     }
 
     if (rows.length) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, LIST_PANEL);
+      hmUI.createWidget(hmUI.widget.FILL_RECT, { ...LIST_PANEL, color: SHARED_COLORS.background });
       hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
         x: LIST_FRAME.x,
         y: LIST_FRAME.y,
         w: LIST_FRAME.w,
         h: LIST_FRAME.h,
         item_space: LIST_FRAME.itemSpace,
-        item_config: createRecipeListConfig(),
-        item_config_count: 1,
+        item_config: createRecipeListConfig(rows),
+        item_config_count: rows.length,
         data_array: rows,
         data_count: rows.length,
-        data_type_config: [
-          {
-            start: 0,
-            end: rows.length - 1,
-            type_id: 1
-          }
-        ],
-        data_type_config_count: 1,
+        data_type_config: rows.map((_row, index) => ({ start: index, end: index, type_id: index + 1 })),
+        data_type_config_count: rows.length,
         enable_scroll_bar: true,
         item_common_focus: supportsHardwareListFocus(),
         item_click_func: (_list, index) => {

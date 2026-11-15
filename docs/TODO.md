@@ -20,6 +20,10 @@
 
 ### Watch UI follow-up
 
+- Confirm the redesigned timer hierarchy, recipe-detail overflow and horizontal Brewers/Latest Result gestures on physical round and rectangular watches.
+- Confirm the warm Settings theme and native field rendering in the Zepp phone app.
+
+
 - Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, and `result-summary`.
 - Re-check the new compact-round tuning on `Amazfit Balance` after the `API_LEVEL 3.6` floor change and confirm that the smaller round layout still preserves the intended spacing without over-tightening the 480 baseline.
 - Confirm on real hardware that the simplified paired-pill `brew-active` dock feels balanced and that the primary-right / secondary-left emphasis reads clearly during a live brew.
@@ -33,7 +37,7 @@
 
 ### Tooling follow-up
 
-- Complete interactive brew and sync validation in the freshly deployed simulator; the automated simulator pass currently verifies round/square startup and deployment freshness only.
+- Resolve the simulator Side Service RPC timeout and complete real phone-to-watch catalog bootstrap validation. Native round/square interactive brewing, result saving, vertical scrolling and horizontal tabs were validated during the interface redesign using a separate fixture catalog; that run does not establish working simulator sync.
 
 - Re-run a clean Ubuntu 26 checkout with `npm ci`, `npm run doctor:ubuntu`, and `npm run verify` to confirm the new local-Zeus path is enough without any global Zeus install.
 - Keep the Parallax-style screenshot matrix current: every new watch screen or page must add at least one deterministic `verify:visual` scenario.

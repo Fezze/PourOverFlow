@@ -1,14 +1,12 @@
 const statusElement = document.querySelector("#status");
 const watchShell = document.querySelector("#watch-shell");
 const watchFace = document.querySelector("#watch-face");
-let currentPreview = null;
-let pendingAssetLoads = [];
 
 window.__POF_WATCH_PREVIEW_READY__ = false;
 
 bootstrap().catch((error) => {
   statusElement.textContent = error instanceof Error ? error.message : String(error);
-  window.__POF_WATCH_PREVIEW_READY__ = false;
+  window.__POF_WATCH_PREVIEW_ERROR__ = statusElement.textContent;
 });
 
 async function bootstrap() {
@@ -19,86 +17,79 @@ async function bootstrap() {
     throw new Error("Missing ?scenario=<name> query parameter.");
   }
 
-  const response = await fetch(`/output/playwright/watch-preview/fixtures/${encodeURIComponent(scenario)}.json`);
+  const response = await fetch(`/watch-preview-fixtures/${encodeURIComponent(scenario)}.json`);
   if (!response.ok) {
     throw new Error(`Could not load preview fixture for ${scenario}.`);
   }
 
-  const preview = await response.json();
-  currentPreview = preview;
-  document.documentElement.lang = preview.locale || "en";
-  statusElement.textContent = `${preview.scenario} • ${preview.locale}`;
-  applyShell(preview.device || {});
-  renderWidgets(preview.widgets || []);
-  await Promise.all(pendingAssetLoads);
+  const { device, locale, widgets } = await response.json();
+  document.documentElement.lang = locale;
+  document.body.dataset.framed = String(params.has("framed"));
+  statusElement.textContent = `${scenario} • ${locale}`;
+  watchShell.dataset.shape = device.shape;
+  watchShell.style.setProperty("--shell-width", `${device.width}px`);
+  watchShell.style.setProperty("--shell-height", `${device.height}px`);
+
+  const pendingImages = [];
+  for (const widget of widgets) {
+    if (widget.visible !== false && widget.VISIBLE !== false) {
+      watchFace.appendChild(createWidgetElement(widget, device.assetDirectory, pendingImages));
+    }
+  }
+
+  await Promise.all([...pendingImages, document.fonts.ready]);
   window.__POF_WATCH_PREVIEW_READY__ = true;
 }
 
-function applyShell(device) {
-  const width = Number(device.width || 480);
-  const height = Number(device.height || 480);
-  const shape = device.shape === "square" ? "square" : "round";
-
-  watchShell.dataset.shape = shape;
-  watchShell.style.setProperty("--shell-width", `${width}px`);
-  watchShell.style.setProperty("--shell-height", `${height}px`);
-}
-
-function renderWidgets(widgets) {
-  pendingAssetLoads = [];
-  watchFace.replaceChildren();
-
-  widgets.forEach((widget) => {
-    const element = createWidgetElement(widget);
-    if (element) {
-      watchFace.appendChild(element);
-    }
-  });
-}
-
-function createWidgetElement(widget) {
-  if (!widget || !widget.type) {
-    return null;
+function createWidgetElement(widget, assetDirectory, pendingImages) {
+  switch (widget.type) {
+    case "FILL_RECT":
+      return createFillRect(widget);
+    case "TEXT":
+      return createText(widget);
+    case "BUTTON":
+      return createButton(widget);
+    case "IMG":
+      return createImage(widget, widget.SRC ?? widget.src, assetDirectory, pendingImages);
+    case "SCROLL_LIST":
+      return createScrollList(widget, assetDirectory, pendingImages);
+    default:
+      throw new Error(`Unsupported preview widget: ${widget.type}`);
   }
-
-  if (widget.type === "FILL_RECT") {
-    return createFillRect(widget);
-  }
-
-  if (widget.type === "TEXT") {
-    return createText(widget);
-  }
-
-  if (widget.type === "BUTTON") {
-    return createButton(widget);
-  }
-
-  if (widget.type === "SCROLL_LIST") {
-    return createScrollList(widget);
-  }
-
-  return null;
 }
 
 function createFillRect(widget) {
   const element = document.createElement("div");
   element.className = "widget fill-rect";
   applyBounds(element, widget);
-  element.style.setProperty("--widget-color", toColor(widget.color, "var(--watch-surface)"));
-  element.style.setProperty("--widget-radius", `${Number(widget.radius || 0)}px`);
+  element.style.backgroundColor = toColor(widget.color, "transparent");
+  element.style.borderRadius = `${widget.radius ?? 0}px`;
   return element;
 }
 
-function createText(widget) {
+function createText(widget, text = widget.text) {
   const element = document.createElement("div");
   element.className = "widget text";
   applyBounds(element, widget);
-  element.textContent = String(widget.text || "");
-  element.style.fontSize = `${Number(widget.text_size || 16)}px`;
-  element.style.setProperty("--widget-color", toColor(widget.color, "var(--watch-text)"));
-  element.style.justifyContent = toHorizontalAlign(widget.align_h);
+  element.style.fontSize = `${widget.text_size ?? 16}px`;
+  element.style.color = toColor(widget.color, "var(--watch-text)");
   element.style.alignItems = toVerticalAlign(widget.align_v);
-  element.style.whiteSpace = widget.text_style === "WRAP" ? "pre-wrap" : "pre-line";
+
+  const content = document.createElement("span");
+  content.textContent = String(text ?? "");
+  content.style.textAlign = toHorizontalAlign(widget.align_h);
+  content.style.whiteSpace = ["WRAP", "CHAR_WRAP"].includes(widget.text_style) ? "pre-wrap" : "pre";
+  content.style.textOverflow = widget.text_style === "ELLIPSIS" ? "ellipsis" : "clip";
+  if (widget.text_style === "CHAR_WRAP") {
+    content.style.overflowWrap = "anywhere";
+  }
+  if (Number.isFinite(widget.line_space)) {
+    content.style.lineHeight = `calc(1em + ${widget.line_space}px)`;
+  }
+  if (Number.isFinite(widget.char_space)) {
+    content.style.letterSpacing = `${widget.char_space}px`;
+  }
+  element.appendChild(content);
   return element;
 }
 
@@ -106,101 +97,66 @@ function createButton(widget) {
   const element = document.createElement("div");
   element.className = "widget button";
   applyBounds(element, widget);
-  element.textContent = String(widget.text || "");
-  const fallbackTextSize = Math.max(16, Math.floor(Number(widget.h || 48) / 2.8));
-  element.style.fontSize = `${Number(widget.text_size || fallbackTextSize)}px`;
-  element.style.borderRadius = `${Number(widget.radius || 999)}px`;
+  element.textContent = String(widget.text ?? "");
+  const fallbackTextSize = Math.max(16, Math.floor(Number(widget.h ?? 48) / 2.8));
+  element.style.fontSize = `${widget.text_size ?? fallbackTextSize}px`;
+  element.style.borderRadius = `${widget.radius ?? 0}px`;
   element.style.background = toColor(widget.normal_color, "var(--watch-accent)");
   element.style.color = toColor(widget.color, "var(--watch-text)");
   return element;
 }
 
-function createScrollList(widget) {
+function createImage(widget, source, assetDirectory, pendingImages) {
+  const image = document.createElement("img");
+  image.className = "widget image";
+  applyBounds(image, widget);
+  image.alt = "";
+  if (source) {
+    const assetPath = String(source).split("/").map(encodeURIComponent).join("/");
+    image.src = `/${assetDirectory}/${assetPath}`;
+    pendingImages.push(image.decode().catch(() => {
+      throw new Error(`Could not load watch asset: ${assetDirectory}/${source}`);
+    }));
+  }
+  return image;
+}
+
+function createScrollList(widget, assetDirectory, pendingImages) {
   const element = document.createElement("div");
   element.className = "widget scroll-list";
   applyBounds(element, widget);
 
-  const itemConfig = widget.item_config?.[0] || {};
-  const itemHeight = Number(itemConfig.item_height || 72);
-  const itemSpace = Number(widget.item_space || 0);
-  const itemRadius = Number(itemConfig.item_bg_radius || 18);
-  const rows = Array.isArray(widget.data_array) ? widget.data_array : [];
+  const rows = widget.data_array.slice(0, widget.data_count);
+  const itemConfigs = widget.item_config.slice(0, widget.item_config_count);
+  const typeRanges = widget.data_type_config?.slice(0, widget.data_type_config_count) ?? [];
+  let rowTop = 0;
 
   rows.forEach((row, index) => {
+    const typeRange = typeRanges.find(({ start, end }) => index >= start && index <= end);
+    const itemConfig = typeRange
+      ? itemConfigs.find((config) => config.type_id === typeRange.type_id)
+      : itemConfigs[0];
+
+    if (!itemConfig) {
+      throw new Error(`No SCROLL_LIST configuration for row ${index}.`);
+    }
+
     const card = document.createElement("div");
-    const hasIcon = Boolean(row?.icon);
-    const textViews = Array.isArray(itemConfig.text_view) ? itemConfig.text_view : [];
-    const shouldUseGenericTextViews = !hasIcon && textViews.some((textView) => (
-      textView?.key && row?.[textView.key] !== undefined && textView.key !== "title" && textView.key !== "meta"
-    ));
-    card.className = `scroll-card${hasIcon ? " with-icon" : ""}${shouldUseGenericTextViews ? " generic" : ""}`;
-    card.style.top = `${index * (itemHeight + itemSpace)}px`;
-    card.style.height = `${itemHeight}px`;
-    card.style.setProperty("--card-radius", `${itemRadius}px`);
-    if (typeof itemConfig.item_bg_color === "number") {
-      card.style.setProperty("--card-color", toColor(itemConfig.item_bg_color, "var(--watch-surface)"));
+    card.className = "scroll-card";
+    card.style.top = `${rowTop}px`;
+    card.style.height = `${itemConfig.item_height}px`;
+    card.style.borderRadius = `${itemConfig.item_bg_radius ?? 0}px`;
+    card.style.backgroundColor = toColor(itemConfig.item_bg_color, "transparent");
+    rowTop += itemConfig.item_height + (widget.item_space ?? 0);
+
+    for (const imageView of itemConfig.image_view?.slice(0, itemConfig.image_view_count) ?? []) {
+      card.appendChild(createImage(imageView, row[imageView.key], assetDirectory, pendingImages));
     }
 
-    if (hasIcon) {
-      const icon = document.createElement("div");
-      icon.className = "icon-chip";
-      const imagePath = buildIconAssetPath(row.icon);
-      if (imagePath) {
-        const image = document.createElement("img");
-        image.alt = row.title || buildIconLabel(row.icon);
-        const imageLoad = new Promise((resolve) => {
-          const fallbackLabel = buildIconLabel(row.icon);
-          const finalizeFallback = () => {
-            icon.replaceChildren();
-            icon.textContent = fallbackLabel;
-            resolve(undefined);
-          };
-
-          image.addEventListener("load", () => resolve(undefined), { once: true });
-          image.addEventListener("error", finalizeFallback, { once: true });
-          image.src = imagePath;
-        });
-        pendingAssetLoads.push(imageLoad);
-        icon.appendChild(image);
-      } else {
-        icon.textContent = buildIconLabel(row.icon);
-      }
-      card.appendChild(icon);
+    for (const textView of itemConfig.text_view?.slice(0, itemConfig.text_view_count) ?? []) {
+      card.appendChild(createText(textView, row[textView.key]));
     }
 
-    if (shouldUseGenericTextViews) {
-      textViews.forEach((textView) => {
-        if (!textView?.key || row?.[textView.key] === undefined) {
-          return;
-        }
-
-        const textElement = document.createElement("div");
-        textElement.className = "scroll-text";
-        applyBounds(textElement, textView);
-        textElement.textContent = String(row[textView.key] || "");
-        textElement.style.fontSize = `${Number(textView.text_size || 16)}px`;
-        textElement.style.setProperty("--widget-color", toColor(textView.color, "var(--watch-text)"));
-        textElement.style.justifyContent = toHorizontalAlign(textView.align_h);
-        textElement.style.alignItems = toVerticalAlign(textView.align_v);
-        textElement.style.whiteSpace = textView.text_style === "WRAP" ? "pre-wrap" : "pre-line";
-        card.appendChild(textElement);
-      });
-    } else {
-      const textWrap = document.createElement("div");
-      const title = document.createElement("div");
-      title.className = "card-title";
-      title.textContent = row?.title || "";
-      textWrap.appendChild(title);
-
-      if (row?.meta) {
-        const meta = document.createElement("div");
-        meta.className = "card-meta";
-        meta.textContent = row.meta;
-        textWrap.appendChild(meta);
-      }
-
-      card.appendChild(textWrap);
-    }
     element.appendChild(card);
   });
 
@@ -208,10 +164,14 @@ function createScrollList(widget) {
 }
 
 function applyBounds(element, widget) {
-  element.style.left = `${Number(widget.x || 0)}px`;
-  element.style.top = `${Number(widget.y || 0)}px`;
-  element.style.width = `${Number(widget.w || 0)}px`;
-  element.style.height = `${Number(widget.h || 0)}px`;
+  element.style.left = `${widget.x ?? 0}px`;
+  element.style.top = `${widget.y ?? 0}px`;
+  if (Number.isFinite(widget.w)) {
+    element.style.width = `${widget.w}px`;
+  }
+  if (Number.isFinite(widget.h)) {
+    element.style.height = `${widget.h}px`;
+  }
 }
 
 function toColor(value, fallback) {
@@ -224,43 +184,20 @@ function toColor(value, fallback) {
 
 function toHorizontalAlign(value) {
   if (value === "RIGHT") {
-    return "flex-end";
+    return "right";
   }
-
   if (value === "CENTER_H") {
     return "center";
   }
-
-  return "flex-start";
+  return "left";
 }
 
 function toVerticalAlign(value) {
-  if (value === "TOP") {
-    return "flex-start";
-  }
-
   if (value === "CENTER_V") {
     return "center";
   }
-
-  return "flex-start";
-}
-
-function buildIconLabel(iconName) {
-  return String(iconName || "")
-    .replace(/\.png$/i, "")
-    .split(/[^a-z0-9]+/i)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((segment) => segment[0])
-    .join("")
-    .toUpperCase();
-}
-
-function buildIconAssetPath(iconName) {
-  if (!iconName || !currentPreview?.device?.assetDirectory) {
-    return null;
+  if (value === "BOTTOM") {
+    return "flex-end";
   }
-
-  return `/${String(currentPreview.device.assetDirectory).replace(/^\/+/, "")}/${iconName}`;
+  return "flex-start";
 }

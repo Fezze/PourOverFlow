@@ -33,66 +33,66 @@ import {
 } from "./view-model";
 
 const NAV_BUTTON_STYLE = {
-  fontSize: "12px",
-  fontWeight: "600",
-  lineHeight: "32px",
+  fontSize: "14px",
+  fontWeight: "650",
+  lineHeight: "40px",
   borderRadius: "32px",
-  background: "#D8E3EC",
-  color: "#1F2D3A",
+  background: "#E9E1D4",
+  color: "#3B352C",
   textAlign: "center",
-  padding: "0 12px",
+  padding: "0 10px",
   width: "31%"
 };
 
 const ROOT_VIEW_STYLE = {
-  padding: "12px 16px 32px",
-  background: "#F4EFE6",
+  padding: "18px 18px 36px",
+  background: "#F3EEE5",
   display: "flex",
   flexDirection: "column",
-  gap: "14px"
+  gap: "16px"
 };
 
 const CARD_STACK_STYLE = {
   display: "flex",
   flexDirection: "column",
-  gap: "14px"
+  gap: "16px"
 };
 
 const ACTION_BUTTON_STYLE = {
-  fontSize: "12px",
-  fontWeight: "600",
+  fontSize: "14px",
+  fontWeight: "650",
   borderRadius: "18px",
-  background: "#5E6773",
+  background: "#776F63",
   color: "white"
 };
 
 const PRIMARY_BUTTON_STYLE = {
-  fontSize: "12px",
-  fontWeight: "600",
+  fontSize: "14px",
+  fontWeight: "700",
   borderRadius: "18px",
-  background: "#188B7E",
-  color: "white"
+  background: "#E6B877",
+  color: "#171512"
 };
 
 const DANGER_BUTTON_STYLE = {
-  fontSize: "12px",
-  fontWeight: "600",
+  fontSize: "14px",
+  fontWeight: "650",
   borderRadius: "18px",
-  background: "#D6675A",
+  background: "#8B473B",
   color: "white"
 };
 
 const INFO_BUTTON_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   borderRadius: "18px",
-  background: "#EEF3F8",
-  color: "#2D3A46"
+  background: "#F8F5EF",
+  color: "#302B24"
 };
 
 const SUCCESS_CARD_STYLE = {
   ...INFO_BUTTON_STYLE,
-  background: "#DFF6F0",
-  color: "#0F5F58",
+  background: "#E5ECE0",
+  color: "#344334",
   textAlign: "left",
   padding: "12px 14px",
   lineHeight: "18px"
@@ -100,8 +100,8 @@ const SUCCESS_CARD_STYLE = {
 
 const ERROR_CARD_STYLE = {
   ...INFO_BUTTON_STYLE,
-  background: "#FCE8E6",
-  color: "#8C2C1F",
+  background: "#F3E4DE",
+  color: "#713A31",
   textAlign: "left",
   padding: "12px 14px",
   lineHeight: "18px"
@@ -109,34 +109,34 @@ const ERROR_CARD_STYLE = {
 
 const HERO_BUTTON_STYLE = {
   fontSize: "16px",
-  lineHeight: "22px",
+  lineHeight: "24px",
   fontWeight: "700",
   borderRadius: "24px",
-  background: "#15202B",
-  color: "white",
+  background: "#24211C",
+  color: "#F7F3EB",
   textAlign: "left",
   padding: "16px 18px"
 };
 
 const SECTION_TITLE_STYLE = {
-  fontSize: "13px",
-  fontWeight: "600",
-  lineHeight: "18px",
+  fontSize: "14px",
+  fontWeight: "650",
+  lineHeight: "20px",
   borderRadius: "18px",
-  background: "#DCE6EF",
-  color: "#21303D",
+  background: "#E9E1D4",
+  color: "#302B24",
   textAlign: "left",
   padding: "10px 14px"
 };
 
 const CARD_BUTTON_STYLE = {
-  fontSize: "13px",
-  lineHeight: "22px",
+  fontSize: "15px",
+  lineHeight: "23px",
   borderRadius: "18px",
-  background: "#FFFFFF",
-  color: "#21303D",
+  background: "#FBF9F4",
+  color: "#24211C",
   textAlign: "left",
-  padding: "14px 16px"
+  padding: "16px 18px"
 };
 
 const LIST_CARD_BUTTON_STYLE = {
@@ -146,128 +146,155 @@ const LIST_CARD_BUTTON_STYLE = {
 };
 
 const SOFT_ACTION_BUTTON_STYLE = {
-  fontSize: "12px",
-  fontWeight: "600",
+  fontSize: "14px",
+  fontWeight: "650",
   borderRadius: "18px",
-  background: "#DCE6EF",
-  color: "#21303D"
+  background: "#E9E1D4",
+  color: "#302B24"
 };
 
 const SHELL_HEADER_STYLE = {
+  fontSize: "22px",
+  lineHeight: "28px",
+  fontWeight: "750",
+  borderRadius: "22px",
+  background: "#24211C",
+  color: "#F7F3EB",
+  textAlign: "left",
+  padding: "18px 20px"
+};
+
+const SHELL_SUBTITLE_STYLE = {
   fontSize: "14px",
   lineHeight: "20px",
-  fontWeight: "700",
-  borderRadius: "22px",
-  background: "#1A2430",
-  color: "#F9FBFC",
+  fontWeight: "500",
+  borderRadius: "0px",
+  background: "transparent",
+  color: "#D8CDBB",
   textAlign: "left",
-  padding: "16px 18px"
+  padding: "0 20px 2px"
+};
+
+const SHELL_TITLE_STYLE = {
+  ...SHELL_HEADER_STYLE,
+  padding: "0 20px",
+  lineHeight: "28px"
+};
+
+const SHELL_HEADER_CONTAINER_STYLE = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "6px",
+  borderRadius: "22px",
+  background: "#24211C",
+  padding: "18px 0",
+  border: "1px solid #38332B"
 };
 
 const PANEL_BASE_STYLE = {
-  borderRadius: "24px",
-  padding: "14px",
+  borderRadius: "22px",
+  padding: "18px",
   display: "flex",
   flexDirection: "column",
-  gap: "12px",
-  boxShadow: "0 6px 18px rgba(22, 32, 43, 0.08)"
+  gap: "14px",
+  boxShadow: "0 5px 16px rgba(48, 39, 25, 0.06)"
 };
 
 const PANEL_TONES = {
   mint: {
-    background: "#DFF4EE",
-    border: "1px solid #B3DDD3"
+    background: "#E9EFE4",
+    border: "1px solid #D2DDC9"
   },
   sky: {
-    background: "#E7F0F8",
-    border: "1px solid #C8D8E8"
+    background: "#F7F3EB",
+    border: "1px solid #DED6C9"
   },
   sand: {
-    background: "#F5EBDD",
-    border: "1px solid #E5D4BC"
+    background: "#F1E8D9",
+    border: "1px solid #DED6C9"
   },
   slate: {
-    background: "#243240",
-    border: "1px solid #314355"
+    background: "#24211C",
+    border: "1px solid #38332B"
   },
   white: {
-    background: "#FFFFFF",
-    border: "1px solid #D7E0E8"
+    background: "#FBF9F4",
+    border: "1px solid #DED6C9"
   }
 };
 
 const PANEL_HEADER_STYLE = {
-  fontSize: "14px",
+  fontSize: "15px",
   fontWeight: "700",
   lineHeight: "20px",
-  color: "#16313A"
+  color: "#24211C"
 };
 
 const PANEL_SUBTITLE_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   lineHeight: "18px",
-  color: "#45606E"
+  color: "#776F63"
 };
 
 const PANEL_HEADER_DARK_STYLE = {
   ...PANEL_HEADER_STYLE,
-  color: "#F3F8FB"
+  color: "#F7F3EB"
 };
 
 const PANEL_SUBTITLE_DARK_STYLE = {
   ...PANEL_SUBTITLE_STYLE,
-  color: "#C5D5E1"
+  color: "#D8CDBB"
 };
 
 const STEPPER_PAGER_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   fontWeight: "600",
   lineHeight: "16px",
   borderRadius: "16px",
-  background: "#D8EAF4",
-  color: "#1B4155",
+  background: "#E9E1D4",
+  color: "#302B24",
   textAlign: "center",
   padding: "8px 10px"
 };
 
 const STEP_BADGE_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   fontWeight: "700",
   lineHeight: "18px",
   borderRadius: "16px",
-  background: "#0E7B83",
-  color: "#FFFFFF",
+  background: "#A9BFA7",
+  color: "#20281F",
   textAlign: "center",
   padding: "8px 12px"
 };
 
 const MINI_STAT_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   lineHeight: "18px",
   borderRadius: "14px",
-  background: "#F9FBFC",
-  color: "#1F2D3A",
+  background: "#FBF9F4",
+  color: "#302B24",
   textAlign: "left",
   padding: "10px 12px"
 };
 
 const STEP_JUMP_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   fontWeight: "700",
   lineHeight: "16px",
   borderRadius: "16px",
-  background: "#E7EEF4",
-  color: "#234050",
+  background: "#E9E1D4",
+  color: "#302B24",
   textAlign: "center",
   padding: "8px 10px",
   minWidth: "48px"
 };
 
 const STATIC_NOTE_STYLE = {
-  fontSize: "12px",
+  fontSize: "14px",
   lineHeight: "18px",
   background: "transparent",
-  color: "#4A5D6A",
+  color: "#776F63",
   textAlign: "left",
   padding: "0",
   borderRadius: "0px"
@@ -275,7 +302,7 @@ const STATIC_NOTE_STYLE = {
 
 const STATIC_NOTE_DARK_STYLE = {
   ...STATIC_NOTE_STYLE,
-  color: "#C5D5E1"
+  color: "#D8CDBB"
 };
 
 const TOOL_LIST_STYLE = {
@@ -292,57 +319,45 @@ const TOOL_ROW_STYLE = {
 };
 
 const TOOL_ICON_STYLE = {
-  width: "54px",
-  minWidth: "54px",
-  height: "54px",
-  borderRadius: "20px",
-  backgroundColor: "#EAF1F7",
+  width: "58px",
+  minWidth: "58px",
+  height: "58px",
+  borderRadius: "21px",
+  backgroundColor: "#E9E1D4",
   backgroundPosition: "center",
   backgroundRepeat: "no-repeat",
-  backgroundSize: "32px 32px",
+  backgroundSize: "36px 36px",
   padding: "0"
 };
 
 const TOOL_ICON_TONES = {
-  tool_aeropress: {
-    backgroundColor: "#DFF4EE"
-  },
-  tool_v60: {
-    backgroundColor: "#E2E9FF"
-  },
-  tool_kalita_wave: {
-    backgroundColor: "#DFF7EF"
-  },
-  tool_chemex: {
-    backgroundColor: "#E5E9FF"
-  },
-  tool_clever_dripper: {
-    backgroundColor: "#EAF4DE"
-  },
-  tool_french_press: {
-    backgroundColor: "#F8E7DC"
-  }
+  tool_aeropress: { backgroundColor: "#EFE1CA" },
+  tool_v60: { backgroundColor: "#EFE1CA" },
+  tool_kalita_wave: { backgroundColor: "#EFE1CA" },
+  tool_chemex: { backgroundColor: "#EFE1CA" },
+  tool_clever_dripper: { backgroundColor: "#EFE1CA" },
+  tool_french_press: { backgroundColor: "#EFE1CA" }
 };
 
 const TOOL_COUNT_BADGE_STYLE = {
   minWidth: "34px",
-  fontSize: "12px",
+  fontSize: "14px",
   fontWeight: "700",
-  lineHeight: "34px",
-  borderRadius: "17px",
-  background: "#DCE6EF",
-  color: "#21303D",
+  lineHeight: "38px",
+  borderRadius: "19px",
+  background: "#E9E1D4",
+  color: "#302B24",
   textAlign: "center",
   padding: "0 10px"
 };
 
 const PANEL_TITLE_RIBBON_STYLE = {
-  fontSize: "12px",
+  fontSize: "13px",
   fontWeight: "700",
   lineHeight: "18px",
   borderRadius: "14px",
-  background: "rgba(255,255,255,0.18)",
-  color: "#F3F8FB",
+  background: "rgba(255,255,255,0.08)",
+  color: "#F7F3EB",
   textAlign: "center",
   padding: "6px 12px"
 };
@@ -350,7 +365,7 @@ const PANEL_TITLE_RIBBON_STYLE = {
 const PANEL_TITLE_LIGHT_STYLE = {
   ...PANEL_TITLE_RIBBON_STYLE,
   background: "rgba(255,255,255,0.55)",
-  color: "#234050"
+  color: "#302B24"
 };
 
 const COLOR_OPTIONS = RECIPE_COLOR_TOKENS.map((colorToken) => ({
@@ -541,8 +556,8 @@ function createSectionTitle(title, subtitle = "") {
 function createNavButtonStyle(isActive) {
   return {
     ...NAV_BUTTON_STYLE,
-    background: isActive ? "#167F73" : "#DFE7EF",
-    color: isActive ? "white" : "#1E2F3A"
+    background: isActive ? "#E6B877" : "#E9E1D4",
+    color: "#171512"
   };
 }
 
@@ -1188,8 +1203,8 @@ AppSettingsPage({
           `${humanizeStepKind(step.kind, i18n)}\n${step.title || i18n.t("settings.editor.untitledStep")}`,
           {
             ...CARD_BUTTON_STYLE,
-            background: "#F4F8FB",
-            color: "#183546"
+            background: "#F1E8D9",
+            color: "#302B24"
           }
         ),
         Select({
@@ -1297,8 +1312,8 @@ AppSettingsPage({
             index === currentStepIndex
               ? {
                   ...STEP_JUMP_STYLE,
-                  background: "#0E7B83",
-                  color: "#FFFFFF"
+                  background: "#A9BFA7",
+                  color: "#20281F"
                 }
               : STEP_JUMP_STYLE,
           onClick: () => {
@@ -1554,8 +1569,8 @@ AppSettingsPage({
       createPanel("slate", i18n.t("settings.history.detailTitle"), i18n.t("settings.history.detailSubtitle"), [
         createStaticCard(buildHistoryCardLabel(historyEntry, i18n), {
           ...SUCCESS_CARD_STYLE,
-          background: "#314352",
-          color: "#D7F3EA"
+          background: "#38332B",
+          color: "#F2E7D5"
         }),
         createStaticCard(
           `${snapshotTool ? getLocalizedToolLabel(snapshotTool, i18n) : historyEntry.recipeSnapshot.toolId}\n${i18n.t("settings.history.filter", {
@@ -1672,7 +1687,10 @@ AppSettingsPage({
       },
       [
         this.renderNav(props),
-        createStaticCard(`${shellHeader.title}\n${shellHeader.subtitle}`, SHELL_HEADER_STYLE),
+        View({ style: SHELL_HEADER_CONTAINER_STYLE }, [
+          createStaticCard(shellHeader.title, SHELL_TITLE_STYLE),
+          createStaticCard(shellHeader.subtitle, SHELL_SUBTITLE_STYLE)
+        ]),
         this.renderMessages(),
         this.renderView(props)
       ].filter(Boolean)

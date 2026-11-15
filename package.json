@@ -21,6 +21,7 @@
     "test:playwright:coverage:harness": "node scripts/playwright-simulator-coverage.mjs --module-harness --coverage",
     "verify:visual": "node scripts/watch-preview.mjs --verify",
     "preview:watch": "node scripts/watch-preview.mjs",
+    "preview:phone": "node scripts/phone-preview.mjs",
     "validation:logs": "node scripts/validation-log-report.mjs",
     "sim:doctor": "node scripts/simulator-doctor.mjs",
     "sim:smoke": "node scripts/playwright-simulator-coverage.mjs",

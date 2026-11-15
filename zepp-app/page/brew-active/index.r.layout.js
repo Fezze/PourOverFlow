@@ -9,10 +9,10 @@ import {
 } from "../../shared/watch/layouts";
 
 const layout = createScaffoldLayout({ shape: "round" });
-const dockInset = pickRoundMetric(10, 8);
+const dockInset = pickRoundMetric(24, 8);
 const actionGap = pickRoundMetric(16, 14);
-const dockY = pickRoundSizeMetric(382, 342, 326);
-const dockHeight = pickRoundSizeMetric(84, 70, 62);
+const dockY = pickRoundSizeMetric(358, 342, 326);
+const dockHeight = pickRoundSizeMetric(78, 70, 62);
 const actionBaseY = dockY + pickRoundSizeMetric(8, 7, 6);
 const actionBaseH = dockHeight - pickRoundSizeMetric(16, 14, 12);
 const actionDockWidth = layout.buttonW - dockInset * 2;

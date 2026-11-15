@@ -29,10 +29,10 @@ export const LIST_FRAME = {
   y: LIST_PANEL.y + pickRoundMetric(8, 8),
   w: LIST_PANEL.w - pickRoundMetric(16, 16),
   h: LIST_PANEL.h - pickRoundMetric(16, 16),
-  itemHeight: pickRoundMetric(104, 98),
-  itemSpace: pickRoundMetric(8, 8),
+  itemHeight: pickRoundMetric(112, 108),
+  itemSpace: pickRoundMetric(10, 10),
   itemRadius: pickRoundMetric(22, 20),
-  titleHeight: pickRoundMetric(44, 40),
+  titleHeight: pickRoundMetric(56, 54),
   metaHeight: pickRoundMetric(26, 24)
 };
 export const EMPTY_BUTTON = createButtonStyle(layout, 0, "secondary");

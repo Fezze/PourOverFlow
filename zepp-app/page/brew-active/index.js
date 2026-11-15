@@ -31,21 +31,29 @@ import {
   TITLE_TEXT
 } from "./index.layout.js";
 
+const IS_ROUND = BACKGROUND.w === BACKGROUND.h;
+const IS_SMALL = IS_ROUND && BACKGROUND.w <= 430;
+const HERO_TOP = IS_ROUND ? (IS_SMALL ? 88 : 100) : 82;
 const CONTENT_PANEL = {
   x: BODY_TEXT.x,
-  y: BODY_TEXT.y + 88,
+  y: HERO_TOP + 152,
   w: BODY_TEXT.w,
-  h: BUTTONS[0].y - (BODY_TEXT.y + 88) - 18,
-  radius: 28,
+  h: Math.max(64, BUTTONS[0].y - (HERO_TOP + 152) - 12),
+  radius: 22,
   color: SHARED_COLORS.surface
 };
 const CONTENT_FRAME = {
-  x: CONTENT_PANEL.x + 14,
-  y: CONTENT_PANEL.y + 16,
-  w: CONTENT_PANEL.w - 28,
-  h: CONTENT_PANEL.h - 32,
-  itemRadius: 22
+  x: CONTENT_PANEL.x + 16,
+  y: CONTENT_PANEL.y + 10,
+  w: CONTENT_PANEL.w - 32,
+  h: CONTENT_PANEL.h - 20,
+  itemRadius: 16
 };
+
+function buildTimerText(activeSession) {
+  const remaining = getCurrentStepRemainingMs(activeSession);
+  return formatDurationLabel(remaining === null ? getElapsedSessionMs(activeSession) : remaining);
+}
 
 function buildProgressText(activeSession, i18n) {
   return i18n.t("watch.brewActive.progress", {
@@ -63,7 +71,6 @@ function buildDescriptionText(activeSession, i18n) {
 function buildStepMetaText(activeSession, i18n) {
   const currentStep = getCurrentSessionStep(activeSession);
   const sessionElapsedLabel = formatDurationLabel(getElapsedSessionMs(activeSession));
-  const stepRemainingMs = getCurrentStepRemainingMs(activeSession);
   const parts = [];
 
   if (currentStep && currentStep.targetTotalWaterMl !== undefined) {
@@ -76,17 +83,11 @@ function buildStepMetaText(activeSession, i18n) {
     }));
   }
 
-  if (stepRemainingMs !== null) {
-    parts.push(i18n.t("watch.brewActive.meta.left", {
-      duration: formatDurationLabel(stepRemainingMs)
-    }));
-  } else {
-    parts.push(i18n.t("watch.brewActive.meta.session", {
-      duration: sessionElapsedLabel
-    }));
-  }
+  parts.push(i18n.t("watch.brewActive.meta.session", {
+    duration: sessionElapsedLabel
+  }));
 
-  return parts.join(" / ");
+  return parts.join(" · ");
 }
 
 function buildAssistText(activeSession) {
@@ -113,7 +114,7 @@ function setWidgetText(widget, text) {
 }
 
 function estimateInstructionLineCount(text, contentWidth = CONTENT_FRAME.w) {
-  const approxCharsPerLine = Math.max(18, Math.floor(contentWidth / 10));
+  const approxCharsPerLine = Math.max(18, Math.floor(contentWidth / 10.5));
   return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
 }
 
@@ -123,7 +124,7 @@ function buildStaticInstructionFrame(instructionText) {
     x: CONTENT_FRAME.x,
     y: CONTENT_FRAME.y,
     w: CONTENT_FRAME.w,
-    h: Math.max(CONTENT_FRAME.h, lineCount * 22)
+    h: Math.max(CONTENT_FRAME.h, lineCount * 24)
   };
 }
 
@@ -146,7 +147,7 @@ function createInstructionScrollConfig(itemHeight) {
           h: itemHeight - 16,
           key: "body",
           color: SHARED_COLORS.text,
-          text_size: BODY_TEXT.text_size + 3,
+          text_size: 20,
           text_style: hmUI.text_style.WRAP,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.TOP
@@ -206,6 +207,7 @@ Page({
       currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep")
     );
     setWidgetText(this.metaWidget, buildStepMetaText(activeSession, this.i18n));
+    setWidgetText(this.timerWidget, buildTimerText(activeSession));
     if (this.descriptionWidget) {
       setWidgetText(this.descriptionWidget, buildDescriptionText(activeSession, this.i18n));
     }
@@ -255,36 +257,50 @@ Page({
 
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
-      text_size: TITLE_TEXT.text_size - 4,
-      h: TITLE_TEXT.h + 4,
+      y: IS_ROUND ? 42 : 24,
+      h: 42,
+      text_size: IS_SMALL ? 17 : 18,
+      align_h: hmUI.align.CENTER_H,
+      color: SHARED_COLORS.muted,
+      text_style: hmUI.text_style.NONE,
       text: activeSession.recipeName
     });
     this.progressWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: BODY_TEXT.y - 2,
-      h: 24,
-      color: SHARED_COLORS.muted,
-      text_size: BODY_TEXT.text_size,
+      y: HERO_TOP,
+      h: 20,
+      align_h: hmUI.align.CENTER_H,
+      color: SHARED_COLORS.accent,
+      text_size: 15,
       text: buildProgressText(activeSession, this.i18n)
     });
     this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      x: BODY_TEXT.x + 2,
-      w: BODY_TEXT.w - 4,
-      y: BODY_TEXT.y + 24,
-      h: 36,
-      text_size: BODY_TEXT.text_size + 8,
+      y: HERO_TOP + 24,
+      h: 34,
+      text_size: IS_SMALL ? 24 : 27,
+      align_h: hmUI.align.CENTER_H,
+      text_style: hmUI.text_style.NONE,
       color: SHARED_COLORS.text,
       text: currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep")
     });
+    this.timerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+      ...BODY_TEXT,
+      y: HERO_TOP + 58,
+      h: 66,
+      line_space: 0,
+      text_size: IS_SMALL ? 54 : 60,
+      align_h: hmUI.align.CENTER_H,
+      color: SHARED_COLORS.accent,
+      text: buildTimerText(activeSession)
+    });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      x: BODY_TEXT.x + 4,
-      w: BODY_TEXT.w - 8,
-      y: BODY_TEXT.y + 62,
-      h: 24,
+      y: HERO_TOP + 126,
+      h: 22,
+      align_h: hmUI.align.CENTER_H,
       color: SHARED_COLORS.muted,
-      text_size: BODY_TEXT.text_size - 2,
+      text_size: IS_SMALL ? 14 : 15,
       text: buildStepMetaText(activeSession, this.i18n)
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, createPanelStyle({
@@ -301,12 +317,13 @@ Page({
         y: staticInstructionFrame.y,
         w: staticInstructionFrame.w,
         h: CONTENT_FRAME.h,
-        text_size: BODY_TEXT.text_size + 3,
+        align_v: hmUI.align.CENTER_V,
+        text_size: 20,
         text_style: hmUI.text_style.WRAP,
         text: descriptionText
       });
     } else {
-      const scrollItemHeight = Math.max(CONTENT_FRAME.h + 28, estimateInstructionLineCount(descriptionText) * 22 + 18);
+      const scrollItemHeight = Math.max(CONTENT_FRAME.h + 28, estimateInstructionLineCount(descriptionText) * 24 + 18);
       hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
         x: CONTENT_FRAME.x,
         y: CONTENT_FRAME.y,

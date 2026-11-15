@@ -1,3 +1,4 @@
+import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import { getColorNumber } from "../../shared/constants/color-palette";
@@ -25,7 +26,7 @@ const DETAIL_LIST_FRAME = {
   w: DETAIL_PANEL.w - 16,
   h: DETAIL_PANEL.h - 24,
   itemHeight: 68,
-  itemSpace: 8,
+  itemSpace: 5,
   itemRadius: 18
 };
 
@@ -39,10 +40,7 @@ function buildRecipeRows(recipe, i18n) {
   return [
     {
       title: i18n.t("watch.recipeDetail.rows.doseWater"),
-      meta: i18n.t("watch.recipeDetail.detail.doseWater", {
-        coffeeDoseG: snapshot.coffeeDoseG,
-        totalWaterMl: snapshot.totalWaterMl
-      })
+      meta: `${snapshot.coffeeDoseG} g · ${snapshot.totalWaterMl} ml`
     },
     {
       title: i18n.t("watch.recipeDetail.rows.brewProfile"),
@@ -77,7 +75,7 @@ function buildStaticDetailRows(detailRows) {
 
   detailRows.forEach((row, index) => {
     const lineCount = estimateDetailLineCount(row.meta);
-    const rowHeight = 38 + (lineCount - 1) * 14;
+    const rowHeight = 43 + (lineCount - 1) * 20;
 
     items.push({
       frame: {
@@ -86,27 +84,27 @@ function buildStaticDetailRows(detailRows) {
         w: DETAIL_LIST_FRAME.w,
         h: rowHeight,
         radius: DETAIL_LIST_FRAME.itemRadius,
-        color: 0x171d26
+        color: SHARED_COLORS.surface
       },
       title: {
         x: DETAIL_LIST_FRAME.x + 16,
-        y: currentY + 7,
+        y: currentY + 2,
         w: DETAIL_LIST_FRAME.w - 32,
-        h: 18,
+        h: 17,
         text: row.title,
-        color: 0xf5f7fa,
-        text_size: 18,
+        color: SHARED_COLORS.muted,
+        text_size: 13,
         align_h: hmUI.align.LEFT,
         align_v: hmUI.align.CENTER_V
       },
       meta: {
         x: DETAIL_LIST_FRAME.x + 16,
-        y: currentY + 24,
+        y: currentY + 20,
         w: DETAIL_LIST_FRAME.w - 32,
-        h: Math.max(16, lineCount * 14),
+        h: Math.max(23, lineCount * 20),
         text: row.meta,
-        color: 0xaab4c2,
-        text_size: 15,
+        color: index === 0 ? SHARED_COLORS.accent : SHARED_COLORS.text,
+        text_size: index === 0 ? 21 : 17,
         text_style: hmUI.text_style.WRAP,
         align_h: hmUI.align.LEFT,
         align_v: hmUI.align.CENTER_V
@@ -130,11 +128,12 @@ function canRenderStaticDetailRows(detailRows) {
   return totalHeight <= DETAIL_LIST_FRAME.h;
 }
 
-function createDetailListConfig() {
-  return [
-    {
-      type_id: 1,
-      item_bg_color: 0x171d26,
+function createDetailListConfig(detailRows) {
+  return detailRows.map((row, index) => {
+    const itemHeight = Math.max(68, 42 + estimateDetailLineCount(row.meta) * 22);
+    return {
+      type_id: index + 1,
+      item_bg_color: SHARED_COLORS.surface,
       item_bg_radius: DETAIL_LIST_FRAME.itemRadius,
       item_press_effect: false,
       text_view: [
@@ -142,10 +141,10 @@ function createDetailListConfig() {
           x: 16,
           y: 10,
           w: DETAIL_LIST_FRAME.w - 32,
-          h: 22,
+          h: 18,
           key: "title",
-          color: 0xf5f7fa,
-          text_size: 18,
+          color: SHARED_COLORS.muted,
+          text_size: 13,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
         },
@@ -153,19 +152,19 @@ function createDetailListConfig() {
           x: 16,
           y: 32,
           w: DETAIL_LIST_FRAME.w - 32,
-          h: 26,
+          h: itemHeight - 40,
           key: "meta",
-          color: 0xaab4c2,
-          text_size: 15,
+          color: index === 0 ? SHARED_COLORS.accent : SHARED_COLORS.text,
+          text_size: 17,
           text_style: hmUI.text_style.WRAP,
           align_h: hmUI.align.LEFT,
           align_v: hmUI.align.CENTER_V
         }
       ],
       text_view_count: 2,
-      item_height: DETAIL_LIST_FRAME.itemHeight
-    }
-  ];
+      item_height: itemHeight
+    };
+  });
 }
 
 Page({
@@ -193,15 +192,18 @@ Page({
     hmUI.createWidget(hmUI.widget.TEXT, {
       ...TITLE_TEXT,
       text_size: TITLE_TEXT.text_size - 2,
-      h: TITLE_TEXT.h + 4,
+      h: 54,
+      y: BACKGROUND.w === BACKGROUND.h ? 44 : 28,
+      align_v: hmUI.align.CENTER_V,
+      text_style: hmUI.text_style.NONE,
       text: selectedRecipe ? selectedRecipe.name : i18n.t("watch.recipeDetail.unavailableTitle")
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, DETAIL_PANEL);
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: DETAIL_PANEL.x,
+      x: DETAIL_PANEL.x + 24,
       y: DETAIL_PANEL.y,
-      w: DETAIL_PANEL.w,
-      h: 6,
+      w: 32,
+      h: 3,
       radius: DETAIL_PANEL.radius,
       color: accentColor
     });
@@ -219,18 +221,12 @@ Page({
           w: DETAIL_LIST_FRAME.w,
           h: DETAIL_LIST_FRAME.h,
           item_space: DETAIL_LIST_FRAME.itemSpace,
-          item_config: createDetailListConfig(),
-          item_config_count: 1,
+          item_config: createDetailListConfig(detailRows),
+          item_config_count: detailRows.length,
           data_array: detailRows,
           data_count: detailRows.length,
-          data_type_config: [
-            {
-              start: 0,
-              end: detailRows.length - 1,
-              type_id: 1
-            }
-          ],
-          data_type_config_count: 1,
+          data_type_config: detailRows.map((_row, index) => ({ start: index, end: index, type_id: index + 1 })),
+          data_type_config_count: detailRows.length,
           enable_scroll_bar: false
         });
       }

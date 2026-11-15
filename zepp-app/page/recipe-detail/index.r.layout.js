@@ -11,8 +11,10 @@ import {
 const layout = createScaffoldLayout({ shape: "round" });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: pickRoundSizeMetric(380, 348, 328),
-  h: pickRoundSizeMetric(64, 56, 54),
+  x: (layout.background.w - pickRoundSizeMetric(280, 280, 268)) / 2,
+  w: pickRoundSizeMetric(280, 280, 268),
+  y: pickRoundSizeMetric(360, 344, 320),
+  h: pickRoundSizeMetric(60, 56, 54),
   radius: pickRoundSizeMetric(32, 28, 27),
   text_size: pickRoundSizeMetric(21, 20, 19)
 });

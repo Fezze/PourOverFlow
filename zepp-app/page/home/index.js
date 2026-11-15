@@ -1,3 +1,4 @@
+import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import {
@@ -24,8 +25,8 @@ import {
   TITLE_TEXT
 } from "./index.layout.js";
 
-const PANEL_COLOR = 0x171d26;
-const MUTED_TEXT = 0xaab4c2;
+const PANEL_COLOR = SHARED_COLORS.surface;
+const MUTED_TEXT = SHARED_COLORS.muted;
 
 function buildHomeTitle(state, i18n) {
   if (state.activeSession) {
@@ -127,10 +128,10 @@ Page({
       text: buildHomeSubtitle(scaffoldState, i18n)
     });
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: BUTTONS[0].x,
+      x: BODY_TEXT.x,
       y: bodyPanelY,
-      w: BUTTONS[0].w,
-      h: 110,
+      w: BODY_TEXT.w,
+      h: Math.min(144, BUTTONS[1].y - bodyPanelY - 18),
       radius: 26,
       color: PANEL_COLOR
     });
@@ -139,8 +140,16 @@ Page({
       x: BODY_TEXT.x + 14,
       w: BODY_TEXT.w - 28,
       y: bodyTextY,
-      h: BODY_TEXT.h + 24,
+      h: Math.min(112, BUTTONS[1].y - bodyTextY - 26),
+      text_size: isResumeState ? 32 : 22,
+      color: isResumeState ? SHARED_COLORS.accent : SHARED_COLORS.text,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
       text: buildHomeBody(scaffoldState, i18n)
+    });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, {
+      x: Math.round(BACKGROUND.w / 2) - 18, y: bodyPanelY + 10,
+      w: 36, h: 3, radius: 1, color: SHARED_COLORS.accent
     });
     if (ACTION_DOCK) {
       hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);

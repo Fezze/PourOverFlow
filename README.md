@@ -2,6 +2,8 @@
 
 PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a watch. V1 combines a simple watch-first execution flow with a phone-side recipe and history manager.
 
+The current visual redesign and editable screen map are documented in [UI-REDESIGN.md](docs/UI-REDESIGN.md).
+
 ## Current status
 
 The repo already includes a Zepp app scaffold with a passing `npm run build`, a versioned seed library, canonical phone storage using `index + records`, real recipe CRUD in `setting/`, a cleaner phone-side Settings UX with contextual headers, a selector-first `Library` view, the same brewer PNG icons as the watch, right-aligned numeric count badges, quieter `History` and `Sync` surfaces, and a paginated recipe-step editor, runtime sync `setting/ -> app-side/ -> watch`, watch cache in `LocalStorage`, storage-backed `active_session_v1`, timestamp-based resume reconciliation, active-brew display guard handling, a haptics-first feedback layer, baseline logic tests, mocked Zepp runtime integration tests for cached watch flow and queue replay, and page-shell runtime coverage for `home`, `tool-list`, `recipe-list`, `recipe-detail`, `brew-active`, and `result-summary`.

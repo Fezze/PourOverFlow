@@ -6,9 +6,9 @@ import { CURRENT_SCHEMA_VERSION, createRecipeSnapshot, createRecipeSummary } fro
 
 export type PreviewPage = "home" | "tool-list" | "recipe-list" | "recipe-detail" | "brew-active" | "result-summary";
 
-export function createCatalogFixture() {
-  const primaryRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
-  const secondaryRecord = getSeedRecipeRecordById("seed_ap_inverted_sweet", 1_100);
+export function createCatalogFixture(locale = "en-US") {
+  const primaryRecord = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000, locale);
+  const secondaryRecord = getSeedRecipeRecordById("seed_ap_inverted_sweet", 1_100, locale);
   const primarySummary = createRecipeSummary(primaryRecord);
   const secondarySummary = createRecipeSummary(secondaryRecord);
   const primarySnapshot = createRecipeSnapshot(primaryRecord);
@@ -53,8 +53,8 @@ export function createCatalogFixture() {
   };
 }
 
-export function createExpandedCatalogFixture() {
-  const seedRecords = getSeedRecipeRecords(4_000);
+export function createExpandedCatalogFixture(locale = "en-US") {
+  const seedRecords = getSeedRecipeRecords(4_000, locale);
   const recipeSummaries = seedRecords.map((recipeRecord) => createRecipeSummary(recipeRecord));
   const recipeSnapshotsById = Object.fromEntries(
     seedRecords.map((recipeRecord) => [recipeRecord.recipeId, createRecipeSnapshot(recipeRecord)])

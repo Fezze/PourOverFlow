@@ -9,13 +9,8 @@
         color-scheme: dark;
         --page-bg: #d9d2c3;
         --watch-bezel: #14181e;
-        --watch-face: #0c0f13;
-        --watch-surface: #171d26;
-        --watch-surface-soft: #222b36;
         --watch-text: #f5f7fa;
-        --watch-muted: #aab4c2;
         --watch-accent: #2d8c82;
-        --watch-outline: rgba(255, 255, 255, 0.08);
         --shadow: 0 32px 70px rgba(20, 24, 30, 0.28);
       }
 
@@ -31,7 +26,7 @@
         background:
           radial-gradient(circle at top, rgba(255, 255, 255, 0.6), transparent 35%),
           linear-gradient(180deg, #ece5d7 0%, var(--page-bg) 100%);
-        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        font-family: "Roboto", "Noto Sans", sans-serif;
         color: #1a1f27;
       }
 
@@ -71,113 +66,62 @@
         height: var(--shell-height, 480px);
         overflow: hidden;
         border-radius: 50%;
-        background:
-          radial-gradient(circle at top, rgba(255, 255, 255, 0.05), transparent 30%),
-          var(--watch-face);
+        background: #000;
       }
 
       #watch-shell[data-shape="square"] #watch-face {
-        border-radius: 44px;
+        border-radius: 0;
       }
 
-      .widget {
+      body[data-framed="false"] {
+        background: #000;
+      }
+
+      body[data-framed="false"] #status {
+        display: none;
+      }
+
+      body[data-framed="false"] #watch-shell {
+        --bezel-padding: 0px;
+        background: none;
+        box-shadow: none;
+      }
+
+      .widget, .scroll-card {
         position: absolute;
-      }
-
-      .fill-rect {
-        background: var(--widget-color, var(--watch-surface));
-        border-radius: var(--widget-radius, 0px);
       }
 
       .text {
         display: flex;
-        color: var(--widget-color, var(--watch-text));
-        white-space: pre-wrap;
         line-height: 1.18;
+        overflow: hidden;
+      }
+
+      .text > span {
+        width: 100%;
         overflow: hidden;
       }
 
       .button {
         display: grid;
         place-items: center;
-        padding: 0 16px;
-        border-radius: 999px;
-        background: linear-gradient(180deg, #2f968a, var(--watch-accent));
-        color: var(--watch-text);
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
         text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .image {
+        object-fit: contain;
       }
 
       .scroll-list {
-        overflow: hidden;
+        overflow: auto;
+        scrollbar-width: none;
       }
 
       .scroll-card {
-        position: absolute;
         left: 0;
         right: 0;
-        display: grid;
-        align-content: center;
-        gap: 4px;
-        padding: 14px 16px;
-        background: var(--card-color, var(--watch-surface));
-        border-radius: var(--card-radius, 18px);
-        border: 1px solid var(--watch-outline);
-      }
-
-      .scroll-card.generic {
-        display: block;
-        padding: 0;
-      }
-
-      .scroll-card.with-icon {
-        grid-template-columns: 44px minmax(0, 1fr);
-        column-gap: 14px;
-      }
-
-      .icon-chip {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        background: var(--watch-surface-soft);
-        color: var(--watch-text);
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-
-      .icon-chip img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display: block;
-      }
-
-      .card-title {
-        color: var(--watch-text);
-        font-size: 18px;
-        font-weight: 600;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .card-meta {
-        color: var(--watch-muted);
-        font-size: 14px;
-        line-height: 1.25;
-        white-space: pre-wrap;
-      }
-
-      .scroll-text {
-        position: absolute;
-        display: flex;
-        color: var(--widget-color, var(--watch-text));
-        line-height: 1.18;
         overflow: hidden;
       }
     </style>

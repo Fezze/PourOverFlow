@@ -9,7 +9,7 @@ import {
 const layout = createScaffoldLayout({ shape: "square" });
 const dockInset = px(8);
 const actionGap = px(14);
-const dockY = px(304);
+const dockY = px(354);
 const dockHeight = px(76);
 const actionBaseY = dockY + px(7);
 const actionBaseH = dockHeight - px(14);

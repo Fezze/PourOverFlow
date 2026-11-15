@@ -1,5 +1,9 @@
 # PourOverFlow v1 - watch and phone flows
 
+## Redesign navigation
+
+The Brewers and Latest Result pages now form two horizontal tabs, indicated by two position marks. Swipe left from Brewers to Latest Result and right to return. Native vertical lists and all existing actions remain. See [UI-REDESIGN.md](UI-REDESIGN.md).
+
 ## Flow map
 
 The product has two primary runtimes:

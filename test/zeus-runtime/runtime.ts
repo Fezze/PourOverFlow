@@ -33,6 +33,7 @@ const deviceState = {
 };
 
 const interactionState = {
+  gestureHandler: null as null | ((gesture: string) => boolean),
   keyHandler: null as null | ((key: string, action?: number) => boolean)
 };
 
@@ -82,6 +83,7 @@ const ui = {
   widget: {
     FILL_RECT: "FILL_RECT",
     TEXT: "TEXT",
+    IMG: "IMG",
     BUTTON: "BUTTON",
     SCROLL_LIST: "SCROLL_LIST"
   },
@@ -90,11 +92,15 @@ const ui = {
     RIGHT: "RIGHT",
     CENTER_H: "CENTER_H",
     CENTER_V: "CENTER_V",
-    TOP: "TOP"
+    TOP: "TOP",
+    BOTTOM: "BOTTOM"
   },
   prop: uiProp,
   text_style: {
-    WRAP: "WRAP"
+    WRAP: "WRAP",
+    CHAR_WRAP: "CHAR_WRAP",
+    ELLIPSIS: "ELLIPSIS",
+    NONE: "NONE"
   },
   createWidget: vi.fn((type, config = {}) => {
     const widgetInstance: Record<string, unknown> = {
@@ -127,6 +133,14 @@ const device = {
 };
 
 const interaction = {
+  GESTURE_LEFT: "GESTURE_LEFT",
+  GESTURE_RIGHT: "GESTURE_RIGHT",
+  GESTURE_UP: "GESTURE_UP",
+  GESTURE_DOWN: "GESTURE_DOWN",
+  onGesture: vi.fn(({ callback }: { callback: (gesture: string) => boolean }) => {
+    interactionState.gestureHandler = callback;
+  }),
+  offGesture: vi.fn(() => { interactionState.gestureHandler = null; }),
   KEY_SHORTCUT: "KEY_SHORTCUT",
   onKey: vi.fn(({ callback }: { callback?: (key: string, action?: number) => boolean }) => {
     interactionState.keyHandler = typeof callback === "function" ? callback : null;
@@ -312,6 +326,7 @@ export function resetZeppRuntime() {
   batteryState.level = 75;
   deviceState.info = { ...defaultDeviceInfo };
   interactionState.keyHandler = null;
+  interactionState.gestureHandler = null;
   settingsState.languageCode = 2;
   uiState.widgets = [];
   setLocalStorageState();
@@ -326,6 +341,8 @@ export function resetZeppRuntime() {
   ui.setStatusBarVisible.mockClear();
   device.getDeviceInfo.mockClear();
   interaction.onKey.mockClear();
+  interaction.onGesture.mockClear();
+  interaction.offGesture.mockClear();
   settings.getLanguage.mockClear();
   ble.createConnect.mockClear();
   ble.disConnect.mockClear();

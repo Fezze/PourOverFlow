@@ -1,5 +1,7 @@
 # Start Here
 
+For the current interface and screenshot workflow, see [UI-REDESIGN.md](UI-REDESIGN.md).
+
 ## Why this file exists
 
 This is a condensed handoff for the next agent or developer. It is meant to help someone enter the repo without reading everything at once, but without losing the most important decisions.

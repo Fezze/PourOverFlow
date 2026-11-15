@@ -1,3 +1,5 @@
+import { SHARED_COLORS } from "../../shared/watch/layouts";
+import { drawBrowseTabs, registerBrowseTabs } from "../../shared/watch/browse-tabs";
 import * as hmUI from "@zos/ui";
 import { getDeviceInfo } from "@zos/device";
 import { replace } from "@zos/router";
@@ -34,20 +36,20 @@ function buildToolRows(tools, i18n) {
 }
 
 function createToolListConfig() {
-  const iconSize = Math.max(44, LIST_FRAME.itemHeight - 44);
+  const iconSize = Math.max(44, LIST_FRAME.itemHeight - 36);
   const iconX = 24;
-  const iconY = Math.max(18, Math.floor((LIST_FRAME.itemHeight - iconSize) / 2));
+  const iconY = Math.floor((LIST_FRAME.itemHeight - iconSize) / 2);
   const titleY = 14;
-  const titleTextSize = Math.max(22, LIST_FRAME.titleHeight - 22);
+  const titleTextSize = 23;
   const metaY = titleY + LIST_FRAME.titleHeight - 8;
-  const metaTextSize = Math.max(14, LIST_FRAME.metaHeight - 12);
+  const metaTextSize = 16;
   const textX = iconX + iconSize + 18;
   const textW = LIST_FRAME.w - textX - 20;
 
   return [
     {
       type_id: 1,
-      item_bg_color: 0x171d26,
+      item_bg_color: SHARED_COLORS.surface,
       item_bg_radius: LIST_FRAME.itemRadius,
       item_press_effect: true,
       image_view: [
@@ -68,7 +70,7 @@ function createToolListConfig() {
           w: textW,
           h: LIST_FRAME.titleHeight,
           key: "title",
-          color: 0xf5f7fa,
+          color: SHARED_COLORS.text,
           text_size: titleTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
@@ -80,7 +82,7 @@ function createToolListConfig() {
           w: textW,
           h: LIST_FRAME.metaHeight,
           key: "meta",
-          color: 0xaab4c2,
+          color: SHARED_COLORS.accent,
           text_size: metaTextSize,
           action: true,
           align_h: hmUI.align.LEFT,
@@ -95,6 +97,7 @@ function createToolListConfig() {
 
 Page({
   onDestroy() {
+    if (this.removeTabs) this.removeTabs();
     if (this.unsubscribeRuntime) {
       this.unsubscribeRuntime();
       this.unsubscribeRuntime = null;
@@ -113,6 +116,8 @@ Page({
     });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
+    this.removeTabs = registerBrowseTabs(0);
+    drawBrowseTabs(BACKGROUND.w, 0, BACKGROUND.w === BACKGROUND.h);
     if (!rows.length) {
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...SUBTITLE_TEXT,

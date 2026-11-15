@@ -20,7 +20,7 @@ const secondaryButton = createFloatingButtonStyle(layout, {
   text_size: pickRoundMetric(18, 17)
 });
 const accentButton = createFloatingButtonStyle(layout, {
-  theme: "accent",
+  theme: "secondary",
   x: layout.buttonX + splitWidth + splitGap,
   y: pickRoundSizeMetric(308, 292, 278),
   w: splitWidth,
@@ -30,8 +30,10 @@ const accentButton = createFloatingButtonStyle(layout, {
 });
 const primaryButton = createFloatingButtonStyle(layout, {
   theme: "primary",
-  y: pickRoundSizeMetric(362, 344, 326),
-  h: pickRoundSizeMetric(64, 56, 54),
+  x: (layout.background.w - pickRoundSizeMetric(280, 280, 268)) / 2,
+  w: pickRoundSizeMetric(280, 280, 268),
+  y: pickRoundSizeMetric(360, 344, 320),
+  h: pickRoundSizeMetric(60, 56, 54),
   radius: pickRoundSizeMetric(32, 28, 27),
   text_size: pickRoundSizeMetric(21, 20, 19)
 });
