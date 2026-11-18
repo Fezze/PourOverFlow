@@ -21,8 +21,9 @@ import {
   enableActiveSessionDisplayGuard
 } from "../../shared/watch/display-guard";
 import { registerShortcutKey } from "../../shared/watch/shortcut-key";
+import { getReadingFrame, measureWrappedText, enableReadingPage } from "../../shared/watch/reading-page";
 import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
-import { SHARED_COLORS, createPanelStyle, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
+import { SHARED_COLORS, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
 import {
   ACTION_DOCK,
   BACKGROUND,
@@ -34,32 +35,26 @@ import {
 
 const IS_ROUND = BACKGROUND.w === BACKGROUND.h;
 const IS_SMALL = IS_ROUND && BACKGROUND.w <= 430;
-// Keep the timer readable while reserving at least four lines for instructions.
-const HERO_TOP = IS_ROUND ? (IS_SMALL ? 64 : 70) : 48;
-const STEP_TOP = HERO_TOP + 20;
-const TIMER_TOP = STEP_TOP + (IS_SMALL ? 30 : 34);
-const TIMER_HEIGHT = IS_SMALL ? 60 : 66;
-const META_TOP = TIMER_TOP + TIMER_HEIGHT;
-const PANEL_TOP = META_TOP + 28;
-const DOCK_TOP = Number.isFinite(ACTION_DOCK?.y) ? ACTION_DOCK.y : BUTTONS[0].y;
-const CONTENT_PANEL = {
-  x: BODY_TEXT.x - (IS_ROUND ? 12 : 0),
-  y: PANEL_TOP,
-  w: BODY_TEXT.w + (IS_ROUND ? 24 : 0),
-  h: DOCK_TOP - PANEL_TOP - 8,
-  radius: 18,
-  color: SHARED_COLORS.surface
-};
+const READING = getReadingFrame(BACKGROUND);
 const INSTRUCTION_TEXT_SIZE = 20;
-const INSTRUCTION_ROW_PADDING_X = 0;
-const INSTRUCTION_ROW_PADDING_Y = 0;
-const CONTENT_FRAME = {
-  x: CONTENT_PANEL.x + 12,
-  y: CONTENT_PANEL.y + 8,
-  w: CONTENT_PANEL.w - 24,
-  h: CONTENT_PANEL.h - 16,
-  itemRadius: 0
-};
+
+function buildFlowLayout(title, instruction) {
+  const titleY = IS_ROUND ? READING.top : 82;
+  const titleSize = IS_SMALL ? 24 : 27;
+  const titleHeight = measureWrappedText(title, titleSize, READING.w);
+  const timerY = titleY + titleHeight + 4;
+  const timerHeight = IS_SMALL ? 60 : 66;
+  const metaY = timerY + timerHeight;
+  const instructionY = metaY + 34;
+  const instructionHeight = measureWrappedText(instruction, INSTRUCTION_TEXT_SIZE, READING.w);
+  const dockY = instructionY + instructionHeight + 28;
+  const dockHeight = ACTION_DOCK.h || BUTTONS[0].h + 16;
+  const dockOffset = BUTTONS[0].y - (ACTION_DOCK.y ?? BUTTONS[0].y - 8);
+  return { titleY, titleSize, titleHeight, timerY, timerHeight, metaY,
+    instructionY, instructionHeight, dockY, dockHeight,
+    buttonY: dockY + dockOffset,
+    contentHeight: Math.max(BACKGROUND.h, dockY + dockHeight + READING.bottom) };
+}
 
 function buildTimerText(activeSession) {
   const remaining = getCurrentStepRemainingMs(activeSession);
@@ -124,62 +119,16 @@ function setWidgetText(widget, text) {
   widget.text = text;
 }
 
-function measureInstructionHeight(text, width) {
-  const { height } = hmUI.getTextLayout(text, {
-    text_size: INSTRUCTION_TEXT_SIZE,
-    text_width: width,
-    wrapped: 1
-  });
-  return Math.max(INSTRUCTION_TEXT_SIZE, Math.ceil(height));
-}
-
-function createInstructionScrollConfig(itemHeight) {
-  return [
-    {
-      type_id: 1,
-      item_bg_color: SHARED_COLORS.surface,
-      item_bg_radius: CONTENT_FRAME.itemRadius,
-      item_press_effect: false,
-      text_view: [
-        {
-          x: INSTRUCTION_ROW_PADDING_X,
-          y: INSTRUCTION_ROW_PADDING_Y,
-          w: CONTENT_FRAME.w - INSTRUCTION_ROW_PADDING_X * 2,
-          h: itemHeight - INSTRUCTION_ROW_PADDING_Y * 2,
-          key: "body",
-          color: SHARED_COLORS.text,
-          text_size: INSTRUCTION_TEXT_SIZE,
-          text_style: hmUI.text_style.WRAP,
-          align_h: hmUI.align.LEFT,
-          align_v: hmUI.align.TOP
-        }
-      ],
-      text_view_count: 1,
-      item_height: itemHeight
-    }
-  ];
-}
-
-function buildPrimaryActionLabel(activeSession) {
-  const currentStep = getCurrentSessionStep(activeSession);
-
-  if (!currentStep) {
-    return "Next";
+function buildPrimaryActionLabel(session, i18n) {
+  const step = getCurrentSessionStep(session);
+  let action = "next";
+  if (step && step.kind === "finish") {
+    action = "finish";
+  } else if (step && session.status !== "waiting_for_confirm" &&
+      (step.kind === "timed_action" || step.kind === "timed_wait")) {
+    action = "skip";
   }
-
-  if (currentStep.kind === "finish") {
-    return "Finish";
-  }
-
-  if (activeSession.status === "waiting_for_confirm") {
-    return "Next";
-  }
-
-  if (currentStep.kind === "timed_action" || currentStep.kind === "timed_wait") {
-    return "Skip";
-  }
-
-  return "Next";
+  return i18n.t(`watch.brewActive.actions.${action}`);
 }
 
 Page({
@@ -208,32 +157,10 @@ Page({
     }
     this.stopConfirmation.show(true);
   },
-  refreshWidgets() {
-    const activeSession = readActiveSession();
-
-    if (
-      !activeSession ||
-      !this.progressWidget ||
-      !this.stepTitleWidget ||
-      !this.metaWidget
-    ) {
-      return;
-    }
-
-    setWidgetText(this.progressWidget, buildProgressText(activeSession, this.i18n));
-    const currentStep = getCurrentSessionStep(activeSession);
-    setWidgetText(
-      this.stepTitleWidget,
-      currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep")
-    );
+  refreshWidgets(activeSession) {
+    if (!activeSession || !this.metaWidget) return;
     setWidgetText(this.metaWidget, buildStepMetaText(activeSession, this.i18n));
     setWidgetText(this.timerWidget, buildTimerText(activeSession));
-    if (this.descriptionWidget) {
-      setWidgetText(this.descriptionWidget, buildDescriptionText(activeSession, this.i18n));
-    }
-    if (this.footerWidget) {
-      setWidgetText(this.footerWidget, buildAssistText(activeSession));
-    }
   },
   build() {
     hmUI.setStatusBarVisible(false);
@@ -246,7 +173,12 @@ Page({
 
     const activeSession = reconcileResult.activeSession || readActiveSession();
 
-    hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
+    const step = activeSession ? getCurrentSessionStep(activeSession) : null;
+    const title = step ? step.title : this.i18n.t("watch.brewActive.unknownStep");
+    const instruction = activeSession ? buildDescriptionText(activeSession, this.i18n) : "";
+    const flow = activeSession ? buildFlowLayout(title, instruction) : null;
+    if (flow) enableReadingPage();
+    hmUI.createWidget(hmUI.widget.FILL_RECT, { ...BACKGROUND, h: flow ? flow.contentHeight : BACKGROUND.h });
 
     if (!activeSession) {
       disableActiveSessionDisplayGuard();
@@ -279,8 +211,6 @@ Page({
       advanceOrCompleteActiveSession();
     });
 
-    const currentStep = getCurrentSessionStep(activeSession);
-
     hmUI.createWidget(hmUI.widget.TEXT, fitCenteredTextToRoundScreen({
       ...TITLE_TEXT,
       y: IS_ROUND ? 38 : 16,
@@ -291,29 +221,31 @@ Page({
       text_style: hmUI.text_style.NONE,
       text: activeSession.recipeName
     }, BACKGROUND));
-    this.progressWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+    hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: HERO_TOP,
+      y: flow.titleY - 26,
       h: 20,
       align_h: hmUI.align.CENTER_H,
       color: SHARED_COLORS.accent,
       text_size: 15,
       text: buildProgressText(activeSession, this.i18n)
     });
-    this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
+    hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: STEP_TOP,
-      h: IS_SMALL ? 30 : 34,
-      text_size: IS_SMALL ? 24 : 27,
+      x: READING.x,
+      w: READING.w,
+      y: flow.titleY,
+      h: flow.titleHeight,
+      text_size: flow.titleSize,
       align_h: hmUI.align.CENTER_H,
-      text_style: hmUI.text_style.NONE,
+      text_style: hmUI.text_style.WRAP,
       color: SHARED_COLORS.text,
-      text: currentStep ? currentStep.title : this.i18n.t("watch.brewActive.unknownStep")
+      text: title
     });
     this.timerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: TIMER_TOP,
-      h: TIMER_HEIGHT,
+      y: flow.timerY,
+      h: flow.timerHeight,
       line_space: 0,
       text_style: hmUI.text_style.NONE,
       text_size: IS_SMALL ? 54 : 60,
@@ -323,86 +255,32 @@ Page({
     });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: META_TOP,
+      y: flow.metaY,
       h: 22,
       align_h: hmUI.align.CENTER_H,
       color: SHARED_COLORS.muted,
       text_size: IS_SMALL ? 14 : 15,
       text: buildStepMetaText(activeSession, this.i18n)
     });
-    hmUI.createWidget(hmUI.widget.FILL_RECT, createPanelStyle({
-      buttonX: BODY_TEXT.x,
-      buttonW: BODY_TEXT.w
-    }, CONTENT_PANEL));
-
-    const descriptionText = buildDescriptionText(activeSession, this.i18n);
-    if (measureInstructionHeight(descriptionText, CONTENT_FRAME.w) <= CONTENT_FRAME.h) {
-      this.descriptionWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-        ...BODY_TEXT,
-        x: CONTENT_FRAME.x,
-        y: CONTENT_FRAME.y,
-        w: CONTENT_FRAME.w,
-        h: CONTENT_FRAME.h,
-        align_v: hmUI.align.CENTER_V,
-        text_size: INSTRUCTION_TEXT_SIZE,
-        text_style: hmUI.text_style.WRAP,
-        text: descriptionText
-      });
-    } else {
-      const scrollTextWidth = CONTENT_FRAME.w - INSTRUCTION_ROW_PADDING_X * 2;
-      const scrollItemHeight = measureInstructionHeight(descriptionText, scrollTextWidth) +
-        INSTRUCTION_ROW_PADDING_Y * 2;
-      hmUI.createWidget(hmUI.widget.SCROLL_LIST, {
-        x: CONTENT_FRAME.x,
-        y: CONTENT_FRAME.y,
-        w: CONTENT_FRAME.w,
-        h: CONTENT_FRAME.h,
-        item_space: 0,
-        item_config: createInstructionScrollConfig(scrollItemHeight),
-        item_config_count: 1,
-        data_array: [
-          {
-            body: descriptionText
-          }
-        ],
-        data_count: 1,
-        data_type_config: [
-          {
-            start: 0,
-            end: 0,
-            type_id: 1
-          }
-        ],
-        data_type_config_count: 1,
-        enable_scroll_bar: false
-      });
-    }
+    hmUI.createWidget(hmUI.widget.FILL_RECT, {
+      x: READING.x - 12, y: flow.instructionY - 12,
+      w: READING.w + 24, h: flow.instructionHeight + 24,
+      radius: 18, color: SHARED_COLORS.surface
+    });
+    hmUI.createWidget(hmUI.widget.TEXT, {
+      ...BODY_TEXT,
+      x: READING.x, y: flow.instructionY, w: READING.w, h: flow.instructionHeight,
+      align_v: hmUI.align.TOP, text_size: INSTRUCTION_TEXT_SIZE,
+      text_style: hmUI.text_style.WRAP,
+      text: instruction
+    });
     if (ACTION_DOCK) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, ACTION_DOCK);
+      hmUI.createWidget(hmUI.widget.FILL_RECT, { ...ACTION_DOCK, y: flow.dockY });
     }
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: (() => {
-        const currentStep = getCurrentSessionStep(activeSession);
-
-        if (!currentStep) {
-          return this.i18n.t("watch.brewActive.actions.next");
-        }
-
-        if (currentStep.kind === "finish") {
-          return this.i18n.t("watch.brewActive.actions.finish");
-        }
-
-        if (activeSession.status === "waiting_for_confirm") {
-          return this.i18n.t("watch.brewActive.actions.next");
-        }
-
-        if (currentStep.kind === "timed_action" || currentStep.kind === "timed_wait") {
-          return this.i18n.t("watch.brewActive.actions.skip");
-        }
-
-        return this.i18n.t("watch.brewActive.actions.next");
-      })(),
+      y: flow.buttonY,
+      text: buildPrimaryActionLabel(activeSession, this.i18n),
       text_size: BUTTONS[0].text_size,
       click_func: () => {
         advanceOrCompleteActiveSession();
@@ -410,6 +288,7 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
+      y: flow.buttonY,
       text: this.i18n.t("watch.brewActive.actions.stop"),
       text_size: BUTTONS[1].text_size,
       click_func: () => {
@@ -420,7 +299,7 @@ Page({
     if (assistText) {
       this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
         ...FOOTER_TEXT,
-        y: BUTTONS[0].y - 28,
+        y: flow.dockY - 28,
         h: 30,
         text: assistText
       });
@@ -447,14 +326,16 @@ Page({
       if (
         !beforeStep ||
         !afterStep ||
-        beforeStep.stepId !== afterStep.stepId ||
-        beforeStatus !== afterSession.status
+        beforeStep.stepId !== afterStep.stepId
       ) {
         replace({ url: PAGE_URLS.brewActive });
         return;
       }
 
-      this.refreshWidgets();
+      if (beforeStatus !== afterSession.status) {
+        setWidgetText(this.primaryButton, buildPrimaryActionLabel(afterSession, this.i18n));
+      }
+      this.refreshWidgets(afterSession);
     }, 1000);
   }
 });

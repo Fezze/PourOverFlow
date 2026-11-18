@@ -22,7 +22,7 @@ async function bootstrap() {
     throw new Error(`Could not load preview fixture for ${scenario}.`);
   }
 
-  const { device, locale, widgets } = await response.json();
+  const { device, locale, widgets, freeScroll } = await response.json();
   document.documentElement.lang = locale;
   document.body.dataset.framed = String(params.has("framed"));
   statusElement.textContent = `${scenario} • ${locale}`;
@@ -30,6 +30,7 @@ async function bootstrap() {
   watchShell.style.setProperty("--shell-width", `${device.width}px`);
   watchShell.style.setProperty("--shell-height", `${device.height}px`);
 
+  if (freeScroll) watchFace.classList.add("reading-page");
   const pendingImages = [];
   for (const widget of widgets) {
     if (widget.visible !== false && widget.VISIBLE !== false) {

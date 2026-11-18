@@ -251,7 +251,7 @@ Use [TODO.md](c:\Users\krzys\Projects\PourOverFlow\docs\TODO.md) as the live sou
 - `active_session_v1` is persisted locally,
 - timed steps, confirm steps, and finish steps have separate reducer semantics,
 - `brew-active` shows both the step timer and session timer,
-- `brew-active` now gives the main instruction body more of the page and only uses an internal scroll area when the step body genuinely overflows,
+- `brew-active` now gives the main instruction body more of the page and scrolls titles, instructions and actions together on the page,
 - the feedback layer is best-effort and capability-gated,
 - baseline session reducer tests exist,
 - `npm test` and `npm run build` pass.

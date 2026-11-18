@@ -83,7 +83,18 @@ async function main() {
         const screenshot = await page.locator(selector).screenshot({ path: screenshotPath });
         validateScreenshot(scenario, screenshot, selector === "#watch-face");
       }
-      const scrolled = await page.locator(".scroll-list").evaluateAll(lists => {
+      const longReadingPage = (scenario.page === "brew-active" && ["overflow", "long-manual"].includes(scenario.state)) ||
+          (scenario.page === "recipe-detail" && scenario.state === "overflow");
+      if (longReadingPage) {
+        await page.locator("body").evaluate(body => { body.dataset.framed = "false"; });
+        await page.locator(".reading-page .text > span").last().evaluate(copy => {
+          const face = copy.closest(".reading-page");
+          face.scrollTop += copy.getBoundingClientRect().top - face.getBoundingClientRect().top - face.clientHeight * 0.35;
+        });
+        const readingPath = resolveScreenshotPath(scenario, captureOptions[0].root).replace(/\.png$/, "-reading.png");
+        await page.locator("#watch-face").screenshot({ path: readingPath });
+      }
+      const scrolled = await page.locator(".reading-page, .scroll-list").evaluateAll(lists => {
         let changed = false;
         for (const list of lists) {
           if (list.scrollHeight > list.clientHeight + 1) {
@@ -93,18 +104,17 @@ async function main() {
         }
         return changed;
       });
-      if ((scenario.page === "brew-active" && ["overflow", "long-manual"].includes(scenario.state)) ||
-          (scenario.page === "recipe-detail" && scenario.state === "overflow")) {
-        const tailVisible = await page.locator(".scroll-card .text > span").last().evaluate(text => {
+      if (longReadingPage) {
+        const tailVisible = await page.locator(".reading-page .text > span").last().evaluate(text => {
           const lastLine = document.createRange();
           const content = text.firstChild;
           lastLine.setStart(content, content.textContent.lastIndexOf("\n") + 1);
           lastLine.setEndAfter(content);
-          const list = text.closest(".scroll-list");
+          const list = text.closest(".reading-page");
           const textFrame = text.parentElement.getBoundingClientRect();
           const tail = lastLine.getBoundingClientRect();
           if (tail.height <= 0 || tail.bottom > textFrame.bottom + 1) return false;
-          list.scrollTop += tail.bottom - list.getBoundingClientRect().bottom + 4;
+
           const visibleTail = lastLine.getBoundingClientRect();
           const viewport = list.getBoundingClientRect();
           return visibleTail.top >= viewport.top - 1 && visibleTail.bottom <= viewport.bottom + 1;
@@ -114,6 +124,20 @@ async function main() {
         }
       }
       if (scrolled) {
+        if (scenario.width === scenario.height && ["recipe-list", "tool-list"].includes(scenario.page)) {
+          const clipped = await page.locator(".scroll-card").last().evaluate(card => {
+            const face = document.querySelector("#watch-face").getBoundingClientRect();
+            const radius = face.width / 2;
+            return [...card.children].some(child => {
+              const range = document.createRange();
+              range.selectNodeContents(child);
+              const rect = child instanceof HTMLImageElement ? child.getBoundingClientRect() : range.getBoundingClientRect();
+              return [rect.left, rect.right].some(x => [rect.top, rect.bottom].some(y =>
+                Math.hypot(x - face.left - radius, y - face.top - radius) > radius));
+            });
+          });
+          if (clipped) throw new Error(`Last list row is clipped by the circular mask in ${scenario.name}.`);
+        }
         const root = captureOptions[0].root;
         await page.locator("body").evaluate(body => { body.dataset.framed = "false"; });
         const screenshotPath = resolveScreenshotPath(scenario, root).replace(/\.png$/, "-scrolled.png");

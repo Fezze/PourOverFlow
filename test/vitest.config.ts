@@ -16,6 +16,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      "@zos/page": resolve(__dirname, "zeus-runtime/zos-page.ts"),
       "@zos/ble": resolve(__dirname, "zeus-runtime/zos-ble.ts"),
       "@zos/device": resolve(__dirname, "zeus-runtime/zos-device.ts"),
       "@zos/display": resolve(__dirname, "zeus-runtime/zos-display.ts"),

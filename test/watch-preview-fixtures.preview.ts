@@ -161,6 +161,7 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
       },
       expectedButtonCount: scenario.expectedButtonCount,
       requiredTextSnippets: scenario.requiredTextSnippets,
+      freeScroll: (await import("@zos/page")).setScrollMode.mock.calls.some(([options]) => options.mode === "FREE"),
       widgets
     };
 
@@ -214,12 +215,14 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
     "scenario name should match page/state/locale/shape/size metadata"
   ).toBe(buildScenarioName(fixturePayload.page, fixturePayload.state, fixturePayload.locale, fixturePayload.device.shape, fixturePayload.device.width, fixturePayload.device.height));
 
+  const pageHeight = fixturePayload.freeScroll ? widgets[0].h : device.height;
+  expect(pageHeight).toBeGreaterThanOrEqual(device.height);
   expect(widgets[0], `${fixturePayload.scenario} should use the target-sized background`).toMatchObject({
     type: "FILL_RECT",
     x: 0,
     y: 0,
     w: device.width,
-    h: device.height
+    h: pageHeight
   });
 
   widgets.forEach((widget, index) => {
@@ -236,7 +239,7 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
     }
 
     if (Number.isFinite(widget.y) && Number.isFinite(widget.h) && widget.type !== "SCROLL_LIST") {
-      expect(widget.y + widget.h, `widget ${index} should stay within screen height`).toBeLessThanOrEqual(device.height + 40);
+      expect(widget.y + widget.h, `widget ${index} should stay within screen height`).toBeLessThanOrEqual(pageHeight + (fixturePayload.freeScroll ? 0 : 40));
     }
   });
 
@@ -251,7 +254,7 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
       expect(
         widget.y + widget.h,
         `button ${index} should clear the lower round-screen mask`
-      ).toBeLessThanOrEqual(device.height - 20);
+      ).toBeLessThanOrEqual(pageHeight - 20);
     }
   });
 

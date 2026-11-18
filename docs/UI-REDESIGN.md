@@ -6,9 +6,13 @@ The redesign preserves the six watch pages, six phone views, closed brewer catal
 
 The watch uses an espresso background (#11100E), warm surfaces (#211E19), cream text (#F4EEE3), and a caramel primary action (#E6B877). Main actions use dark text for contrast. Phone Settings uses warm paper with matching espresso and caramel accents.
 
-The brewing screen prioritizes the large step countdown; the elapsed session time and water target remain visible. Manual steps show elapsed time. Long instructions and recipe details use native vertical lists. Active brew measures wrapped instructions at the actual text width, including the narrower width inside a scroll row, so the last lines remain reachable. Recipe list names have room for two lines; long detail titles retain native marquee behavior. Result summaries emphasize total duration while keeping status and timing delta. The Stop button opens a localized system confirmation before aborting the brew.
+The brewing screen shows the step timer, session time and water target above a wide instruction. Recipe notes and active-brew instructions scroll with their titles and actions. Recipe-list rows expand to fit longer names. Result summaries emphasize total duration while keeping status and timing delta. The Stop button opens a localized system confirmation before aborting the brew.
 
 Brewers and Latest Result are two horizontal browsing tabs. Swipe left from Brewers to Latest Result; swipe right to return. Two position marks identify the active tab. Vertical gestures and the outer system-back gesture remain native. Existing navigation buttons remain available. The active brew does not register these tab gestures.
+
+## Reading width and whole-page scrolling
+
+Recipe details and brewing steps use the watch's native free page scroll. The heading, description and actions travel together. The timer updates in place while reading. When a timed step awaits confirmation, its button changes from Skip to Next at the same scroll position. A new step opens at the top. On round screens text has 24 px side margins. On rectangular screens it has 16 px. The step title wraps at the same width. The recipe and brewer choosers retain native selection lists with wider rows. The earlier fixed instruction viewport described in the historical review below has been replaced.
 
 ## Editable screen files
 

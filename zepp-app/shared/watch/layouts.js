@@ -144,6 +144,12 @@ export function createScaffoldLayout(options = {}) {
   };
 }
 
+// Largest y coordinate where both ends of a row still fit inside the circle.
+export function roundContentBottom(diameter, inset) {
+  const radius = diameter / 2;
+  return Math.floor(radius + Math.sqrt((radius - 4) ** 2 - (radius - inset) ** 2));
+}
+
 // Centered headers sit near the narrow top of a circular display. Their whole
 // text frame must fit inside the mask, including native marquee endpoints.
 export function fitCenteredTextToRoundScreen(style, screen) {

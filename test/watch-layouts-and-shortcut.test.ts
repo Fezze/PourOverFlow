@@ -112,14 +112,14 @@ describe("watch layouts and shortcut helpers", () => {
     const squareToolList = await import("../zepp-app/page/tool-list/index.s.layout.js");
 
     expect(roundToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
-    expect(roundToolList.LIST_FRAME.x).toBeGreaterThanOrEqual(48);
+    expect(roundToolList.LIST_FRAME.x).toBe(12);
     expect(roundToolList.LIST_FRAME.w).toBeGreaterThanOrEqual(384);
-    expect(roundToolList.LIST_FRAME.h).toBeGreaterThan(320);
+    expect(roundToolList.LIST_FRAME.h).toBeGreaterThan(2 * roundToolList.LIST_FRAME.itemHeight);
     expect(roundToolList.LIST_FRAME.y).toBeGreaterThan(roundToolList.TITLE_TEXT.y + roundToolList.TITLE_TEXT.h);
     expect(roundToolList.LIST_FRAME.itemHeight).toBeLessThan(100);
 
     expect(squareToolList.TITLE_TEXT.align_h).toBe("CENTER_H");
-    expect(squareToolList.LIST_FRAME.x).toBeGreaterThanOrEqual(18);
+    expect(squareToolList.LIST_FRAME.x).toBe(8);
     expect(squareToolList.LIST_FRAME.w).toBeGreaterThanOrEqual(344);
     expect(squareToolList.LIST_FRAME.h).toBeGreaterThan(210);
     expect(squareToolList.LIST_FRAME.h).toBeGreaterThanOrEqual(

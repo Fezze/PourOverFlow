@@ -54,7 +54,7 @@ function buildRecipeRows(recipes, i18n) {
 }
 
 function createRecipeListConfig(rows) {
-  const textInset = 20;
+  const textInset = BACKGROUND.w === BACKGROUND.h ? 12 : 8;
   const titleY = 10;
   const titleTextSize = 22;
   const metaTextSize = 16;

@@ -11,9 +11,9 @@ export const LIST_PANEL = createPanelStyle(layout, {
   h: px(340)
 });
 export const LIST_FRAME = {
-  x: LIST_PANEL.x + px(8),
+  x: 8,
   y: LIST_PANEL.y + px(8),
-  w: LIST_PANEL.w - px(16),
+  w: layout.background.w - 16,
   h: LIST_PANEL.h - px(16),
   itemHeight: px(100),
   itemSpace: px(8),

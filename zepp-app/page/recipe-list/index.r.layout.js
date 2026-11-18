@@ -2,6 +2,7 @@ import {
   createButtonStyle,
   createPanelStyle,
   createScaffoldLayout,
+  roundContentBottom,
   pickRoundMetric,
   pickRoundSizeMetric
 } from "../../shared/watch/layouts";
@@ -24,11 +25,12 @@ export const LIST_PANEL = createPanelStyle(layout, {
   w: layout.buttonW + pickRoundMetric(12, 8),
   h: pickRoundMetric(270, 260)
 });
+const listY = LIST_PANEL.y + pickRoundMetric(8, 8);
 export const LIST_FRAME = {
-  x: LIST_PANEL.x + pickRoundMetric(8, 8),
-  y: LIST_PANEL.y + pickRoundMetric(8, 8),
-  w: LIST_PANEL.w - pickRoundMetric(16, 16),
-  h: LIST_PANEL.h - pickRoundMetric(16, 16),
+  x: 12,
+  y: listY,
+  w: layout.background.w - 24,
+  h: roundContentBottom(BACKGROUND.w, 24) + 10 - listY,
   itemHeight: pickRoundMetric(112, 108),
   itemSpace: pickRoundMetric(10, 10),
   itemRadius: pickRoundMetric(22, 20),

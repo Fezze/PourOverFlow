@@ -60,36 +60,43 @@ for (const locale of ["en-US", "pl-PL"] as const) {
         definition.onDestroy.call(instance);
       });
 
-      it("reserves four instruction lines, preserves long copy and keeps timer/actions usable", async () => {
+      it("scrolls wide instructions and both actions together without resetting on ticks", async () => {
         const { runtime, store, definition } = await load("brew-active", width, height, locale);
         const fixture = createCatalogFixture(locale);
         const snapshot = createRecipeSnapshot({ ...fixture.primaryRecord, name: copy.recipeName });
         snapshot.steps[1].body = copy.instruction;
         snapshot.steps[1].title = copy.stepTitle;
+        snapshot.steps[1].requiresConfirm = true;
         const session = createActiveBrewSession(snapshot, { now: 250_000 });
         Object.assign(session, { currentStepIndex: 1, expectedStepEndAt: 265_000 });
         runtime.setLocalStorageState({ [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(session) });
         const instance = buildPage(definition);
         expectHeaderInsideMask(runtime.findCreatedWidgetsByType("TEXT")[0], width, height);
-        const [list] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
-        expect(list.data_array[0].body).toBe(copy.instruction);
-        const view = list.item_config[0].text_view[0];
-        expect(list.h).toBeGreaterThanOrEqual(100);
+        const widgets = runtime.getCreatedWidgets();
+        const view = widgets.find(w => w.text === copy.instruction);
+        const buttons = runtime.findCreatedWidgetsByType("BUTTON");
+        const timer = widgets.find(w => w.text === "00:15");
+        const page = await import("@zos/page");
+        expect(page.setScrollMode).toHaveBeenCalledWith(expect.objectContaining({ mode: page.SCROLL_MODE_FREE }));
+        expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
+        expect(view.w).toBe(width - (width === height ? 48 : 32));
         expect(view.text_size).toBe(20);
         await expectTextFits(copy.instruction, view);
-        expect(view.w).toBeGreaterThanOrEqual(width === height ? width - 136 : width - 80);
-        const buttons = runtime.findCreatedWidgetsByType("BUTTON");
-        const timer = runtime.findCreatedWidgetsByType("TEXT").find(w => w.text === "00:15");
         expect(timer.text_size).toBeGreaterThanOrEqual(54);
-        expect(timer.y + timer.h).toBeLessThan(list.y);
+        expect(timer.y + timer.h).toBeLessThan(view.y);
         for (const button of buttons) {
           expect(button.h).toBeGreaterThanOrEqual(50);
-          expect(list.y + list.h).toBeLessThan(button.y);
+          expect(button.y).toBeGreaterThan(view.y + view.h);
+          expect(button.y + button.h).toBeLessThan(widgets[0].h);
         }
-        // A timer refresh must leave the native scroll widget (and its position) intact.
+        page.scrollTo.mockClear();
         vi.advanceTimersByTime(1000);
-        expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toEqual([list]);
+        expect(page.scrollTo).not.toHaveBeenCalled();
         expect(timer.text).toBe("00:14");
+        vi.advanceTimersByTime(14_000);
+        expect(store.readActiveSession().status).toBe("waiting_for_confirm");
+        expect(buttons[0].text).toBe(locale === "pl-PL" ? "Dalej" : "Next");
+        expect(page.scrollTo).not.toHaveBeenCalled();
         expect(runtime.router.replace).not.toHaveBeenCalled();
         buttons[0].click_func();
         expect(store.readActiveSession().currentStepIndex).toBe(2);
@@ -107,16 +114,16 @@ for (const locale of ["en-US", "pl-PL"] as const) {
         runtime.setLocalStorageState({ [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache) });
         store.writeSelectedRecipeId(snapshot.recipeId);
         const instance = buildPage(definition);
-        expectHeaderInsideMask(runtime.findCreatedWidgetsByType("TEXT")[0], width, height);
-        const [list] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
-        expect(list.data_array.at(-1).meta).toBe(copy.description);
-        for (const [index, row] of list.data_array.entries()) {
-          const config = list.item_config[index];
-          await expectTextFits(row.meta, config.text_view[1]);
-          expect(config.item_height).toBeGreaterThanOrEqual(config.text_view[1].y + config.text_view[1].h);
+        const texts = runtime.findCreatedWidgetsByType("TEXT");
+        const note = texts.find(w => w.text === copy.description);
+        const profile = texts.find(w => w.text.includes(copy.grindLabel));
+        for (const widget of [note, profile]) {
+          expect(widget.w).toBe(width - (width === height ? 48 : 32));
+          await expectTextFits(widget.text, widget);
         }
+        expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
         const [start] = runtime.findCreatedWidgetsByType("BUTTON");
-        expect(list.y + list.h).toBeLessThan(start.y);
+        expect(note.y + note.h).toBeLessThan(start.y);
         start.click_func();
         expect(store.readActiveSession().recipeSnapshot.description).toBe(copy.description);
         definition.onDestroy.call(instance);
@@ -150,8 +157,8 @@ it("accounts for explicit short lines that character-count estimates miss", asyn
   runtime.setLocalStorageState({ [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache) });
   store.writeSelectedRecipeId(fixture.primarySnapshot.recipeId);
   const instance = buildPage(definition);
-  const [list] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
-  await expectTextFits(fixture.primarySnapshot.description, list.item_config.at(-1).text_view[1]);
+  const note = runtime.findCreatedWidgetsByType("TEXT").find(w => w.text === fixture.primarySnapshot.description);
+  await expectTextFits(note.text, note);
   definition.onDestroy.call(instance);
 });
 

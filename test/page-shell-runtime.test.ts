@@ -206,7 +206,7 @@ describe("page shell runtime coverage", () => {
     const fillRects = runtime.getCreatedWidgets().filter((widget) => widget.type === "FILL_RECT");
 
     expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
-    expect(fillRects.length).toBeGreaterThanOrEqual(5);
+    expect(fillRects[0].h).toBeGreaterThanOrEqual(buttons[0].y + buttons[0].h);
     expect(textWidgets.some((widget) => String(widget.text).includes("Dose and water"))).toBe(true);
     expect(textWidgets.some((widget) => String(widget.text).includes("Brew profile"))).toBe(true);
     expect(textWidgets.some((widget) => String(widget.text).includes("Time and steps"))).toBe(true);
@@ -269,10 +269,10 @@ describe("page shell runtime coverage", () => {
     watchStore.writeSelectedRecipeId(fixture.primarySummary.recipeId);
     buildPage(pageDefinition);
 
-    const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
-    expect(scrollList).toBeTruthy();
-    expect(scrollList.enable_scroll_bar).toBe(false);
-    expect(scrollList.data_count).toBeGreaterThanOrEqual(4);
+    const note = runtime.findCreatedWidgetsByType("TEXT").find(w => w.text === longSnapshot.description);
+    expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
+    expect(note.y + note.h).toBeLessThan(runtime.findCreatedWidgetsByType("BUTTON")[0].y);
+    expect(runtime.getCreatedWidgets()[0].h).toBeGreaterThan(480);
   });
 
   it("renders the active-brew dock with Zepp-safe labels and separate countdown and session time", async () => {
@@ -319,7 +319,7 @@ describe("page shell runtime coverage", () => {
     }
   });
 
-  it("falls back to an internal scroll area when the active-brew instruction body overflows", async () => {
+  it("includes every instruction line above the actions in the scrolling page", async () => {
     const fixture = createCatalogFixture();
     const body = "Pour slowly from the center.\n".repeat(12) + "Keep pouring throughout the spiral.";
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
@@ -352,13 +352,8 @@ describe("page shell runtime coverage", () => {
     try {
       buildPage(pageDefinition);
 
-      const [scrollList] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
-      expect(scrollList).toBeTruthy();
-      expect(scrollList.enable_scroll_bar).toBe(false);
-      expect(scrollList.data_count).toBe(1);
-      expect(scrollList.data_array[0].body).toBe(body);
-      const [row] = scrollList.item_config;
-      const [text] = row.text_view;
+      const text = runtime.findCreatedWidgetsByType("TEXT").find(w => w.text === body);
+      expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
       const { getTextLayout } = await import("@zos/ui");
       const { height } = getTextLayout(body, {
         text_size: text.text_size,
@@ -366,8 +361,8 @@ describe("page shell runtime coverage", () => {
         wrapped: 1
       });
       expect(text.h).toBeGreaterThanOrEqual(height);
-      expect(row.item_height).toBeGreaterThanOrEqual(text.y + text.h);
-      expect(row.item_height).toBeGreaterThan(scrollList.h);
+      const [action] = runtime.findCreatedWidgetsByType("BUTTON");
+      expect(action.y).toBeGreaterThan(text.y + text.h);
     } finally {
       vi.useRealTimers();
     }

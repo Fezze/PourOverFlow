@@ -10,9 +10,9 @@ export const SUBTITLE_TEXT = layout.subtitle;
 TITLE_TEXT.align_h = hmUI.align.CENTER_H;
 SUBTITLE_TEXT.align_h = hmUI.align.CENTER_H;
 export const LIST_FRAME = {
-  x: px(18),
+  x: 8,
   y: px(112),
-  w: px(344),
+  w: layout.background.w - 16,
   h: px(296),
   itemHeight: px(92),
   itemSpace: px(10),

@@ -20,9 +20,8 @@
 
 ### Watch UI follow-up
 
-- Investigate the existing round-firmware `SCROLL_LIST` over-scroll past a very long single instruction item. The last sentence is reachable by scrolling back; browser previews do not reproduce this firmware behavior. Preserve full text, fixed actions and the runtime 3.6 floor in any follow-up.
 
-- Confirm the compact brewing header, expanded instruction viewport, long description scrolling and dynamic recipe-name rows on physical round and rectangular watches; retain the Brewers/Latest Result gesture checks.
+- Confirm the compact brewing header, wide instructions and whole-page scrolling, long description scrolling and dynamic recipe-name rows on physical round and rectangular watches; retain the Brewers/Latest Result gesture checks.
 - Confirm the warm Settings theme and native field rendering in the Zepp phone app.
 
 
