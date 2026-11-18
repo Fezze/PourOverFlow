@@ -21,7 +21,7 @@
 ### Watch UI follow-up
 
 
-- Confirm the compact brewing header, wide instructions and whole-page scrolling, long description scrolling and dynamic recipe-name rows on physical round and rectangular watches; retain the Brewers/Latest Result gesture checks.
+- Confirm the compact brewing header, wide instructions, a circle-safe reader and pinned actions, long description scrolling and dynamic recipe-name rows on physical round and rectangular watches; retain the Brewers/Latest Result gesture checks.
 - Confirm the warm Settings theme and native field rendering in the Zepp phone app.
 
 

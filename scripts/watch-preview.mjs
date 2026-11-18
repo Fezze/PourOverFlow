@@ -85,11 +85,15 @@ async function main() {
       }
       const longReadingPage = (scenario.page === "brew-active" && ["overflow", "long-manual"].includes(scenario.state)) ||
           (scenario.page === "recipe-detail" && scenario.state === "overflow");
+      const buttons = page.locator("#watch-face > .button");
+      const buttonBounds = () => buttons.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().toJSON()));
+      if (longReadingPage) await page.locator("body").evaluate(body => { body.dataset.framed = "false"; });
+      const initialButtons = longReadingPage ? await buttonBounds() : [];
+      const paragraphs = page.locator(".reading-page .text > span").filter({ hasText: /\n/ });
       if (longReadingPage) {
-        await page.locator("body").evaluate(body => { body.dataset.framed = "false"; });
-        await page.locator(".reading-page .text > span").last().evaluate(copy => {
+        await paragraphs.last().evaluate(copy => {
           const face = copy.closest(".reading-page");
-          face.scrollTop += copy.getBoundingClientRect().top - face.getBoundingClientRect().top - face.clientHeight * 0.35;
+          face.scrollTop += copy.getBoundingClientRect().top - face.getBoundingClientRect().top - 3;
         });
         const readingPath = resolveScreenshotPath(scenario, captureOptions[0].root).replace(/\.png$/, "-reading.png");
         await page.locator("#watch-face").screenshot({ path: readingPath });
@@ -105,7 +109,7 @@ async function main() {
         return changed;
       });
       if (longReadingPage) {
-        const tailVisible = await page.locator(".reading-page .text > span").last().evaluate(text => {
+        const tailVisible = await paragraphs.last().evaluate(text => {
           const lastLine = document.createRange();
           const content = text.firstChild;
           lastLine.setStart(content, content.textContent.lastIndexOf("\n") + 1);
@@ -115,10 +119,17 @@ async function main() {
           const tail = lastLine.getBoundingClientRect();
           if (tail.height <= 0 || tail.bottom > textFrame.bottom + 1) return false;
 
-          const visibleTail = lastLine.getBoundingClientRect();
+          // Recipe attribution may follow the instruction. Bring the actual last
+          // line into view, as a reader can, and check its full bounding box.
           const viewport = list.getBoundingClientRect();
-          return visibleTail.top >= viewport.top - 1 && visibleTail.bottom <= viewport.bottom + 1;
+          list.scrollTop += tail.bottom - viewport.bottom + 4;
+          const visibleTail = lastLine.getBoundingClientRect();
+          return visibleTail.top >= viewport.top - 1 && visibleTail.bottom <= viewport.bottom + 1 &&
+            visibleTail.left >= viewport.left - 1 && visibleTail.right <= viewport.right + 1;
         });
+        if (!initialButtons.length || JSON.stringify(await buttonBounds()) !== JSON.stringify(initialButtons)) {
+          throw new Error(`Pinned controls moved in ${scenario.name}.`);
+        }
         if (!scrolled || !tailVisible) {
           throw new Error(`Final text line is clipped in ${scenario.name}.`);
         }

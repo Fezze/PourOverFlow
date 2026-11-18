@@ -22,7 +22,7 @@ async function bootstrap() {
     throw new Error(`Could not load preview fixture for ${scenario}.`);
   }
 
-  const { device, locale, widgets, freeScroll } = await response.json();
+  const { device, locale, widgets } = await response.json();
   document.documentElement.lang = locale;
   document.body.dataset.framed = String(params.has("framed"));
   statusElement.textContent = `${scenario} • ${locale}`;
@@ -30,11 +30,13 @@ async function bootstrap() {
   watchShell.style.setProperty("--shell-width", `${device.width}px`);
   watchShell.style.setProperty("--shell-height", `${device.height}px`);
 
-  if (freeScroll) watchFace.classList.add("reading-page");
+  const elements = [];
   const pendingImages = [];
-  for (const widget of widgets) {
+  for (const [index, widget] of widgets.entries()) {
     if (widget.visible !== false && widget.VISIBLE !== false) {
-      watchFace.appendChild(createWidgetElement(widget, device.assetDirectory, pendingImages));
+      const element = createWidgetElement(widget, device.assetDirectory, pendingImages);
+      elements[index] = element;
+      (elements[widget.parentIndex] ?? watchFace).appendChild(element);
     }
   }
 
@@ -52,6 +54,12 @@ function createWidgetElement(widget, assetDirectory, pendingImages) {
       return createButton(widget);
     case "IMG":
       return createImage(widget, widget.SRC ?? widget.src, assetDirectory, pendingImages);
+    case "VIEW_CONTAINER": {
+      const element = document.createElement("div");
+      element.className = "widget reading-page";
+      applyBounds(element, widget);
+      return element;
+    }
     case "SCROLL_LIST":
       return createScrollList(widget, assetDirectory, pendingImages);
     default:

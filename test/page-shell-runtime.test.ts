@@ -271,8 +271,10 @@ describe("page shell runtime coverage", () => {
 
     const note = runtime.findCreatedWidgetsByType("TEXT").find(w => w.text === longSnapshot.description);
     expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
-    expect(note.y + note.h).toBeLessThan(runtime.findCreatedWidgetsByType("BUTTON")[0].y);
-    expect(runtime.getCreatedWidgets()[0].h).toBeGreaterThan(480);
+    const reader = runtime.getCreatedWidgets()[note.parentIndex];
+    expect(reader.type).toBe("VIEW_CONTAINER");
+    expect(reader.y + reader.h).toBeLessThan(runtime.findCreatedWidgetsByType("BUTTON")[0].y);
+    expect(runtime.getCreatedWidgets()[0].h).toBe(480);
   });
 
   it("renders the active-brew dock with Zepp-safe labels and separate countdown and session time", async () => {
@@ -319,7 +321,7 @@ describe("page shell runtime coverage", () => {
     }
   });
 
-  it("includes every instruction line above the actions in the scrolling page", async () => {
+  it("measures the full instruction inside the reader above the stationary actions", async () => {
     const fixture = createCatalogFixture();
     const body = "Pour slowly from the center.\n".repeat(12) + "Keep pouring throughout the spiral.";
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
@@ -362,7 +364,9 @@ describe("page shell runtime coverage", () => {
       });
       expect(text.h).toBeGreaterThanOrEqual(height);
       const [action] = runtime.findCreatedWidgetsByType("BUTTON");
-      expect(action.y).toBeGreaterThan(text.y + text.h);
+      const reader = runtime.getCreatedWidgets()[text.parentIndex];
+      expect(reader.type).toBe("VIEW_CONTAINER");
+      expect(reader.y + reader.h).toBeLessThan(action.y);
     } finally {
       vi.useRealTimers();
     }

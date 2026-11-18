@@ -6,13 +6,29 @@ The redesign preserves the six watch pages, six phone views, closed brewer catal
 
 The watch uses an espresso background (#11100E), warm surfaces (#211E19), cream text (#F4EEE3), and a caramel primary action (#E6B877). Main actions use dark text for contrast. Phone Settings uses warm paper with matching espresso and caramel accents.
 
-The brewing screen shows the step timer, session time and water target above a wide instruction. Recipe notes and active-brew instructions scroll with their titles and actions. Recipe-list rows expand to fit longer names. Result summaries emphasize total duration while keeping status and timing delta. The Stop button opens a localized system confirmation before aborting the brew.
+The brewing screen shows the step timer, session time and water target above a wide instruction. Recipe notes and active-brew instructions scroll between a stationary instrument header and stationary actions. Recipe-list rows expand to fit longer names. Result summaries emphasize total duration while keeping status and timing delta. The Stop button opens a localized system confirmation before aborting the brew.
 
 Brewers and Latest Result are two horizontal browsing tabs. Swipe left from Brewers to Latest Result; swipe right to return. Two position marks identify the active tab. Vertical gestures and the outer system-back gesture remain native. Existing navigation buttons remain available. The active brew does not register these tab gestures.
 
-## Reading width and whole-page scrolling
+## Watch design decisions from the November review
 
-Recipe details and brewing steps use the watch's native free page scroll. The heading, description and actions travel together. The timer updates in place while reading. When a timed step awaits confirmation, its button changes from Skip to Next at the same scroll position. A new step opens at the top. On round screens text has 24 px side margins. On rectangular screens it has 16 px. The step title wraps at the same width. The recipe and brewer choosers retain native selection lists with wider rows. The earlier fixed instruction viewport described in the historical review below has been replaced.
+| Review | Observation | Decision |
+| --- | --- | --- |
+| Initial space review, `6e4c6ec` | The instruction panel had too little room for a realistic recipe. Short examples hid wrapping defects. | Added long English and Polish recipes, measured paragraph height on the watch and exercised manual and timed steps. |
+| Width review, `502b597` | Horizontal padding was the main constraint. The full page could scroll, and narrower test cases did not justify shrinking the font. | Increased the 416 px instruction width from 280 to 368 px and the square width from 310 to 358 px. Scrolling the whole page made all text reachable, but also moved Start, Stop and Next off screen. |
+| Fixed controls, current design | The previous 416 px reading screenshot shows a fragment of the outgoing title at the circular top edge. Reaching an action after a long paragraph required another gesture. | Place the live measurement above the reader and keep actions at the bottom. Size the reader to a rectangle whose four corners clear the circular mask, including during scrolling. |
+
+### Brewing instrument
+
+The brewing header pairs the current step count with a large amber timer, water target and elapsed session time. A thin line shows progress through the recipe. The reading area opens on the full step title, followed by the instruction and recipe name. The detail screen uses the same layout with the coffee dose and water volume as its main measurement. It retains the full recipe name, grind, filter, time, steps and tasting notes.
+
+Text is cream on espresso, with amber reserved for measurements, progress and the primary action. Removing the surrounding cards gives the text one continuous reading surface. The body stays at 20 px. Both screens use 24 px side margins on round displays and 16 px on the rectangular display.
+
+Start, Stop and the current step action are available on entry, while reading and after the last paragraph. The reader scrolls vertically inside the stationary display. A timed step that requires confirmation changes Skip to Next in place. Pressing Next opens the new step at the top. On a round screen a line can pass through the straight edge of the scrolling viewport during a swipe. The physical rim clears both ends of every visible line.
+
+The app uses the native [Zepp VIEW_CONTAINER](https://docs.zepp.com/docs/reference/device-app-api/newAPI/ui/widget/VIEW_CONTAINER/) with a separate root-level action row. The long Polish fixtures contain 1,011 characters of instruction and 735 characters of recipe notes. Browser snapshots cover all five target sizes in Polish and English. Native gesture captures and the comparison image for this review are stored in the workspace delivery folder `fixed-controls-review`.
+
+On Balance 2 and Active 2 Square, the native test tapped Start directly on entry, scrolled the long instruction forward and back, then tapped Next from within the text. The action strip was pixel-identical before, during and after reading. The next step opened at its beginning. The consolidated run passed 289 tests, the 240-scenario preview, browser smoke and coverage, and production packaging. Physical watch testing remains open.
 
 ## Editable screen files
 

@@ -45,8 +45,10 @@ describe("recipe content preservation", () => {
     buildPage(pageDefinition);
     const note = runtime.findCreatedWidgetsByType("TEXT").find(w => w.text === description);
     const start = runtime.findCreatedWidgetsByType("BUTTON")[0];
-    expect(note.y + note.h).toBeLessThan(start.y);
-    expect(runtime.getCreatedWidgets()[0].h).toBeGreaterThan(480);
+    const reader = runtime.getCreatedWidgets()[note.parentIndex];
+    expect(reader.type).toBe("VIEW_CONTAINER");
+    expect(reader.y + reader.h).toBeLessThan(start.y);
+    expect(runtime.getCreatedWidgets()[0].h).toBe(480);
     expect(start.text).toBe("Start brew");
     start.click_func();
     expect(store.readActiveSession().recipeSnapshot.description).toBe(description);

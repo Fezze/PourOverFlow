@@ -162,7 +162,7 @@ After session start, do not read `RecipeRecord` from cache again in order to "pu
 - panel text should keep visible inner padding from its own background rather than hugging the card edges.
 - the main instruction body should take the largest available middle block on the page instead of giving that space to generic footer copy,
 - the current step metadata may live above the instruction body so the large instruction panel can stay readable,
-- the step title, timer, full-width instruction and action buttons share one native scrolling page. Swiping on the header scrolls the instruction into view.
+- the step title and instruction scroll together within the broad central reading area. The timer and action buttons stay in view throughout the step.
 - the dock chrome itself should stay simple; prefer one rounded dock surface plus two rounded action pills over extra masks, dividers, or stacked filler rectangles.
 
 ### Behavior by step type

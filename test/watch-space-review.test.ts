@@ -60,7 +60,7 @@ for (const locale of ["en-US", "pl-PL"] as const) {
         definition.onDestroy.call(instance);
       });
 
-      it("scrolls wide instructions and both actions together without resetting on ticks", async () => {
+      it("keeps wide instructions in the safe reading area and pins actions through timer expiry", async () => {
         const { runtime, store, definition } = await load("brew-active", width, height, locale);
         const fixture = createCatalogFixture(locale);
         const snapshot = createRecipeSnapshot({ ...fixture.primaryRecord, name: copy.recipeName });
@@ -76,27 +76,28 @@ for (const locale of ["en-US", "pl-PL"] as const) {
         const view = widgets.find(w => w.text === copy.instruction);
         const buttons = runtime.findCreatedWidgetsByType("BUTTON");
         const timer = widgets.find(w => w.text === "00:15");
-        const page = await import("@zos/page");
-        expect(page.setScrollMode).toHaveBeenCalledWith(expect.objectContaining({ mode: page.SCROLL_MODE_FREE }));
+        const reader = widgets[view.parentIndex];
+        expect(reader.type).toBe("VIEW_CONTAINER");
+        expectHeaderInsideMask(reader, width, height);
         expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
         expect(view.w).toBe(width - (width === height ? 48 : 32));
         expect(view.text_size).toBe(20);
         await expectTextFits(copy.instruction, view);
         expect(timer.text_size).toBeGreaterThanOrEqual(54);
-        expect(timer.y + timer.h).toBeLessThan(view.y);
+        expect(timer.y + timer.h).toBeLessThan(reader.y);
         for (const button of buttons) {
           expect(button.h).toBeGreaterThanOrEqual(50);
-          expect(button.y).toBeGreaterThan(view.y + view.h);
+          expect(button.parentIndex).toBeUndefined();
+          expect(button.y).toBeGreaterThan(reader.y + reader.h);
           expect(button.y + button.h).toBeLessThan(widgets[0].h);
         }
-        page.scrollTo.mockClear();
         vi.advanceTimersByTime(1000);
-        expect(page.scrollTo).not.toHaveBeenCalled();
+        expect(runtime.findCreatedWidgetsByType("VIEW_CONTAINER")).toEqual([reader]);
         expect(timer.text).toBe("00:14");
         vi.advanceTimersByTime(14_000);
         expect(store.readActiveSession().status).toBe("waiting_for_confirm");
         expect(buttons[0].text).toBe(locale === "pl-PL" ? "Dalej" : "Next");
-        expect(page.scrollTo).not.toHaveBeenCalled();
+        expect(runtime.findCreatedWidgetsByType("VIEW_CONTAINER")).toEqual([reader]);
         expect(runtime.router.replace).not.toHaveBeenCalled();
         buttons[0].click_func();
         expect(store.readActiveSession().currentStepIndex).toBe(2);
@@ -123,7 +124,10 @@ for (const locale of ["en-US", "pl-PL"] as const) {
         }
         expect(runtime.findCreatedWidgetsByType("SCROLL_LIST")).toHaveLength(0);
         const [start] = runtime.findCreatedWidgetsByType("BUTTON");
-        expect(note.y + note.h).toBeLessThan(start.y);
+        const reader = runtime.getCreatedWidgets()[note.parentIndex];
+        expectHeaderInsideMask(reader, width, height);
+        expect(start.parentIndex).toBeUndefined();
+        expect(reader.y + reader.h).toBeLessThan(start.y);
         start.click_func();
         expect(store.readActiveSession().recipeSnapshot.description).toBe(copy.description);
         definition.onDestroy.call(instance);

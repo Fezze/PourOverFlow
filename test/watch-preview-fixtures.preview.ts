@@ -161,7 +161,6 @@ it("exports deterministic watch-preview fixture payloads with structural checks"
       },
       expectedButtonCount: scenario.expectedButtonCount,
       requiredTextSnippets: scenario.requiredTextSnippets,
-      freeScroll: (await import("@zos/page")).setScrollMode.mock.calls.some(([options]) => options.mode === "FREE"),
       widgets
     };
 
@@ -215,7 +214,7 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
     "scenario name should match page/state/locale/shape/size metadata"
   ).toBe(buildScenarioName(fixturePayload.page, fixturePayload.state, fixturePayload.locale, fixturePayload.device.shape, fixturePayload.device.width, fixturePayload.device.height));
 
-  const pageHeight = fixturePayload.freeScroll ? widgets[0].h : device.height;
+  const pageHeight = device.height;
   expect(pageHeight).toBeGreaterThanOrEqual(device.height);
   expect(widgets[0], `${fixturePayload.scenario} should use the target-sized background`).toMatchObject({
     type: "FILL_RECT",
@@ -238,8 +237,8 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
       expect(widget.x + widget.w, `widget ${index} should stay within screen width`).toBeLessThanOrEqual(device.width + 1);
     }
 
-    if (Number.isFinite(widget.y) && Number.isFinite(widget.h) && widget.type !== "SCROLL_LIST") {
-      expect(widget.y + widget.h, `widget ${index} should stay within screen height`).toBeLessThanOrEqual(pageHeight + (fixturePayload.freeScroll ? 0 : 40));
+    if (widget.parentIndex === undefined && Number.isFinite(widget.y) && Number.isFinite(widget.h) && widget.type !== "SCROLL_LIST") {
+      expect(widget.y + widget.h, `widget ${index} should stay within screen height`).toBeLessThanOrEqual(pageHeight + 40);
     }
   });
 
@@ -302,7 +301,7 @@ function validatePreviewFixture(fixturePayload: Record<string, any>) {
   if (fixturePayload.page === "brew-active" && fixturePayload.state !== "no-session") {
     const timer = textWidgets.find((widget) => /^\d+:\d{2}$/.test(widget.text) && widget.text_size >= 48);
     const elapsed = textWidgets.find((widget) => /(?:Session|Sesja) \d+:\d{2}/.test(widget.text));
-    const instructionsTop = scrollListWidgets[0]?.y ?? buttonWidgets[0].y;
+    const instructionsTop = widgets.find(widget => widget.type === "VIEW_CONTAINER").y;
     expect(timer, `${fixturePayload.scenario} should have a prominent timer`).toBeDefined();
     expect(elapsed, `${fixturePayload.scenario} should keep elapsed session time visible`).toBeDefined();
     expect(timer.y + timer.h).toBeLessThanOrEqual(elapsed.y);

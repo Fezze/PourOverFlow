@@ -21,40 +21,20 @@ import {
   enableActiveSessionDisplayGuard
 } from "../../shared/watch/display-guard";
 import { registerShortcutKey } from "../../shared/watch/shortcut-key";
-import { getReadingFrame, measureWrappedText, enableReadingPage } from "../../shared/watch/reading-page";
+import { getReadingFrame, createReader, createInstrumentText } from "../../shared/watch/reading-page";
 import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
-import { SHARED_COLORS, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
+import { SHARED_COLORS } from "../../shared/watch/layouts";
 import {
   ACTION_DOCK,
   BACKGROUND,
   BODY_TEXT,
   BUTTONS,
-  FOOTER_TEXT,
   TITLE_TEXT
 } from "./index.layout.js";
 
 const IS_ROUND = BACKGROUND.w === BACKGROUND.h;
 const IS_SMALL = IS_ROUND && BACKGROUND.w <= 430;
-const READING = getReadingFrame(BACKGROUND);
-const INSTRUCTION_TEXT_SIZE = 20;
-
-function buildFlowLayout(title, instruction) {
-  const titleY = IS_ROUND ? READING.top : 82;
-  const titleSize = IS_SMALL ? 24 : 27;
-  const titleHeight = measureWrappedText(title, titleSize, READING.w);
-  const timerY = titleY + titleHeight + 4;
-  const timerHeight = IS_SMALL ? 60 : 66;
-  const metaY = timerY + timerHeight;
-  const instructionY = metaY + 34;
-  const instructionHeight = measureWrappedText(instruction, INSTRUCTION_TEXT_SIZE, READING.w);
-  const dockY = instructionY + instructionHeight + 28;
-  const dockHeight = ACTION_DOCK.h || BUTTONS[0].h + 16;
-  const dockOffset = BUTTONS[0].y - (ACTION_DOCK.y ?? BUTTONS[0].y - 8);
-  return { titleY, titleSize, titleHeight, timerY, timerHeight, metaY,
-    instructionY, instructionHeight, dockY, dockHeight,
-    buttonY: dockY + dockOffset,
-    contentHeight: Math.max(BACKGROUND.h, dockY + dockHeight + READING.bottom) };
-}
+const READING = getReadingFrame(BACKGROUND, ACTION_DOCK.y ?? BUTTONS[0].y);
 
 function buildTimerText(activeSession) {
   const remaining = getCurrentStepRemainingMs(activeSession);
@@ -94,16 +74,6 @@ function buildStepMetaText(activeSession, i18n) {
   }));
 
   return parts.join(" · ");
-}
-
-function buildAssistText(activeSession) {
-  const currentStep = getCurrentSessionStep(activeSession);
-
-  if (!currentStep) {
-    return "Session state is missing the current step.";
-  }
-
-  return "";
 }
 
 function setWidgetText(widget, text) {
@@ -176,9 +146,7 @@ Page({
     const step = activeSession ? getCurrentSessionStep(activeSession) : null;
     const title = step ? step.title : this.i18n.t("watch.brewActive.unknownStep");
     const instruction = activeSession ? buildDescriptionText(activeSession, this.i18n) : "";
-    const flow = activeSession ? buildFlowLayout(title, instruction) : null;
-    if (flow) enableReadingPage();
-    hmUI.createWidget(hmUI.widget.FILL_RECT, { ...BACKGROUND, h: flow ? flow.contentHeight : BACKGROUND.h });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
 
     if (!activeSession) {
       disableActiveSessionDisplayGuard();
@@ -211,75 +179,28 @@ Page({
       advanceOrCompleteActiveSession();
     });
 
-    hmUI.createWidget(hmUI.widget.TEXT, fitCenteredTextToRoundScreen({
-      ...TITLE_TEXT,
-      y: IS_ROUND ? 38 : 16,
-      h: 26,
-      text_size: IS_SMALL ? 17 : 18,
-      align_h: hmUI.align.CENTER_H,
-      color: SHARED_COLORS.muted,
-      text_style: hmUI.text_style.NONE,
-      text: activeSession.recipeName
-    }, BACKGROUND));
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      y: flow.titleY - 26,
-      h: 20,
-      align_h: hmUI.align.CENTER_H,
-      color: SHARED_COLORS.accent,
-      text_size: 15,
-      text: buildProgressText(activeSession, this.i18n)
+    const colors = SHARED_COLORS;
+    const timerH = IS_SMALL ? 58 : 64;
+    const metaY = READING.y - 27;
+    const timerY = metaY - timerH;
+    createInstrumentText(BACKGROUND, buildProgressText(activeSession, this.i18n),
+      timerY - 20, 20, 16, colors.muted);
+    this.timerWidget = createInstrumentText(BACKGROUND, buildTimerText(activeSession),
+      timerY, timerH, IS_SMALL ? 54 : 60, colors.primary);
+    this.metaWidget = createInstrumentText(BACKGROUND, buildStepMetaText(activeSession, this.i18n),
+      metaY, 22, 16, colors.text);
+
+    const track = { x: READING.x, y: READING.y - 4, w: READING.w, h: 3 };
+    hmUI.createWidget(hmUI.widget.FILL_RECT, { ...track, color: colors.surfaceMuted });
+    hmUI.createWidget(hmUI.widget.FILL_RECT, { ...track, color: colors.primary,
+      w: Math.round(track.w * (activeSession.currentStepIndex + 1) / activeSession.recipeSnapshot.steps.length)
     });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      x: READING.x,
-      w: READING.w,
-      y: flow.titleY,
-      h: flow.titleHeight,
-      text_size: flow.titleSize,
-      align_h: hmUI.align.CENTER_H,
-      text_style: hmUI.text_style.WRAP,
-      color: SHARED_COLORS.text,
-      text: title
-    });
-    this.timerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      y: flow.timerY,
-      h: flow.timerHeight,
-      line_space: 0,
-      text_style: hmUI.text_style.NONE,
-      text_size: IS_SMALL ? 54 : 60,
-      align_h: hmUI.align.CENTER_H,
-      color: SHARED_COLORS.accent,
-      text: buildTimerText(activeSession)
-    });
-    this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      y: flow.metaY,
-      h: 22,
-      align_h: hmUI.align.CENTER_H,
-      color: SHARED_COLORS.muted,
-      text_size: IS_SMALL ? 14 : 15,
-      text: buildStepMetaText(activeSession, this.i18n)
-    });
-    hmUI.createWidget(hmUI.widget.FILL_RECT, {
-      x: READING.x - 12, y: flow.instructionY - 12,
-      w: READING.w + 24, h: flow.instructionHeight + 24,
-      radius: 18, color: SHARED_COLORS.surface
-    });
-    hmUI.createWidget(hmUI.widget.TEXT, {
-      ...BODY_TEXT,
-      x: READING.x, y: flow.instructionY, w: READING.w, h: flow.instructionHeight,
-      align_v: hmUI.align.TOP, text_size: INSTRUCTION_TEXT_SIZE,
-      text_style: hmUI.text_style.WRAP,
-      text: instruction
-    });
-    if (ACTION_DOCK) {
-      hmUI.createWidget(hmUI.widget.FILL_RECT, { ...ACTION_DOCK, y: flow.dockY });
-    }
+    const addText = createReader(READING);
+    addText(title, 27, colors.text, 4);
+    addText(instruction, 20, colors.text, 10);
+    addText(activeSession.recipeName, 16, colors.muted, 14);
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      y: flow.buttonY,
       text: buildPrimaryActionLabel(activeSession, this.i18n),
       text_size: BUTTONS[0].text_size,
       click_func: () => {
@@ -288,25 +209,12 @@ Page({
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
-      y: flow.buttonY,
       text: this.i18n.t("watch.brewActive.actions.stop"),
       text_size: BUTTONS[1].text_size,
       click_func: () => {
         this.confirmStop();
       }
     });
-    const assistText = buildAssistText(activeSession);
-    if (assistText) {
-      this.footerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
-        ...FOOTER_TEXT,
-        y: flow.dockY - 28,
-        h: 30,
-        text: assistText
-      });
-    } else {
-      this.footerWidget = null;
-    }
-
     this.activeTimer = setInterval(() => {
       const beforeSession = readActiveSession();
       const beforeStep = getCurrentSessionStep(beforeSession);

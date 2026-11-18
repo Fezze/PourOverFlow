@@ -85,6 +85,7 @@ const ui = {
     TEXT: "TEXT",
     IMG: "IMG",
     BUTTON: "BUTTON",
+    VIEW_CONTAINER: "VIEW_CONTAINER",
     SCROLL_LIST: "SCROLL_LIST"
   },
   align: {
@@ -123,6 +124,11 @@ const ui = {
 
       return widgetInstance[String(property)];
     });
+    const index = uiState.widgets.length;
+    if (type === "VIEW_CONTAINER") {
+      widgetInstance.createWidget = (childType, props) =>
+        ui.createWidget(childType, { ...props, parentIndex: index });
+    }
     uiState.widgets.push(widgetInstance);
     return widgetInstance;
   })

@@ -191,7 +191,7 @@ The watch UI now follows these repo-level rules:
 - round-screen list screens should avoid pinning the first visible card directly against the top edge when a calmer centered starting position fits better,
 - round-screen list rows should keep the icon column inset enough to avoid mask clipping on the first visible items,
 - card content should keep visible inner padding from the panel edges,
-- recipe details use one native scrolling page for the title, measured metadata rows, full recipe notes and Start button,
+- recipe details scroll the title, metadata and notes between a fixed dose/water header and Start button,
 - the result summary keeps compact rows and scrolls them when its content overflows,
 - once a detail page already shows visible summary rows and a clear CTA, avoid spending extra footer space on generic "scroll" hints,
 - destructive or secondary watch actions should prefer short Zepp-safe labels or icon treatment over another full-width text button,
