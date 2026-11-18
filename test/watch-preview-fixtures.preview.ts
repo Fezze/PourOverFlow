@@ -1,4 +1,6 @@
 import path from "node:path";
+import { LONG_WATCH_COPY } from "./support/watch-long-content.js";
+import { createRecipeSnapshot } from "../zepp-app/shared/domain/schema.js";
 import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 
@@ -28,6 +30,8 @@ type PreviewState =
   | "normal"
   | "overflow"
   | "long-title"
+  | "medium-copy"
+  | "long-manual"
   | "timed"
   | "waiting"
   | "confirm"
@@ -84,6 +88,7 @@ const previewScenarios: PreviewScenario[] = PREVIEW_LOCALES.flatMap((locale) => 
     createToolListScenario({ locale, state: "populated", target }),
     createToolListScenario({ locale, state: "no-catalog", target }),
     createRecipeListScenario({ locale, state: "populated", target }),
+    createRecipeListScenario({ locale, state: "long-title", target }),
     createRecipeListScenario({ locale, state: "empty-brewer", target }),
     createRecipeDetailScenario({ locale, state: "normal", target }),
     createRecipeDetailScenario({ locale, state: "overflow", target }),
@@ -94,7 +99,10 @@ const previewScenarios: PreviewScenario[] = PREVIEW_LOCALES.flatMap((locale) => 
     createBrewActiveScenario({ locale, state: "finish", target }),
     createBrewActiveScenario({ locale, state: "no-session", target }),
     createBrewActiveScenario({ locale, state: "overflow", target }),
+    createBrewActiveScenario({ locale, state: "medium-copy", target }),
+    createBrewActiveScenario({ locale, state: "long-manual", target }),
     createResultSummaryScenario({ locale, state: "normal", target }),
+    createResultSummaryScenario({ locale, state: "long-title", target }),
     createResultSummaryScenario({ locale, state: "aborted", target }),
     createResultSummaryScenario({ locale, state: "expired", target }),
     createResultSummaryScenario({ locale, state: "empty-result", target })
@@ -419,7 +427,7 @@ function createToolListScenario(options: {
 
 function createRecipeListScenario(options: {
   locale: PreviewLocale;
-  state: "populated" | "empty-brewer";
+  state: "populated" | "empty-brewer" | "long-title";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
@@ -439,7 +447,7 @@ function createRecipeListScenario(options: {
       ? options.locale === "pl-PL"
         ? ["Odśwież z telefonu"]
         : ["Refresh from phone"]
-      : ["V60"],
+      : options.state === "long-title" ? [LONG_WATCH_COPY[options.locale].recipeName] : ["V60"],
     async prepare(runtime) {
       const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
 
@@ -453,6 +461,11 @@ function createRecipeListScenario(options: {
       }
 
       const fixture = createExpandedCatalogFixture(options.locale);
+      if (options.state === "long-title") {
+        const summary = fixture.catalogCache.recipesByTool.tool_v60[0];
+        summary.name = LONG_WATCH_COPY[options.locale].recipeName;
+        fixture.catalogCache.recipeSnapshotsById[summary.recipeId].name = summary.name;
+      }
       runtime.setLocalStorageState({
         [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
       });
@@ -488,7 +501,12 @@ function createRecipeDetailScenario(options: {
       const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
       const snapshot = { ...fixture.primarySnapshot };
       if (options.state === "overflow") {
-        snapshot.description = "This is a much longer tasting note intended to force the recipe detail surface into a real overflow case so the page keeps scrolling only when it genuinely needs more vertical space than the round layout can offer.";
+        Object.assign(snapshot, createRecipeSnapshot({
+          ...fixture.primaryRecord,
+          description: LONG_WATCH_COPY[options.locale].description,
+          grindLabel: LONG_WATCH_COPY[options.locale].grindLabel,
+          filterLabel: LONG_WATCH_COPY[options.locale].filterLabel
+        }));
       }
       if (options.state === "long-title") {
         snapshot.name = LONG_RECIPE_TITLES[options.locale];
@@ -512,7 +530,7 @@ function createRecipeDetailScenario(options: {
 
 function createBrewActiveScenario(options: {
   locale: PreviewLocale;
-  state: "timed" | "waiting" | "overflow" | "confirm" | "finish" | "no-session";
+  state: "timed" | "waiting" | "overflow" | "medium-copy" | "long-manual" | "confirm" | "finish" | "no-session";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
@@ -538,23 +556,19 @@ function createBrewActiveScenario(options: {
       }
       const fixture = createCatalogFixture(options.locale);
       const now = options.state === "waiting" ? 240_000 : 250_000;
-      const snapshot = options.state === "overflow"
-        ? {
-            ...fixture.primarySnapshot,
-            steps: fixture.primarySnapshot.steps.map((step, index) => (
-              index === 1
-                ? {
-                    ...step,
-                    body: "Pour slowly from the center, keep the kettle low, and stay steady through the spiral. ".repeat(12) +
-                      "\nFinish pouring at the outer edge."
-                  }
-                : { ...step }
-            ))
-          }
-        : fixture.primarySnapshot;
+      const copy = LONG_WATCH_COPY[options.locale];
+      const snapshot = createRecipeSnapshot(fixture.primaryRecord);
+      if (["overflow", "long-manual", "medium-copy"].includes(options.state)) {
+        const index = options.state === "long-manual" ? 0 : 1;
+        snapshot.steps[index].body = options.state === "medium-copy" ? copy.mediumInstruction : copy.instruction;
+        if (options.state !== "medium-copy") {
+          snapshot.name = copy.recipeName;
+          snapshot.steps[index].title = copy.stepTitle;
+        }
+      }
       const activeSession = createActiveBrewSession(snapshot, { now });
 
-      if (["waiting", "confirm", "finish"].includes(options.state)) {
+      if (["waiting", "confirm", "finish", "long-manual"].includes(options.state)) {
         activeSession.currentStepIndex = options.state === "finish" ? snapshot.steps.length - 1 : 0;
         if (options.state === "confirm") activeSession.recipeSnapshot.steps[0].kind = "confirm";
         activeSession.status = "waiting_for_confirm";
@@ -577,7 +591,7 @@ function createBrewActiveScenario(options: {
 
 function createResultSummaryScenario(options: {
   locale: PreviewLocale;
-  state: "normal" | "aborted" | "expired" | "empty-result";
+  state: "normal" | "aborted" | "expired" | "empty-result" | "long-title";
   target: PreviewTarget;
 }): PreviewScenario {
   return {
@@ -609,7 +623,7 @@ function createResultSummaryScenario(options: {
 
       const fixture = createCatalogFixture(options.locale);
       runtime.setLocalStorageState({
-        [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify({ ...fixture.lastResult, status: options.state === "normal" ? "completed" : options.state })
+        [WATCH_STORAGE_KEYS.lastResult]: JSON.stringify({ ...fixture.lastResult, recipeName: options.state === "long-title" ? LONG_WATCH_COPY[options.locale].recipeName : fixture.lastResult.recipeName, status: ["normal", "long-title"].includes(options.state) ? "completed" : options.state })
       });
     }
   };

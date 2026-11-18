@@ -71,6 +71,9 @@ async function main() {
         await verifyBrewerRow(page, fixture);
       }
 
+      if (["recipe-detail", "brew-active", "recipe-list"].includes(scenario.page)) {
+        await verifyWrappedText(page, scenario);
+      }
       for (const { root, selector } of captureOptions) {
         await page.locator("body").evaluate((body, framed) => {
           body.dataset.framed = String(framed);
@@ -90,8 +93,9 @@ async function main() {
         }
         return changed;
       });
-      if (scenario.page === "brew-active" && scenario.state === "overflow") {
-        const tailVisible = await page.locator(".scroll-card .text > span").evaluate(text => {
+      if ((scenario.page === "brew-active" && ["overflow", "long-manual"].includes(scenario.state)) ||
+          (scenario.page === "recipe-detail" && scenario.state === "overflow")) {
+        const tailVisible = await page.locator(".scroll-card .text > span").last().evaluate(text => {
           const lastLine = document.createRange();
           const content = text.firstChild;
           lastLine.setStart(content, content.textContent.lastIndexOf("\n") + 1);
@@ -99,16 +103,14 @@ async function main() {
           const list = text.closest(".scroll-list");
           const textFrame = text.parentElement.getBoundingClientRect();
           const tail = lastLine.getBoundingClientRect();
-          if (tail.height <= 0 || tail.bottom > textFrame.bottom + 1) {
-            return false;
-          }
+          if (tail.height <= 0 || tail.bottom > textFrame.bottom + 1) return false;
           list.scrollTop += tail.bottom - list.getBoundingClientRect().bottom + 4;
           const visibleTail = lastLine.getBoundingClientRect();
           const viewport = list.getBoundingClientRect();
           return visibleTail.top >= viewport.top - 1 && visibleTail.bottom <= viewport.bottom + 1;
         });
         if (!scrolled || !tailVisible) {
-          throw new Error(`Final instruction line is clipped in ${scenario.name}.`);
+          throw new Error(`Final text line is clipped in ${scenario.name}.`);
         }
       }
       if (scrolled) {
@@ -122,6 +124,31 @@ async function main() {
   } finally {
     await browser?.close();
     await stopStaticServer(server.server);
+  }
+}
+
+async function verifyWrappedText(page, scenario) {
+  const clipped = await page.locator(".text > span").evaluateAll(spans => spans.flatMap(span => {
+    if (getComputedStyle(span).whiteSpace !== "pre-wrap") return [];
+    const range = document.createRange();
+    range.selectNodeContents(span);
+    // Line-box height excludes unused font ascent/descent around short labels.
+    const textHeight = span.scrollHeight;
+    const frame = span.parentElement.getBoundingClientRect();
+    // CSS pre-wrap hangs trailing spaces outside a line. Check visible words,
+    // not the union width of a range that includes those invisible spaces.
+    const node = span.firstChild;
+    const outside = [...span.textContent.matchAll(/\S+/g)].some(match => {
+      range.setStart(node, match.index);
+      range.setEnd(node, match.index + match[0].length);
+      return [...range.getClientRects()].some(rect => rect.left < frame.left - 1 || rect.right > frame.right + 1);
+    });
+    return textHeight > frame.height + 1 || outside
+      ? [{ text: span.textContent.slice(0, 90), textHeight, frameHeight: frame.height, outside }] : [];
+  }));
+  if (clipped.length) {
+    await page.locator("#watch-face").screenshot({ path: path.join(PREVIEW_ROOT, `${scenario.name}-failure.png`) });
+    throw new Error(`Wrapped text is clipped in ${scenario.name}: ${JSON.stringify(clipped)}`);
   }
 }
 

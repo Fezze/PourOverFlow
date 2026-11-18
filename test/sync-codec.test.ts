@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { LONG_WATCH_COPY } from "./support/watch-long-content.js";
 
 import { createRecipeSnapshot } from "../zepp-app/shared/domain/schema.js";
 import { createSyncEnvelope, validateSyncEnvelope } from "../zepp-app/shared/sync/contracts.js";
@@ -17,7 +18,7 @@ import {
   buildPhoneHistorySnapshot,
   buildPhoneToolCatalogSnapshot
 } from "../zepp-app/shared/sync/normalize.js";
-import { ensurePhoneStorage, readRecipeRecord, saveHistoryEntry } from "../zepp-app/shared/storage/phone-store.js";
+import { ensurePhoneStorage, readRecipeRecord, saveRecipeRecord, saveHistoryEntry } from "../zepp-app/shared/storage/phone-store.js";
 
 function createMockSettingsStorage() {
   const values = new Map();
@@ -170,4 +171,18 @@ test("history snapshot exposes latest result after phone-side history save", () 
   expect(historySnapshot.historyRevision).toBe(1);
   expect(historySnapshot.latestResult.historyId).toBe(historyEntry.historyId);
   expect(historySnapshot.latestResult.recipeName).toBe(recipeRecord.name);
+});
+
+
+test("phone catalog transport preserves a long description from the saved recipe", () => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const record = readRecipeRecord(storage, "seed_ap_daily_clean");
+  record.description = LONG_WATCH_COPY["pl-PL"].description;
+  expect(saveRecipeRecord(storage, record).ok).toBe(true);
+  const catalog = buildPhoneCatalogSnapshot(storage, ensurePhoneStorage(storage));
+  const envelope = createSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT, catalog);
+  const watch = decodeEnvelopeFromPeerSocket(encodeEnvelopeForPeerSocket(envelope));
+  expect(watch.payload.recipeSnapshotsById[record.recipeId].description).toBe(record.description);
+  expect(createRecipeSnapshot({ ...record, description: undefined }).description).toBe("");
 });

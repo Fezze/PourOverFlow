@@ -1,5 +1,5 @@
 import { formatDurationLabel } from "../../shared/engine/recipe-engine";
-import { SHARED_COLORS } from "../../shared/watch/layouts";
+import { SHARED_COLORS, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
 import { drawBrowseTabs, registerBrowseTabs } from "../../shared/watch/browse-tabs";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
@@ -42,13 +42,13 @@ function buildTitleStyle(lastResult) {
     return TITLE_TEXT;
   }
 
-  return {
+  return fitCenteredTextToRoundScreen({
     ...TITLE_TEXT,
     h: TITLE_TEXT.h + 16,
     text_size: TITLE_TEXT.text_size > 24 ? 24 : TITLE_TEXT.text_size,
     align_v: hmUI.align.CENTER_V,
     text_style: hmUI.text_style.NONE
-  };
+  }, BACKGROUND);
 }
 
 function buildResultRows(lastResult, i18n) {

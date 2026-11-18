@@ -216,6 +216,7 @@ export function createRecipeSnapshot(recipeRecord) {
     recipeId: recipeRecord.recipeId,
     toolId: recipeRecord.toolId,
     name: recipeRecord.name,
+    description: recipeRecord.description || "",
     colorToken: recipeRecord.colorToken,
     coffeeDoseG: recipeRecord.coffeeDoseG,
     totalWaterMl: recipeRecord.totalWaterMl,

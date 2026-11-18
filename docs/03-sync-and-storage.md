@@ -401,3 +401,7 @@ During resume:
 - `PUSH_HISTORY_SNAPSHOT` carries only the latest result, not full history.
 - `pendingHistoryQueue` lives in `sync_meta_v1`.
 - Bootstrap is revision-aware by slice. Each stale slice is sent as a full snapshot, not as record-by-record patching.
+
+## Optional recipe description in snapshots
+
+Catalog snapshots now carry the phone recipe description into watch details and newly started sessions. This is an additive optional `RecipeSnapshot.description` field under schema version 1. Existing cached snapshots and historical sessions without it remain readable. The existing catalog revision and chunked transport paths are retained; the next changed catalog/bootstrap supplies the field.

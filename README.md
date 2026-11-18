@@ -2,7 +2,7 @@
 
 PourOverFlow is a planned Zepp OS app for guiding manual coffee brewing from a watch. V1 combines a simple watch-first execution flow with a phone-side recipe and history manager.
 
-The current visual redesign and editable screen map are documented in [UI-REDESIGN.md](docs/UI-REDESIGN.md).
+The current visual redesign, small-screen space review and editable screen map are documented in [UI-REDESIGN.md](docs/UI-REDESIGN.md).
 
 ## Current status
 

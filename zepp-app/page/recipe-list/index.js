@@ -55,46 +55,39 @@ function buildRecipeRows(recipes, i18n) {
 
 function createRecipeListConfig(rows) {
   const textInset = 20;
-  const titleY = Math.max(10, Math.floor((LIST_FRAME.itemHeight - LIST_FRAME.titleHeight - LIST_FRAME.metaHeight) / 2));
+  const titleY = 10;
   const titleTextSize = 22;
-  const metaY = titleY + LIST_FRAME.titleHeight + 2;
   const metaTextSize = 16;
 
-  return rows.map((row, index) => ({
+  return rows.map((row, index) => {
+    const textWidth = LIST_FRAME.w - textInset * 2;
+    const { height } = hmUI.getTextLayout(row.title, {
+      text_size: titleTextSize, text_width: textWidth, wrapped: 1
+    });
+    const titleHeight = Math.max(LIST_FRAME.titleHeight, Math.ceil(height));
+    const metaY = titleY + titleHeight + 2;
+    return {
       type_id: index + 1,
       item_bg_color: SHARED_COLORS.surface,
       item_bg_radius: LIST_FRAME.itemRadius,
       item_press_effect: true,
       text_view: [
         {
-          x: textInset,
-          y: titleY,
-          w: LIST_FRAME.w - textInset * 2,
-          h: LIST_FRAME.titleHeight,
-          key: "title",
-          color: SHARED_COLORS.text,
-          text_size: titleTextSize,
-          action: true,
-          text_style: hmUI.text_style.WRAP,
-          align_h: hmUI.align.LEFT,
-          align_v: hmUI.align.CENTER_V
+          x: textInset, y: titleY, w: textWidth, h: titleHeight,
+          key: "title", color: SHARED_COLORS.text, text_size: titleTextSize,
+          action: true, text_style: hmUI.text_style.WRAP,
+          align_h: hmUI.align.LEFT, align_v: hmUI.align.CENTER_V
         },
         {
-          x: textInset,
-          y: metaY,
-          w: LIST_FRAME.w - textInset * 2,
-          h: LIST_FRAME.metaHeight,
-          key: "meta",
-          color: row.color,
-          text_size: metaTextSize,
-          action: true,
-          align_h: hmUI.align.LEFT,
-          align_v: hmUI.align.CENTER_V
+          x: textInset, y: metaY, w: textWidth, h: LIST_FRAME.metaHeight,
+          key: "meta", color: row.color, text_size: metaTextSize,
+          action: true, align_h: hmUI.align.LEFT, align_v: hmUI.align.CENTER_V
         }
       ],
       text_view_count: 2,
-      item_height: LIST_FRAME.itemHeight
-    }));
+      item_height: Math.max(LIST_FRAME.itemHeight, metaY + LIST_FRAME.metaHeight + 10)
+    };
+  });
 }
 
 Page({

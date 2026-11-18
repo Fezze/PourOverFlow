@@ -1,4 +1,4 @@
-import { SHARED_COLORS } from "../../shared/watch/layouts";
+import { SHARED_COLORS, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import { getColorNumber } from "../../shared/constants/color-palette";
@@ -22,13 +22,13 @@ import {
 
 const DETAIL_LIST_FRAME = {
   x: DETAIL_PANEL.x + 8,
-  y: DETAIL_PANEL.y + 12,
+  y: DETAIL_PANEL.y + 8,
   w: DETAIL_PANEL.w - 16,
-  h: DETAIL_PANEL.h - 24,
-  itemHeight: 68,
-  itemSpace: 5,
-  itemRadius: 18
+  h: DETAIL_PANEL.h - 16,
+  itemSpace: 3,
+  itemRadius: 12
 };
+const DETAIL_TEXT_INSET = 10;
 
 function buildRecipeRows(recipe, i18n) {
   const snapshot = recipe.recipeSnapshot;
@@ -64,73 +64,16 @@ function buildRecipeRows(recipe, i18n) {
   ];
 }
 
-function estimateDetailLineCount(text) {
-  const approxCharsPerLine = Math.max(24, Math.floor((DETAIL_LIST_FRAME.w - 32) / 8));
-  return Math.max(1, Math.ceil(String(text || "").length / approxCharsPerLine));
-}
-
-function buildStaticDetailRows(detailRows) {
-  const items = [];
-  let currentY = DETAIL_LIST_FRAME.y;
-
-  detailRows.forEach((row, index) => {
-    const lineCount = estimateDetailLineCount(row.meta);
-    const rowHeight = 43 + (lineCount - 1) * 20;
-
-    items.push({
-      frame: {
-        x: DETAIL_LIST_FRAME.x,
-        y: currentY,
-        w: DETAIL_LIST_FRAME.w,
-        h: rowHeight,
-        radius: DETAIL_LIST_FRAME.itemRadius,
-        color: SHARED_COLORS.surface
-      },
-      title: {
-        x: DETAIL_LIST_FRAME.x + 16,
-        y: currentY + 2,
-        w: DETAIL_LIST_FRAME.w - 32,
-        h: 17,
-        text: row.title,
-        color: SHARED_COLORS.muted,
-        text_size: 13,
-        align_h: hmUI.align.LEFT,
-        align_v: hmUI.align.CENTER_V
-      },
-      meta: {
-        x: DETAIL_LIST_FRAME.x + 16,
-        y: currentY + 20,
-        w: DETAIL_LIST_FRAME.w - 32,
-        h: Math.max(23, lineCount * 20),
-        text: row.meta,
-        color: index === 0 ? SHARED_COLORS.accent : SHARED_COLORS.text,
-        text_size: index === 0 ? 21 : 17,
-        text_style: hmUI.text_style.WRAP,
-        align_h: hmUI.align.LEFT,
-        align_v: hmUI.align.CENTER_V
-      }
-    });
-
-    currentY += rowHeight + (index === detailRows.length - 1 ? 0 : DETAIL_LIST_FRAME.itemSpace);
-  });
-
-  return items;
-}
-
-function canRenderStaticDetailRows(detailRows) {
-  if (!detailRows.length) {
-    return false;
-  }
-
-  const totalHeight = buildStaticDetailRows(detailRows).reduce((sum, row) => sum + row.frame.h, 0) +
-    DETAIL_LIST_FRAME.itemSpace * Math.max(0, detailRows.length - 1);
-
-  return totalHeight <= DETAIL_LIST_FRAME.h;
-}
-
 function createDetailListConfig(detailRows) {
   return detailRows.map((row, index) => {
-    const itemHeight = Math.max(68, 42 + estimateDetailLineCount(row.meta) * 22);
+    const textSize = index === 0 ? 21 : 17;
+    const textWidth = DETAIL_LIST_FRAME.w - DETAIL_TEXT_INSET * 2;
+    const { height } = hmUI.getTextLayout(row.meta, {
+      text_size: textSize,
+      text_width: textWidth,
+      wrapped: 1
+    });
+    const textHeight = Math.max(textSize, Math.ceil(height));
     return {
       type_id: index + 1,
       item_bg_color: SHARED_COLORS.surface,
@@ -138,33 +81,45 @@ function createDetailListConfig(detailRows) {
       item_press_effect: false,
       text_view: [
         {
-          x: 16,
-          y: 10,
-          w: DETAIL_LIST_FRAME.w - 32,
-          h: 18,
-          key: "title",
-          color: SHARED_COLORS.muted,
-          text_size: 13,
-          align_h: hmUI.align.LEFT,
-          align_v: hmUI.align.CENTER_V
+          x: DETAIL_TEXT_INSET, y: 0, w: textWidth, h: 16,
+          key: "title", color: SHARED_COLORS.muted, text_size: 13,
+          align_h: hmUI.align.LEFT, align_v: hmUI.align.CENTER_V
         },
         {
-          x: 16,
-          y: 32,
-          w: DETAIL_LIST_FRAME.w - 32,
-          h: itemHeight - 40,
-          key: "meta",
-          color: index === 0 ? SHARED_COLORS.accent : SHARED_COLORS.text,
-          text_size: 17,
-          text_style: hmUI.text_style.WRAP,
-          align_h: hmUI.align.LEFT,
-          align_v: hmUI.align.CENTER_V
+          x: DETAIL_TEXT_INSET, y: 18, w: textWidth, h: textHeight,
+          key: "meta", color: index === 0 ? SHARED_COLORS.accent : SHARED_COLORS.text,
+          text_size: textSize, text_style: hmUI.text_style.WRAP,
+          align_h: hmUI.align.LEFT, align_v: hmUI.align.TOP
         }
       ],
       text_view_count: 2,
-      item_height: itemHeight
+      item_height: 18 + textHeight + 3
     };
   });
+}
+
+function buildStaticDetailRows(detailRows, configs) {
+  let y = DETAIL_LIST_FRAME.y;
+  return detailRows.map((row, index) => {
+    const config = configs[index];
+    const item = {
+      frame: {
+        x: DETAIL_LIST_FRAME.x, y, w: DETAIL_LIST_FRAME.w, h: config.item_height,
+        radius: DETAIL_LIST_FRAME.itemRadius, color: SHARED_COLORS.surface
+      },
+      ...Object.fromEntries(config.text_view.map(({ key, ...view }) => [key, {
+        ...view, x: DETAIL_LIST_FRAME.x + view.x, y: y + view.y, text: row[key]
+      }]))
+    };
+    y += config.item_height + DETAIL_LIST_FRAME.itemSpace;
+    return item;
+  });
+}
+
+function canRenderStaticDetailRows(configs) {
+  const height = configs.reduce((sum, row) => sum + row.item_height, 0) +
+    DETAIL_LIST_FRAME.itemSpace * Math.max(0, configs.length - 1);
+  return configs.length > 0 && height <= DETAIL_LIST_FRAME.h;
 }
 
 Page({
@@ -180,6 +135,7 @@ Page({
     const selectedRecipe = getSelectedRecipe();
     const snapshot = selectedRecipe ? selectedRecipe.recipeSnapshot : null;
     const detailRows = selectedRecipe ? buildRecipeRows(selectedRecipe, i18n) : [];
+    const detailConfigs = createDetailListConfig(detailRows);
     const accentColor = snapshot ? getColorNumber(snapshot.colorToken) : 0x2d8c82;
 
     this.unsubscribeRuntime = subscribeRuntimeEvent((event) => {
@@ -189,15 +145,15 @@ Page({
     });
 
     hmUI.createWidget(hmUI.widget.FILL_RECT, BACKGROUND);
-    hmUI.createWidget(hmUI.widget.TEXT, {
+    hmUI.createWidget(hmUI.widget.TEXT, fitCenteredTextToRoundScreen({
       ...TITLE_TEXT,
       text_size: TITLE_TEXT.text_size - 2,
-      h: 54,
-      y: BACKGROUND.w === BACKGROUND.h ? 44 : 28,
+      h: 40,
+      y: BACKGROUND.w === BACKGROUND.h ? 52 : 28,
       align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.NONE,
       text: selectedRecipe ? selectedRecipe.name : i18n.t("watch.recipeDetail.unavailableTitle")
-    });
+    }, BACKGROUND));
     hmUI.createWidget(hmUI.widget.FILL_RECT, DETAIL_PANEL);
     hmUI.createWidget(hmUI.widget.FILL_RECT, {
       x: DETAIL_PANEL.x + 24,
@@ -208,8 +164,8 @@ Page({
       color: accentColor
     });
     if (detailRows.length) {
-      if (canRenderStaticDetailRows(detailRows)) {
-        buildStaticDetailRows(detailRows).forEach((row) => {
+      if (canRenderStaticDetailRows(detailConfigs)) {
+        buildStaticDetailRows(detailRows, detailConfigs).forEach((row) => {
           hmUI.createWidget(hmUI.widget.FILL_RECT, row.frame);
           hmUI.createWidget(hmUI.widget.TEXT, row.title);
           hmUI.createWidget(hmUI.widget.TEXT, row.meta);
@@ -221,7 +177,7 @@ Page({
           w: DETAIL_LIST_FRAME.w,
           h: DETAIL_LIST_FRAME.h,
           item_space: DETAIL_LIST_FRAME.itemSpace,
-          item_config: createDetailListConfig(detailRows),
+          item_config: detailConfigs,
           item_config_count: detailRows.length,
           data_array: detailRows,
           data_count: detailRows.length,

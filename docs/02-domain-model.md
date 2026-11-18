@@ -255,6 +255,7 @@ interface RecipeSnapshot {
   recipeId: string
   toolId: string
   name: string
+  description?: string
   colorToken: RecipeColorToken
   coffeeDoseG: number
   totalWaterMl: number
@@ -266,6 +267,8 @@ interface RecipeSnapshot {
   recipeUpdatedAt: number
 }
 ```
+
+The optional `description` is copied from the phone recipe for watch details. Older snapshots without it remain valid and use the existing fallback. Storage keys, schema version and message types are unchanged.
 
 ### Snapshot rule
 

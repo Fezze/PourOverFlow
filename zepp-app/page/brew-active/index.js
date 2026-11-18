@@ -22,7 +22,7 @@ import {
 } from "../../shared/watch/display-guard";
 import { registerShortcutKey } from "../../shared/watch/shortcut-key";
 import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
-import { SHARED_COLORS, createPanelStyle } from "../../shared/watch/layouts";
+import { SHARED_COLORS, createPanelStyle, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
 import {
   ACTION_DOCK,
   BACKGROUND,
@@ -34,24 +34,31 @@ import {
 
 const IS_ROUND = BACKGROUND.w === BACKGROUND.h;
 const IS_SMALL = IS_ROUND && BACKGROUND.w <= 430;
-const HERO_TOP = IS_ROUND ? (IS_SMALL ? 88 : 100) : 82;
+// Keep the timer readable while reserving at least four lines for instructions.
+const HERO_TOP = IS_ROUND ? (IS_SMALL ? 64 : 70) : 48;
+const STEP_TOP = HERO_TOP + 20;
+const TIMER_TOP = STEP_TOP + (IS_SMALL ? 30 : 34);
+const TIMER_HEIGHT = IS_SMALL ? 60 : 66;
+const META_TOP = TIMER_TOP + TIMER_HEIGHT;
+const PANEL_TOP = META_TOP + 28;
+const DOCK_TOP = Number.isFinite(ACTION_DOCK?.y) ? ACTION_DOCK.y : BUTTONS[0].y;
 const CONTENT_PANEL = {
-  x: BODY_TEXT.x,
-  y: HERO_TOP + 152,
-  w: BODY_TEXT.w,
-  h: Math.max(64, BUTTONS[0].y - (HERO_TOP + 152) - 12),
-  radius: 22,
+  x: BODY_TEXT.x - (IS_ROUND ? 12 : 0),
+  y: PANEL_TOP,
+  w: BODY_TEXT.w + (IS_ROUND ? 24 : 0),
+  h: DOCK_TOP - PANEL_TOP - 8,
+  radius: 18,
   color: SHARED_COLORS.surface
 };
 const INSTRUCTION_TEXT_SIZE = 20;
-const INSTRUCTION_ROW_PADDING_X = 10;
-const INSTRUCTION_ROW_PADDING_Y = 8;
+const INSTRUCTION_ROW_PADDING_X = 0;
+const INSTRUCTION_ROW_PADDING_Y = 0;
 const CONTENT_FRAME = {
-  x: CONTENT_PANEL.x + 16,
-  y: CONTENT_PANEL.y + 10,
-  w: CONTENT_PANEL.w - 32,
-  h: CONTENT_PANEL.h - 20,
-  itemRadius: 16
+  x: CONTENT_PANEL.x + 12,
+  y: CONTENT_PANEL.y + 8,
+  w: CONTENT_PANEL.w - 24,
+  h: CONTENT_PANEL.h - 16,
+  itemRadius: 0
 };
 
 function buildTimerText(activeSession) {
@@ -243,12 +250,18 @@ Page({
 
     if (!activeSession) {
       disableActiveSessionDisplayGuard();
+      const title = this.i18n.t("watch.brewActive.noActiveBrew");
+      const titleHeight = Math.max(TITLE_TEXT.h, Math.ceil(hmUI.getTextLayout(title, {
+        text_size: TITLE_TEXT.text_size, text_width: TITLE_TEXT.w, wrapped: 1
+      }).height));
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...TITLE_TEXT,
-        text: this.i18n.t("watch.brewActive.noActiveBrew")
+        h: titleHeight,
+        text: title
       });
       hmUI.createWidget(hmUI.widget.TEXT, {
         ...BODY_TEXT,
+        y: Math.max(BODY_TEXT.y, TITLE_TEXT.y + titleHeight + 8),
         text: this.i18n.t("watch.brewActive.noSessionStored")
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -268,16 +281,16 @@ Page({
 
     const currentStep = getCurrentSessionStep(activeSession);
 
-    hmUI.createWidget(hmUI.widget.TEXT, {
+    hmUI.createWidget(hmUI.widget.TEXT, fitCenteredTextToRoundScreen({
       ...TITLE_TEXT,
-      y: IS_ROUND ? 42 : 24,
-      h: 42,
+      y: IS_ROUND ? 38 : 16,
+      h: 26,
       text_size: IS_SMALL ? 17 : 18,
       align_h: hmUI.align.CENTER_H,
       color: SHARED_COLORS.muted,
       text_style: hmUI.text_style.NONE,
       text: activeSession.recipeName
-    });
+    }, BACKGROUND));
     this.progressWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
       y: HERO_TOP,
@@ -289,8 +302,8 @@ Page({
     });
     this.stepTitleWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: HERO_TOP + 24,
-      h: 34,
+      y: STEP_TOP,
+      h: IS_SMALL ? 30 : 34,
       text_size: IS_SMALL ? 24 : 27,
       align_h: hmUI.align.CENTER_H,
       text_style: hmUI.text_style.NONE,
@@ -299,9 +312,10 @@ Page({
     });
     this.timerWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: HERO_TOP + 58,
-      h: 66,
+      y: TIMER_TOP,
+      h: TIMER_HEIGHT,
       line_space: 0,
+      text_style: hmUI.text_style.NONE,
       text_size: IS_SMALL ? 54 : 60,
       align_h: hmUI.align.CENTER_H,
       color: SHARED_COLORS.accent,
@@ -309,7 +323,7 @@ Page({
     });
     this.metaWidget = hmUI.createWidget(hmUI.widget.TEXT, {
       ...BODY_TEXT,
-      y: HERO_TOP + 126,
+      y: META_TOP,
       h: 22,
       align_h: hmUI.align.CENTER_H,
       color: SHARED_COLORS.muted,

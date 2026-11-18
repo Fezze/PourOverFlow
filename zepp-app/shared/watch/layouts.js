@@ -144,6 +144,17 @@ export function createScaffoldLayout(options = {}) {
   };
 }
 
+// Centered headers sit near the narrow top of a circular display. Their whole
+// text frame must fit inside the mask, including native marquee endpoints.
+export function fitCenteredTextToRoundScreen(style, screen) {
+  if (screen.w !== screen.h) return style;
+  const radius = screen.w / 2;
+  const verticalDistance = Math.max(Math.abs(style.y - radius), Math.abs(style.y + style.h - radius));
+  const halfWidth = Math.sqrt(Math.max(0, (radius - 4) ** 2 - verticalDistance ** 2));
+  const x = Math.max(style.x, Math.ceil(radius - halfWidth));
+  return { ...style, x, w: Math.min(style.w, screen.w - x * 2) };
+}
+
 export function createButtonStyle(layout, index, theme = "primary") {
   const themes = {
     primary: {

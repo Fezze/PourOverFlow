@@ -21,7 +21,7 @@ Brewers and Latest Result are two horizontal browsing tabs. Swipe left from Brew
 
 ## Reproducible visual previews
 
-`npm run preview:watch` imports the real page and target layout files with mocked Zepp services, then renders their widget geometry in Chromium. It exports 200 states across five target sizes and two languages. Set `WATCH_PREVIEW_OUTPUT` to choose a separate output directory; `-- --framed` also exports framed images. Screen-only PNG dimensions match each target.
+`npm run preview:watch` imports the real page and target layout files with mocked Zepp services, then renders their widget geometry in Chromium. It exports 240 states across five target sizes and two languages. Set `WATCH_PREVIEW_OUTPUT` to choose a separate output directory; `-- --framed` also exports framed images. Screen-only PNG dimensions match each target.
 
 The old preview duplicated layouts and approximated list rows with CSS. The updated exporter reads real layouts, and the renderer honors every list text/image subview and row type. Browser assertions compare row geometry with serialized widget properties.
 
@@ -36,3 +36,16 @@ After the redesign, native Balance 2 and Active 2 Square runs covered recipe sel
 The initial redesign verification and focused repairs passed: 234 tests in 25 files, Vitest coverage, browser module smoke and coverage, 200 watch preview states, 42 phone preview states and the five-target Zeus build. Additional scrolled captures bring the watch collection to 254 PNGs. A watch regression run passed 45 tests after the initial visual adjustment. The follow-up passed 236 tests and repeated the full brewing, tab, and Stop flow on both simulator profiles. Real-device haptics, screen sleep, native phone field appearance and sync remain hardware checks.
 
 Artifacts for this task are stored in `/home/krzysztof/Documents/ChatGPT/PourOverFlow/redesign-2026-11-14/`. Final verification results and image provenance are recorded with the delivery.
+
+
+## Small-screen space review (2026-11-15; validated 2026-11-18)
+
+The active-brew header uses tighter vertical spacing and the instruction panel has one inset instead of nested padding. The 20 px instruction font, 54–60 px timer and existing action sizes remain intact. Every target reserves at least 100 px of instruction height (four lines in the browser metric model) while keeping the timer, elapsed time, water target and actions visible. Actual line count depends on the firmware font.
+
+Recipe details use native `getTextLayout` measurements for paragraph-aware row heights, shared by static and scrollable rendering. Square details start higher and use the gap above the Start action. Recipe-list rows grow only when a name needs more than their usual two lines. The phone's recipe description is now included in new snapshots; legacy snapshots keep their existing fallback.
+
+The preview matrix includes realistic long English/Polish instructions, manual and timed steps, medium instructions, long recipe names and multi-paragraph recipe descriptions with long grind/filter labels. The browser gate checks wrapped-text bounds and the last line of both description and instruction lists. Firmware font metrics and physical comfort still require native/real-watch checks. API profile remains `configVersion: v3`, target `3.6` (legacy 3.x); no newer API is introduced. Text measurement is available from [API level 2.0](https://docs.zepp.com/docs/reference/device-app-api/newAPI/ui/getTextLayout/).
+
+Long recipe headers in details, active brewing and saved results are fitted to the circular mask, retaining native marquee. The empty brewing-state title grows for Polish wrapping. Native round lists can scroll beyond a very long single item; the final instruction remains reachable by scrolling back, as in the preceding firmware baseline.
+
+The final space-review batch passed 289 tests in 26 files (86.56% statement / 76.99% branch / 79.21% function / 86.51% line coverage), browser module smoke/coverage, the 240-state preview matrix and production packaging for all five targets. The review and native evidence live under `/home/krzysztof/Documents/ChatGPT/PourOverFlow/space-review-2026-11-15/`.
