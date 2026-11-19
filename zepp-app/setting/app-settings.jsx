@@ -6,7 +6,8 @@ import {
   FEEDBACK_CUES,
   RECIPE_COLOR_TOKENS,
   RECIPE_STEP_KINDS,
-  createDefaultRecipeSteps
+  createDefaultRecipeSteps,
+  createLastResultSummary
 } from "../shared/domain/schema";
 import {
   createUserRecipeRecord,
@@ -1061,14 +1062,15 @@ AppSettingsPage({
     const historyDraft = this.state.ui.historyDraft || createHistoryDraft(historyEntry);
     const snapshot = historyEntry.recipeSnapshot;
     const brewer = getLocalizedToolLabel(getToolMeta(snapshot.toolId), i18n) || snapshot.toolId;
-    const deltaMs = historyEntry.deviationSummary.totalDeltaMs || 0;
+    const deltaMs = createLastResultSummary(historyEntry).totalDeltaMs;
     const delta = i18n.t(deltaMs >= 0 ? "settings.history.deltaOver" : "settings.history.deltaUnder", {
       duration: formatDeltaDuration(Math.abs(deltaMs))
     });
+    const stepsById = new Map(snapshot.steps.map((step) => [step.stepId, step]));
     const stepSummaries = (historyEntry.stepRunResults || []).map((result) =>
       View({ style: DIVIDED_ROW }, [
         View({ style: { ...STACK, gap: "2px", flex: "1 1 0" } }, [
-          createText(`${result.order + 1}. ${result.title || i18n.t("settings.editor.untitledStep")}`, TITLE),
+          createText(`${result.order + 1}. ${stepsById.get(result.stepId)?.title || result.title || i18n.t("settings.editor.untitledStep")}`, TITLE),
           createText(humanizeStepKind(result.kind, i18n))
         ]),
         createText(formatDurationLabel(result.actualDurationMs || 0), PRIMARY_VALUE, "right")

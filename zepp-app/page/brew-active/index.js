@@ -92,10 +92,10 @@ function setWidgetText(widget, text) {
 function buildPrimaryActionLabel(session, i18n) {
   const step = getCurrentSessionStep(session);
   let action = "next";
-  if (step && step.kind === "finish") {
+  if (step?.kind === "finish" && session.currentStepIndex === session.recipeSnapshot.steps.length - 1) {
     action = "finish";
   } else if (step && session.status !== "waiting_for_confirm" &&
-      (step.kind === "timed_action" || step.kind === "timed_wait")) {
+      getCurrentStepRemainingMs(session) !== null) {
     action = "skip";
   }
   return i18n.t(`watch.brewActive.actions.${action}`);

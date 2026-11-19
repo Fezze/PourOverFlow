@@ -323,7 +323,8 @@ describe("phone settings page behavior", () => {
     expect(instance.state.ui.stepPageIndex).toBe(original.steps.length - 1);
     click(findButton(instance.build(props), "Up"));
     click(findButton(instance.build(props), "Save recipe"));
-    expect(findText(instance.build(props), "Recipe must end with a finish step.")).toBeDefined();
+    expect(instance.state.ui.errorMessage).toContain("Recipe must end with a finish step.");
+    expect(instance.state.ui.errorMessage).toContain("cannot be a finish step before the end");
     expect(readRecipeRecord(props.settingsStorage, original.recipeId)).toEqual(original);
     expect(readPhoneSnapshot(props.settingsStorage).syncMeta.recipeCatalogRevision).toBe(originalRevision);
 
@@ -379,6 +380,7 @@ describe("phone settings page behavior", () => {
   it("saves history rating and note from the history detail view", () => {
     const { instance, props } = createPage();
     const recipe = readRecipeRecord(props.settingsStorage, "seed_ap_daily_clean")!;
+    const timedStep = recipe.steps[1];
     const historyEntry = {
       schemaVersion: 1,
       historyId: "hist_settings_feedback_1",
@@ -390,8 +392,11 @@ describe("phone settings page behavior", () => {
       startedAt: 1711111111111,
       endedAt: 1711111112222,
       elapsedMs: 1111,
-      stepRunResults: [],
-      deviationSummary: { totalDeltaMs: -62_000, worstStepDeltaMs: 0, completedSteps: 1, totalSteps: 1 },
+      stepRunResults: [{
+        stepId: timedStep.stepId, order: timedStep.order, kind: timedStep.kind,
+        plannedDurationMs: timedStep.durationMs, actualDurationMs: timedStep.durationMs - 2_000
+      }],
+      deviationSummary: { totalDeltaMs: 0, worstStepDeltaMs: 0, completedSteps: 1, totalSteps: 1 },
       syncedFrom: "watch",
       createdAt: 1711111112222,
       updatedAt: 1711111112222
@@ -401,8 +406,9 @@ describe("phone settings page behavior", () => {
     click(findRecordRow(instance.build(props), recipe.name));
     const detail = instance.build(props);
     expect(findText(detail, "00:01")).toBeDefined();
+    expect(findText(detail, `2. ${timedStep.title}`)).toBeDefined();
     expect(findNode(detail, (node) => node.type === "Text" && node.children.some(
-      (child) => typeof child === "string" && child.includes("1m 02s under planned")
+      (child) => typeof child === "string" && child.includes("2s under planned")
     ))).toBeDefined();
     const rating = findSelect(detail, "Rating")!;
     rating.onChange(rating.options.find(({ name }) => name === "5")!.value);

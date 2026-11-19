@@ -16,9 +16,12 @@ import {
   safeParseJson,
   saveHistoryEntry,
   saveRecipeRecord,
+  saveWatchHistoryEntry,
   updateHistoryEntryFeedback
 } from "../zepp-app/shared/storage/phone-store.js";
-import { PHONE_STORAGE_KEYS, getPhoneRecipeRecordKey } from "../zepp-app/shared/storage/keys.js";
+import { buildHistoryEntryFromSession, createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
+import { abortSession } from "../zepp-app/shared/engine/session-reducer.js";
+import { PHONE_STORAGE_KEYS, getPhoneHistoryRecordKey, getPhoneRecipeRecordKey } from "../zepp-app/shared/storage/keys.js";
 
 function createMockSettingsStorage() {
   const values = new Map();
@@ -438,4 +441,58 @@ test("saveRecipeRecord rejects unsupported tools and updateHistoryEntryFeedback 
     userNote: "Rounded cup"
   });
   expect(readHistoryEntry(settingsStorage, historyEntry.historyId)).not.toHaveProperty("userRating");
+});
+
+test.each(["", "0", "-1000", "15,5"])("rejects the invalid countdown %j in a recipe draft", (durationMs) => {
+  const settingsStorage = createMockSettingsStorage();
+  const draft = createValidDraft();
+  draft.steps[1].durationMs = durationMs;
+  const result = saveRecipeRecord(settingsStorage, draft);
+  expect(result.ok).toBe(false);
+  expect(result.issues).toContain("Step 1 must have a positive duration in milliseconds.");
+});
+
+test("rejects a finish step before the end of a recipe draft", () => {
+  const draft = createValidDraft();
+  draft.steps[0].kind = "finish";
+  const result = saveRecipeRecord(createMockSettingsStorage(), draft);
+  expect(result.ok).toBe(false);
+  expect(result.issues).toContain("Step 0 cannot be a finish step before the end of the recipe.");
+});
+
+test.each([2, 3, 4])("repairs a watch delivery interrupted on storage write %i", (interruptedWrite) => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const { recipeRecord } = saveRecipeRecord(storage, createValidDraft());
+  const session = createActiveBrewSession(recipeRecord, { now: 1_000 });
+  const entry = buildHistoryEntryFromSession(abortSession(session, { now: 2_000 }), { now: 2_000 });
+  const setItem = storage.setItem.bind(storage);
+  let writes = 0;
+  const writer = vi.spyOn(storage, "setItem").mockImplementation((key, value) => {
+    if (++writes === interruptedWrite) throw new Error("Interrupted write");
+    setItem(key, value);
+  });
+  expect(() => saveWatchHistoryEntry(storage, entry)).toThrow("Interrupted write");
+  writer.mockRestore();
+
+  expect(saveWatchHistoryEntry(storage, entry)).toMatchObject({ ok: true, historyEntry: entry });
+  expect(readHistoryIndex(storage).map(({ historyId }) => historyId)).toEqual([entry.historyId]);
+  expect(readHistoryEntry(storage, entry.historyId)).toEqual(entry);
+  const revision = readPhoneSyncMeta(storage).historyRevision;
+  expect(revision).toBeGreaterThan(0);
+  expect(saveWatchHistoryEntry(storage, entry).syncMeta.historyRevision).toBe(revision);
+});
+
+test("repairs a legacy unindexed history record while preserving phone feedback", () => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const { recipeRecord } = saveRecipeRecord(storage, createValidDraft());
+  const session = createActiveBrewSession(recipeRecord, { now: 1_000 });
+  const entry = buildHistoryEntryFromSession(abortSession(session, { now: 2_000 }), { now: 2_000 });
+  const editedEntry = { ...entry, userNote: "Keep the canonical note", userRating: 5 };
+  storage.setItem(getPhoneHistoryRecordKey(entry.historyId), JSON.stringify(editedEntry));
+
+  expect(saveWatchHistoryEntry(storage, entry)).toMatchObject({ ok: true, historyEntry: editedEntry });
+  expect(readHistoryIndex(storage)).toHaveLength(1);
+  expect(readHistoryEntry(storage, entry.historyId)).toEqual(editedEntry);
 });

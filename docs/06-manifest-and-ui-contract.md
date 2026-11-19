@@ -115,6 +115,7 @@ Implementation should stay aligned with this outline:
 - Keep `data:os.device.info` when the watch layout layer uses `getDeviceInfo()` for runtime sizing.
 - Do not force `runtime.type`, because official Zeus templates do not require it for a passing build.
 - Keep the Parallax-style target matrix on the same `API_LEVEL 3.6` runtime baseline; do not copy Parallax Pilot's `target: "4.0"` unless that becomes an explicit product decision.
+- Enable `SCROLL_LIST` scrollbar and common-focus options only on API_LEVEL 4.0 or later.
 - Keep `designWidth` tied to the target family: `416`, `454`, `466`, `480`, and `390` for `square-390x450`.
 - Do not add `app-service`, `secondary-widget`, `app-widget`, `data-widget`, or BLE permissions.
 - Do not add a `band` target.

@@ -361,6 +361,28 @@ describe("mocked Zepp runtime watch flow", () => {
     });
   });
 
+  it("resumes the existing session after returning to recipe details and tapping Start", () => {
+    const fixture = seedRichBrowseCatalog();
+    selectTool(fixture.recipeRecord.toolId);
+    expect(selectRecipe(fixture.recipeSummary.recipeId)).toBe(true);
+    expect(startSelectedRecipe()).toBe(true);
+    advanceOrCompleteActiveSession();
+    const active = readActiveSession()!;
+
+    expect(selectRecipe(fixture.secondRecipeSummary.recipeId)).toBe(true);
+    __zeusRuntime.router.push.mockClear();
+    expect(startSelectedRecipe()).toBe(true);
+
+    expect(readActiveSession()).toMatchObject({
+      sessionId: active.sessionId,
+      recipeId: active.recipeId,
+      currentStepIndex: 1
+    });
+    expect(getPendingHistoryQueue()).toEqual([]);
+    expect(__zeusRuntime.router.push).not.toHaveBeenCalled();
+    expect(__zeusRuntime.router.replace).toHaveBeenLastCalledWith({ url: PAGE_URLS.brewActive });
+  });
+
   it("discards an active session from home and stores an aborted summary", () => {
     seedCachedCatalog();
 
@@ -429,16 +451,39 @@ describe("mocked Zepp runtime watch flow", () => {
       ])
     );
 
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      historyRevision: 8,
+      latestResult: null
+    });
+    expect(readLastResult()?.historyId).toBe(pendingEntry.historyId);
+
     deliverSyncEnvelope(SYNC_MESSAGE_TYPES.ACK_HISTORY_ENTRY, {
       historyId: pendingEntry.historyId,
       historyRevision: 9
     });
 
     expect(getPendingHistoryQueue()).toHaveLength(0);
+    expect(readLastResult()?.historyId).toBe(pendingEntry.historyId);
+    clearSentBridgeFrames();
+    expect(refreshPhoneSnapshot()).toBe(true);
+    expect(readSentSyncEnvelopes()[0].payload.knownHistoryRevision).toBe(8);
+
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      historyRevision: 8,
+      latestResult: null
+    });
+    expect(readLastResult()?.historyId).toBe(pendingEntry.historyId);
     expect(readWatchSyncMeta()).toMatchObject({
-      historyRevision: 9,
+      historyRevision: 8,
       lastAckedHistoryId: pendingEntry.historyId
     });
+
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      historyRevision: 9,
+      latestResult: { ...readLastResult(), totalDeltaMs: 125 }
+    });
+    expect(readWatchSyncMeta().historyRevision).toBe(9);
+    expect(readLastResult()?.totalDeltaMs).toBe(125);
   });
 
   it("keeps neutral guard behavior when there is no active session or missing recipe snapshot", () => {
@@ -484,7 +529,7 @@ describe("mocked Zepp runtime watch flow", () => {
           payload: expect.objectContaining({
             knownToolCatalogRevision: 0,
             knownRecipeCatalogRevision: 0,
-            knownHistoryRevision: 0
+            knownHistoryRevision: -1
           })
         })
       ])

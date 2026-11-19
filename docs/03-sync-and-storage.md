@@ -107,6 +107,7 @@ interface WatchSyncMeta {
   toolCatalogRevision: number
   recipeCatalogRevision: number
   historyRevision: number
+  historySnapshotApplied?: boolean
   lastBootstrapAt?: number
   lastAckedHistoryId?: string
   pendingHistoryQueue: HistoryEntry[]
@@ -170,7 +171,8 @@ Rules:
 
 - a local `sendShake()` moves only to `shake_sent`,
 - a remote SHAKE or a valid incoming sync envelope moves to `ready`,
-- bootstrap requests and queue flushes must wait for `ready`.
+- bootstrap requests and queue flushes wait for `ready`,
+- the watch retries a missing shake response up to three total attempts per batch. Manual sync can start another batch after the timeout, and disconnect or app teardown cancels the pending retry.
 
 At the current stage, some watch pages may still require a rebuild to fully show a new snapshot that arrives after the first render.
 
@@ -310,7 +312,7 @@ This remains separate from `seedCatalogVersion`:
 
 - if `PUSH_TOOL_CATALOG` is corrupted, keep the previous cache,
 - if a `RecipeSummary` has no matching `recipeSnapshotById`, hide that recipe,
-- if `latestResult: null` arrives, clear `last_result_v1`.
+- use the newest available result from the received phone snapshot and the unsent local queue. An empty snapshot clears the display when no local result is pending.
 
 ## Writing history from the watch
 
@@ -322,7 +324,9 @@ This remains separate from `seedCatalogVersion`:
 4. it sends `UPSERT_HISTORY_ENTRY`,
 5. after `ACK_HISTORY_ENTRY` it removes the entry from `pendingHistoryQueue`.
 
-History delivery is idempotent by `historyId`: when a valid watch result already exists on the phone, acknowledge the stored record at the current history revision without rewriting it. Retries must preserve phone-edited notes, ratings, and timestamps.
+History delivery is idempotent by `historyId`. The phone temporarily sets `watchDeliveryPending` on the stored record until the index and revision writes succeed. A retry repairs a marked or unindexed record using the stored notes, rating, and timestamps. Once the record is indexed and the marker is cleared, a retry can acknowledge it without rewriting.
+
+The watch removes acknowledged entries from the queue and advances its history snapshot revision only when it applies a snapshot. An existing installation without `historySnapshotApplied` requests the snapshot again once to recover revisions previously learned from ACKs. Within the current connection, snapshots older than a received ACK or a newer applied snapshot are discarded.
 
 ### Offline scenario
 

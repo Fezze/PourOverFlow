@@ -4,6 +4,7 @@ import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.
 import { normalizeRecipeSteps } from "../zepp-app/shared/domain/schema.js";
 import {
   buildScaffoldResult,
+  buildHistoryEntryFromSession,
   createActiveBrewSession,
   formatDurationLabel,
   getCurrentStepElapsedMs,
@@ -11,7 +12,7 @@ import {
   getElapsedSessionMs,
   getStepProgressLabel
 } from "../zepp-app/shared/engine/recipe-engine.js";
-import { abortSession, advanceSession } from "../zepp-app/shared/engine/session-reducer.js";
+import { abortSession, advanceSession, resumeSession, tickSession } from "../zepp-app/shared/engine/session-reducer.js";
 
 describe("recipe engine helpers", () => {
   it("builds a running session from a recipe snapshot and keeps unknown tool labels stable", () => {
@@ -101,4 +102,34 @@ describe("recipe engine helpers", () => {
       summary: "Session completed. Result is stored locally and queued for sync."
     });
   });
+});
+
+it("resumes legacy early-finish and missing-duration steps as manual checkpoints", () => {
+  const recipe = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
+  const [first, second, finish] = [recipe.steps[0], recipe.steps[1], recipe.steps.at(-1)];
+  const steps = normalizeRecipeSteps([
+    { ...first, kind: "finish" },
+    { ...second, durationMs: undefined },
+    finish
+  ]);
+  const started = createActiveBrewSession({ ...recipe, steps }, { now: 1_000 });
+  const secondStep = advanceSession(started, { now: 2_000 });
+  expect(secondStep).toMatchObject({ currentStepIndex: 1, status: "waiting_for_confirm" });
+  expect(getCurrentStepRemainingMs(secondStep, 10_000)).toBeNull();
+  expect(tickSession(secondStep, { now: 10_000 })).toEqual(secondStep);
+  expect(resumeSession(secondStep, { now: 10_000 })).toMatchObject({
+    currentStepIndex: 1, status: "waiting_for_confirm"
+  });
+  const lastStep = advanceSession(secondStep, { now: 11_000 });
+  expect(advanceSession(lastStep, { now: 12_000 })).toMatchObject({ status: "completed", currentStepIndex: 2 });
+});
+
+it("stores signed timing deviations for early and late timed steps only", () => {
+  const recipe = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
+  let session = createActiveBrewSession(recipe, { now: 1_000 });
+  session = advanceSession(session, { now: 2_000 });
+  session = advanceSession(session, { now: 12_000 }); // 5 seconds early.
+  session = advanceSession(session, { now: 44_000 }); // 2 seconds late.
+  const result = buildHistoryEntryFromSession(abortSession(session, { now: 45_000 }), { now: 45_000 });
+  expect(result.deviationSummary).toMatchObject({ totalDeltaMs: -3_000, worstStepDeltaMs: -5_000 });
 });

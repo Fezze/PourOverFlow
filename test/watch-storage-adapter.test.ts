@@ -84,7 +84,7 @@ it("writes each synchronized slice and invalidates stale selections independentl
   expect(getLocalStorageSnapshot()[keys.lastResult]).toBeUndefined();
 });
 
-it("limits the durable queue, updates duplicate entries and retains valid revisions on an incomplete ACK", () => {
+it("limits the durable queue, updates duplicate entries and leaves the snapshot revision unchanged on ACK", () => {
   store.writeWatchSyncMeta({ historyRevision: 41, pendingHistoryQueue: [] });
   for (let index = 0; index < 21; index += 1) store.enqueuePendingHistoryEntry({ historyId: `result-${index}` });
   const queue = store.getPendingHistoryQueue();
@@ -94,7 +94,7 @@ it("limits the durable queue, updates duplicate entries and retains valid revisi
   expect(store.getPendingHistoryQueue()).toHaveLength(20);
   store.enqueuePendingHistoryEntry({ historyId: "result-1", status: "completed" });
   expect(store.getPendingHistoryQueue().at(-1)).toEqual({ historyId: "result-1", status: "completed" });
-  store.ackPendingHistoryEntry("result-1", NaN);
+  store.ackPendingHistoryEntry("result-1");
   expect(store.readWatchSyncMeta()).toMatchObject({ historyRevision: 41, lastAckedHistoryId: "result-1" });
   expect(store.getPendingHistoryQueue().find(({ historyId }) => historyId === "result-1")).toBeUndefined();
   store.setConnectionStatus(true);

@@ -714,6 +714,23 @@ describe("page shell runtime coverage", () => {
     expect(scrollList.item_common_focus).toBe(false);
   });
 
+  it.each(["3.6", "3.7", "unknown"])("omits API 4 list fields on runtime %s", async (apiLevel) => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-list/index.js", createLayoutMock());
+    runtime.settings.getSystemInfo.mockReturnValueOnce({ minAPI: apiLevel });
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.catalogCache]: JSON.stringify(fixture.catalogCache)
+    });
+
+    buildPage(pageDefinition);
+    const [list] = runtime.findCreatedWidgetsByType("SCROLL_LIST");
+    expect(list).toBeDefined();
+    expect(list).not.toHaveProperty("item_common_focus");
+    expect(list).not.toHaveProperty("enable_scroll_bar");
+    list.item_click_func(list, 0);
+    expect(runtime.router.push).toHaveBeenCalledWith({ url: "page/recipe-detail/index" });
+  });
+
   it("renders the recipe list empty state and lets the user request sync", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/recipe-list/index.js", createLayoutMock());

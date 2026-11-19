@@ -2,6 +2,7 @@ import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { getReadingFrame, createReader, createInstrumentText } from "../../shared/watch/reading-page";
 import { replace } from "@zos/router";
+import { readActiveSession } from "../../shared/storage/watch-store";
 import { getColorNumber } from "../../shared/constants/color-palette";
 import {
   getSelectedRecipe,
@@ -60,6 +61,7 @@ Page({
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const selectedRecipe = getSelectedRecipe();
+    const hasActiveSession = Boolean(readActiveSession());
     const snapshot = selectedRecipe ? selectedRecipe.recipeSnapshot : null;
     const detailRows = selectedRecipe ? buildRecipeRows(selectedRecipe, i18n) : [];
     const title = selectedRecipe ? selectedRecipe.name : i18n.t("watch.recipeDetail.unavailableTitle");
@@ -90,7 +92,7 @@ Page({
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
       text: selectedRecipe
-        ? i18n.t("watch.recipeDetail.actions.start")
+        ? i18n.t(hasActiveSession ? "watch.home.actions.resume" : "watch.recipeDetail.actions.start")
         : i18n.t("watch.recipeDetail.actions.back"),
       click_func: () => {
         if (selectedRecipe) {

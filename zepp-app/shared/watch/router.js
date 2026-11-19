@@ -165,6 +165,10 @@ export function selectRecipe(recipeId) {
 }
 
 export function startRecipe(recipeSummary) {
+  if (readActiveSession()) {
+    return resumeActiveSession();
+  }
+
   const recipeSnapshot = getRecipeSnapshotById(recipeSummary.recipeId);
 
   if (!recipeSnapshot) {

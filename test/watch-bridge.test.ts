@@ -23,11 +23,12 @@ beforeEach(() => {
   resetZeppRuntime();
   for (const stub of Object.values(store)) stub.mockReset();
   store.getPendingHistoryQueue.mockReturnValue([pending]);
-  store.readWatchSyncMeta.mockReturnValue({ recipeCatalogRevision: 11, toolCatalogRevision: 7, historyRevision: 8 });
+  store.readWatchSyncMeta.mockReturnValue({ recipeCatalogRevision: 11, toolCatalogRevision: 7, historyRevision: 8, historySnapshotApplied: true });
 });
 afterEach(() => {
   bridge.destroyWatchSyncBridge();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 function messages() {
@@ -89,7 +90,7 @@ it("dispatches decoded slices only after complete assembly and routes ACK by his
     const final = buildAppBridgeDataFrame(chunks.at(-1), { port2: 42 });
     deliverBleMessage(final.buffer, final.size);
     expect(receiver).toHaveBeenCalledOnce();
-    if (type === "ACK_HISTORY_ENTRY") expect(receiver).toHaveBeenCalledWith(pending.historyId, 9);
+    if (type === "ACK_HISTORY_ENTRY") expect(receiver).toHaveBeenCalledWith(pending.historyId);
     else expect(receiver).toHaveBeenCalledWith(payload);
   }
   const bad = new TextEncoder().encode("bad payload");
@@ -108,4 +109,47 @@ it("allows a ready connection to recover from an unsuccessful write without ackn
   expect(store.ackPendingHistoryEntry).not.toHaveBeenCalled();
   expect(bridge.flushPendingHistoryQueue()).toBe(true);
   expect(messages().at(-1)).toMatchObject({ messageType: "UPSERT_HISTORY_ENTRY" });
+});
+
+it("retries dropped shakes, re-arms on manual sync, and flushes when the first reply is a snapshot", () => {
+  vi.useFakeTimers();
+  bridge.initWatchSyncBridge();
+  setBleConnected(true);
+
+  vi.advanceTimersByTime(9_000);
+  expect(__zeusRuntime.bleState.sentPayloads).toHaveLength(3);
+  expect(messages()).toEqual([]);
+  expect(bridge.requestBootstrap()).toBe(false);
+  expect(__zeusRuntime.bleState.sentPayloads).toHaveLength(4);
+
+  const payload = { historyRevision: 12, latestResult: null };
+  store.applyHistorySnapshot.mockImplementation(() => {
+    store.readWatchSyncMeta.mockReturnValue({ historyRevision: 12, historySnapshotApplied: true });
+  });
+  const frame = buildAppBridgeDataFrame(encodeEnvelopeForBle(createSyncEnvelope(
+    "PUSH_HISTORY_SNAPSHOT", payload
+  )).buffer);
+  deliverBleMessage(frame.buffer, frame.size);
+  expect(messages()).toEqual([
+    expect.objectContaining({ messageType: "REQUEST_BOOTSTRAP", payload: expect.objectContaining({
+      knownHistoryRevision: 12
+    }) }),
+    expect.objectContaining({ messageType: "UPSERT_HISTORY_ENTRY" })
+  ]);
+  const frameCount = __zeusRuntime.bleState.sentPayloads.length;
+  vi.advanceTimersByTime(9_000);
+  expect(__zeusRuntime.bleState.sentPayloads).toHaveLength(frameCount);
+});
+
+it("cancels handshake retries on disconnect and teardown", () => {
+  vi.useFakeTimers();
+  bridge.initWatchSyncBridge();
+  setBleConnected(true);
+  setBleConnected(false);
+  vi.advanceTimersByTime(9_000);
+  expect(__zeusRuntime.bleState.sentPayloads).toHaveLength(1);
+  setBleConnected(true);
+  bridge.destroyWatchSyncBridge();
+  vi.advanceTimersByTime(9_000);
+  expect(__zeusRuntime.bleState.sentPayloads).toHaveLength(2);
 });

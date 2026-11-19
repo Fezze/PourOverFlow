@@ -1,7 +1,7 @@
 import { SHARED_COLORS } from "../../shared/watch/layouts";
 import { drawBrowseTabs, registerBrowseTabs } from "../../shared/watch/browse-tabs";
 import * as hmUI from "@zos/ui";
-import { getDeviceInfo } from "@zos/device";
+import { getScrollListOptions } from "../../shared/watch/scroll-list-options";
 import { replace } from "@zos/router";
 import { PAGE_URLS, refreshPhoneSnapshot, selectTool, getToolList } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
@@ -13,16 +13,6 @@ import {
   SUBTITLE_TEXT,
   TITLE_TEXT
 } from "./index.layout.js";
-
-function supportsHardwareListFocus() {
-  try {
-    const deviceInfo = getDeviceInfo();
-    return Number(deviceInfo?.keyNumber) >= 3 || String(deviceInfo?.keyType || "").includes("sport");
-  } catch (error) {
-    console.log("Hardware list focus fallback", error);
-    return false;
-  }
-}
 
 function buildToolRows(tools, i18n) {
   return tools.map((tool) => ({
@@ -144,8 +134,7 @@ Page({
           }
         ],
         data_type_config_count: 1,
-        enable_scroll_bar: false,
-        item_common_focus: supportsHardwareListFocus(),
+        ...getScrollListOptions(false, true),
         item_click_func: (_list, index) => {
           selectTool(rows[index].toolId);
         }

@@ -16,7 +16,7 @@ import {
   readWatchSyncMeta,
   setConnectionStatus
 } from "../storage/watch-store";
-import { createSyncEnvelope } from "../sync/contracts.js";
+import { createSyncEnvelope, validateSyncEnvelope } from "../sync/contracts.js";
 import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../sync/device-codec";
 import {
   APP_BRIDGE_MESSAGE_TYPES,
@@ -32,6 +32,12 @@ import {
 import { SYNC_MESSAGE_TYPES } from "../sync/message-types";
 import { resolveWatchLocale } from "../i18n/watch-locale.js";
 import { logValidation } from "./validation-log";
+
+const SHAKE_RETRY_MS = 3_000;
+const MAX_SHAKE_ATTEMPTS = 3;
+let shakeRetryTimer = null;
+let shakeAttempts = 0;
+let minimumHistoryRevision = 0;
 
 let isInitialized = false;
 let hasPrimedRuntimeSync = false;
@@ -77,12 +83,18 @@ function shouldSendShake() {
   return bridgeHandshakeState === BRIDGE_HANDSHAKE_STATE.CONNECTED;
 }
 
-function markBridgeHandshakeResolved(reason, options = {}) {
-  bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.READY;
-
-  if (options.markConnected) {
-    setConnectionStatus(true);
+function clearShakeRetry() {
+  if (shakeRetryTimer !== null) {
+    clearTimeout(shakeRetryTimer);
+    shakeRetryTimer = null;
   }
+  shakeAttempts = 0;
+}
+
+function markBridgeHandshakeResolved() {
+  clearShakeRetry();
+  bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.READY;
+  setConnectionStatus(true);
 }
 
 function sendBuffer(buffer, size, label) {
@@ -98,9 +110,20 @@ function sendShake() {
     port2: appSidePort
   });
 
+  markBridgeShakeSent();
+  shakeAttempts += 1;
+  shakeRetryTimer = setTimeout(() => {
+    shakeRetryTimer = null;
+    bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.CONNECTED;
+    if (shakeAttempts < MAX_SHAKE_ATTEMPTS) {
+      sendShake();
+    } else {
+      shakeAttempts = 0;
+    }
+  }, SHAKE_RETRY_MS);
+
   try {
     sendBuffer(buffer, size, "SHAKE");
-    markBridgeShakeSent();
     return true;
   } catch (error) {
     console.log("Failed to send watch sync shake", error);
@@ -164,11 +187,13 @@ function flushStartupSyncIfReady() {
     return false;
   }
 
-  const requestedBootstrap = shouldBootstrapAfterShake ? requestBootstrap() : false;
-  const flushedQueue = shouldFlushQueueAfterShake ? flushPendingHistoryQueue() : false;
-
+  const bootstrap = shouldBootstrapAfterShake;
+  const flushQueue = shouldFlushQueueAfterShake;
   shouldBootstrapAfterShake = false;
   shouldFlushQueueAfterShake = false;
+
+  const requestedBootstrap = bootstrap && requestBootstrap();
+  const flushedQueue = flushQueue && flushPendingHistoryQueue();
 
   return requestedBootstrap || flushedQueue;
 }
@@ -181,7 +206,7 @@ function handleIncomingMessage(index, data, size) {
   }
 
   if (bridgeFrame && bridgeFrame.type === APP_BRIDGE_MESSAGE_TYPES.SHAKE) {
-    markBridgeHandshakeResolved("remote-shake", { markConnected: true });
+    markBridgeHandshakeResolved();
     flushStartupSyncIfReady();
     return;
   }
@@ -206,28 +231,43 @@ function handleIncomingMessage(index, data, size) {
     transportResult.payload.byteLength
   );
 
-  if (!syncEnvelope) {
+  if (validateSyncEnvelope(syncEnvelope).length ||
+      !syncEnvelope.payload || typeof syncEnvelope.payload !== "object") {
     console.log(`Watch sync bridge ignored undecodable payload index=${index} size=${size}`);
     return;
   }
 
-  markBridgeHandshakeResolved("incoming-sync-envelope", { markConnected: true });
+  const wasReady = hasBridgeHandshake();
+  if (!wasReady) {
+    markBridgeHandshakeResolved();
+  }
 
   switch (syncEnvelope.messageType) {
     case SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG:
       applyToolCatalogSnapshot(syncEnvelope.payload);
-      return;
+      break;
     case SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT:
       applyCatalogSnapshot(syncEnvelope.payload);
-      return;
+      break;
     case SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT:
-      applyHistorySnapshot(syncEnvelope.payload);
-      return;
+      if (Number.isFinite(syncEnvelope.payload.historyRevision) &&
+          syncEnvelope.payload.historyRevision >= minimumHistoryRevision) {
+        applyHistorySnapshot(syncEnvelope.payload);
+        minimumHistoryRevision = syncEnvelope.payload.historyRevision;
+      }
+      break;
     case SYNC_MESSAGE_TYPES.ACK_HISTORY_ENTRY:
-      ackPendingHistoryEntry(syncEnvelope.payload.historyId, syncEnvelope.payload.historyRevision);
-      return;
+      if (Number.isFinite(syncEnvelope.payload.historyRevision)) {
+        minimumHistoryRevision = Math.max(minimumHistoryRevision, syncEnvelope.payload.historyRevision);
+      }
+      ackPendingHistoryEntry(syncEnvelope.payload.historyId);
+      break;
     default:
       console.log(`Unhandled watch sync message: ${syncEnvelope.messageType} (index=${index})`);
+  }
+
+  if (!wasReady) {
+    flushStartupSyncIfReady();
   }
 }
 
@@ -236,15 +276,18 @@ function handleConnectionStatus(status) {
   setConnectionStatus(connected);
 
   if (!connected) {
+    clearShakeRetry();
     appSidePort = 0;
+    minimumHistoryRevision = 0;
     bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.DISCONNECTED;
     return;
   }
 
-  markBridgeTransportConnected();
+  if (bridgeHandshakeState === BRIDGE_HANDSHAKE_STATE.DISCONNECTED) {
+    markBridgeTransportConnected();
+  }
   shouldBootstrapAfterShake = true;
   shouldFlushQueueAfterShake = true;
-  sendShake();
   flushStartupSyncIfReady();
 }
 
@@ -257,15 +300,7 @@ export function initWatchSyncBridge() {
     createConnect(handleIncomingMessage);
     addListener(handleConnectionStatus);
     isInitialized = true;
-    setConnectionStatus(Boolean(connectStatus()) && typeof bleSend === "function");
-
-    if (Boolean(connectStatus()) && typeof bleSend === "function") {
-      markBridgeTransportConnected();
-      shouldBootstrapAfterShake = true;
-      shouldFlushQueueAfterShake = true;
-      sendShake();
-      flushStartupSyncIfReady();
-    }
+    handleConnectionStatus(connectStatus());
   } catch (error) {
     console.log("Failed to initialize watch sync bridge", error);
     setConnectionStatus(false);
@@ -277,6 +312,8 @@ export function destroyWatchSyncBridge() {
     return;
   }
 
+  clearShakeRetry();
+  minimumHistoryRevision = 0;
   removeListener(handleConnectionStatus);
   disConnect();
   setConnectionStatus(false);
@@ -302,14 +339,6 @@ export function primeWatchSyncBridge() {
     return false;
   }
 
-  if (!hasBridgeHandshake() && shouldSendShake()) {
-    sendShake();
-  }
-
-  if (!hasBridgeHandshake()) {
-    return false;
-  }
-
   return flushStartupSyncIfReady();
 }
 
@@ -322,20 +351,18 @@ export function requestBootstrap() {
     return false;
   }
 
-  if (!hasBridgeHandshake() && shouldSendShake()) {
-    sendShake();
-  }
-
   if (!hasBridgeHandshake()) {
-    return false;
+    shouldBootstrapAfterShake = true;
+    return flushStartupSyncIfReady();
   }
 
   const syncMeta = readWatchSyncMeta();
+  const knownHistoryRevision = syncMeta.historySnapshotApplied ? syncMeta.historyRevision : -1;
 
   logValidation("bootstrap_request", {
     knownToolCatalogRevision: syncMeta.toolCatalogRevision,
     knownRecipeCatalogRevision: syncMeta.recipeCatalogRevision,
-    knownHistoryRevision: syncMeta.historyRevision,
+    knownHistoryRevision,
     preferredLocale: resolveWatchLocale()
   });
 
@@ -343,7 +370,7 @@ export function requestBootstrap() {
     createSyncEnvelope(SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP, {
       knownToolCatalogRevision: syncMeta.toolCatalogRevision,
       knownRecipeCatalogRevision: syncMeta.recipeCatalogRevision,
-      knownHistoryRevision: syncMeta.historyRevision,
+      knownHistoryRevision,
       preferredLocale: resolveWatchLocale()
     })
   );
@@ -389,12 +416,9 @@ export function flushPendingHistoryQueue() {
     return false;
   }
 
-  if (!hasBridgeHandshake() && shouldSendShake()) {
-    sendShake();
-  }
-
   if (!hasBridgeHandshake()) {
-    return false;
+    shouldFlushQueueAfterShake = true;
+    return flushStartupSyncIfReady();
   }
 
   const pendingHistoryQueue = getPendingHistoryQueue();

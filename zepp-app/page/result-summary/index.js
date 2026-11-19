@@ -6,6 +6,7 @@ import { replace } from "@zos/router";
 import { getToolById, getLocalizedToolLabel } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
 import { goHome, goToToolList, PAGE_URLS } from "../../shared/watch/router";
+import { getScrollListOptions } from "../../shared/watch/scroll-list-options";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
 import {
@@ -242,7 +243,7 @@ Page({
             }
           ],
           data_type_config_count: 1,
-          enable_scroll_bar: false
+          ...getScrollListOptions(false)
         });
       }
     } else {

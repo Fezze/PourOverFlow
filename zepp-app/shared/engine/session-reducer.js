@@ -1,13 +1,11 @@
+import { hasStepCountdown } from "../domain/schema.js";
+
 function isTerminalSession(activeSession) {
   return activeSession && ["completed", "aborted", "expired"].includes(activeSession.status);
 }
 
-function isTimedStep(step) {
-  return Boolean(step && (step.kind === "timed_action" || step.kind === "timed_wait"));
-}
-
 function deriveStepStatus(step) {
-  return isTimedStep(step) ? "running" : "waiting_for_confirm";
+  return hasStepCountdown(step) ? "running" : "waiting_for_confirm";
 }
 
 function enterStep(activeSession, nextStepIndex, now) {
@@ -28,7 +26,7 @@ function enterStep(activeSession, nextStepIndex, now) {
     currentStepIndex: nextStepIndex,
     status: deriveStepStatus(nextStep),
     currentStepStartedAt: now,
-    expectedStepEndAt: isTimedStep(nextStep) ? now + (nextStep.durationMs || 0) : undefined,
+    expectedStepEndAt: hasStepCountdown(nextStep) ? now + nextStep.durationMs : undefined,
     elapsedSessionMs: now - activeSession.sessionStartedAt,
     lastPersistedAt: now
   };
@@ -101,7 +99,7 @@ export function advanceSession(activeSession, options = {}) {
     options.confirmedManually !== false
   );
 
-  if (currentStep.kind === "finish" || activeSession.currentStepIndex >= activeSession.recipeSnapshot.steps.length - 1) {
+  if (activeSession.currentStepIndex >= activeSession.recipeSnapshot.steps.length - 1) {
     return {
       ...completedSession,
       status: "completed",
@@ -131,7 +129,7 @@ export function tickSession(activeSession, options = {}) {
     return activeSession;
   }
 
-  if (!isTimedStep(currentStep) || !Number.isFinite(activeSession.expectedStepEndAt)) {
+  if (!hasStepCountdown(currentStep) || !Number.isFinite(activeSession.expectedStepEndAt)) {
     return activeSession;
   }
 
@@ -202,7 +200,7 @@ export function resumeSession(activeSession, options = {}) {
       };
     }
 
-    if (!isTimedStep(currentStep)) {
+    if (!hasStepCountdown(currentStep)) {
       return {
         ...nextSession,
         status: "waiting_for_confirm",
@@ -214,7 +212,7 @@ export function resumeSession(activeSession, options = {}) {
 
     const expectedStepEndAt = Number.isFinite(nextSession.expectedStepEndAt)
       ? nextSession.expectedStepEndAt
-      : nextSession.currentStepStartedAt + (currentStep.durationMs || 0);
+      : nextSession.currentStepStartedAt + currentStep.durationMs;
 
     if (now < expectedStepEndAt) {
       return {

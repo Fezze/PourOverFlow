@@ -248,7 +248,7 @@ describe("watch runtime helpers", () => {
       pendingHistoryQueue: getPendingHistoryQueue()
     };
 
-    ackPendingHistoryEntry("hist_drop", Number.NaN);
+    ackPendingHistoryEntry("hist_drop");
 
     expect(readWatchSyncMeta()).toMatchObject({
       historyRevision: 7,

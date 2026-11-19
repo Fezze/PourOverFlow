@@ -428,7 +428,7 @@ export function deleteRecipeRecord(settingsStorage, recipeId) {
   return true;
 }
 
-export function saveHistoryEntry(settingsStorage, historyEntry) {
+export function saveHistoryEntry(settingsStorage, historyEntry, { watchDelivery = false } = {}) {
   const issues = validateHistoryEntry(historyEntry);
 
   if (issues.length) {
@@ -439,22 +439,32 @@ export function saveHistoryEntry(settingsStorage, historyEntry) {
     };
   }
 
+  const { watchDeliveryPending, ...savedEntry } = historyEntry;
+  const needsDeliveryMarker = watchDelivery || watchDeliveryPending;
+  const recordKey = getPhoneHistoryRecordKey(savedEntry.historyId);
   const nextHistoryIndex = readHistoryIndex(settingsStorage).filter(
     (historyIndexEntry) => historyIndexEntry.historyId !== historyEntry.historyId
   );
   nextHistoryIndex.push(createHistoryIndexEntry(historyEntry));
 
-  writeSettingsJson(settingsStorage, getPhoneHistoryRecordKey(historyEntry.historyId), historyEntry);
+  // Keep the retry marker on the record until the index and revision are durable.
+  writeSettingsJson(settingsStorage, recordKey, needsDeliveryMarker
+    ? { ...savedEntry, watchDeliveryPending: true }
+    : savedEntry);
   writeHistoryIndex(settingsStorage, nextHistoryIndex);
   const syncMeta = updatePhoneSyncMeta(settingsStorage, (currentSyncMeta) => ({
     ...currentSyncMeta,
     historyRevision: currentSyncMeta.historyRevision + 1
   }));
 
+  if (needsDeliveryMarker) {
+    writeSettingsJson(settingsStorage, recordKey, savedEntry);
+  }
+
   return {
     ok: true,
     issues: [],
-    historyEntry,
+    historyEntry: savedEntry,
     syncMeta
   };
 }
@@ -469,7 +479,11 @@ export function saveWatchHistoryEntry(settingsStorage, historyEntry) {
 
   const existingEntry = readHistoryEntry(settingsStorage, historyEntry.historyId);
 
-  if (existingEntry) {
+  const indexHasEntry = existingEntry && readHistoryIndex(settingsStorage).some(
+    (entry) => entry.historyId === existingEntry.historyId
+  );
+
+  if (indexHasEntry && !existingEntry.watchDeliveryPending) {
     return {
       ok: true,
       issues: [],
@@ -478,7 +492,7 @@ export function saveWatchHistoryEntry(settingsStorage, historyEntry) {
     };
   }
 
-  return saveHistoryEntry(settingsStorage, historyEntry);
+  return saveHistoryEntry(settingsStorage, existingEntry || historyEntry, { watchDelivery: true });
 }
 
 export function updateHistoryEntryFeedback(settingsStorage, historyId, patch) {

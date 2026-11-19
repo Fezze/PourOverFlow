@@ -4,6 +4,8 @@ import {
   RECIPE_COLOR_TOKENS,
   RECIPE_SOURCES,
   RECIPE_STEP_KINDS,
+  hasStepCountdown,
+  isTimedStepKind,
   sumRecipeStepDurations
 } from "./schema.js";
 import { TOOL_IDS } from "../constants/tool-catalog.js";
@@ -191,6 +193,12 @@ export function validateRecipeRecord(recipeRecord) {
   } else {
     recipeRecord.steps.forEach((step, index) => {
       issues.push(...validateRecipeStep(step, index, index, recipeRecord.steps.length));
+      if (step?.kind === "finish" && index !== recipeRecord.steps.length - 1) {
+        issues.push(`Step ${index} cannot be a finish step before the end of the recipe.`);
+      }
+      if (isTimedStepKind(step?.kind) && !hasStepCountdown(step)) {
+        issues.push(`Step ${index} must have a positive duration in milliseconds.`);
+      }
     });
   }
 

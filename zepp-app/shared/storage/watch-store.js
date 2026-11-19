@@ -1,6 +1,6 @@
 import { LocalStorage } from "@zos/storage";
 import { TOOL_CATALOG } from "../constants/tool-catalog";
-import { CURRENT_SCHEMA_VERSION } from "../domain/schema";
+import { CURRENT_SCHEMA_VERSION, createLastResultSummary } from "../domain/schema";
 import { WATCH_STORAGE_KEYS } from "./keys";
 import { emitRuntimeEvent } from "../watch/runtime-events";
 
@@ -130,6 +130,7 @@ function createDefaultWatchSyncMeta() {
     toolCatalogRevision: 0,
     recipeCatalogRevision: 0,
     historyRevision: 0,
+    historySnapshotApplied: false,
     pendingHistoryQueue: []
   };
 }
@@ -354,10 +355,20 @@ export function applyCatalogSnapshot(payload) {
 }
 
 export function applyHistorySnapshot(payload) {
-  writeLastResult(payload.latestResult || null);
+  const syncMeta = readWatchSyncMeta();
+  let latestResult = payload.latestResult || null;
+
+  for (const entry of syncMeta.pendingHistoryQueue) {
+    if (!latestResult || entry.endedAt > latestResult.endedAt) {
+      latestResult = createLastResultSummary(entry);
+    }
+  }
+
+  writeLastResult(latestResult);
   return writeWatchSyncMeta({
-    ...readWatchSyncMeta(),
+    ...syncMeta,
     historyRevision: payload.historyRevision,
+    historySnapshotApplied: true,
     lastBootstrapAt: Date.now()
   });
 }
@@ -380,12 +391,11 @@ export function enqueuePendingHistoryEntry(historyEntry) {
   });
 }
 
-export function ackPendingHistoryEntry(historyId, historyRevision) {
+export function ackPendingHistoryEntry(historyId) {
   const syncMeta = readWatchSyncMeta();
 
   return writeWatchSyncMeta({
     ...syncMeta,
-    historyRevision: Number.isFinite(historyRevision) ? historyRevision : syncMeta.historyRevision,
     lastAckedHistoryId: historyId,
     pendingHistoryQueue: syncMeta.pendingHistoryQueue.filter(
       (pendingEntry) => pendingEntry.historyId !== historyId

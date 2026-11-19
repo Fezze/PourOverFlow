@@ -38,7 +38,8 @@ const interactionState = {
 };
 
 const settingsState = {
-  languageCode: 2
+  languageCode: 2,
+  apiLevel: "4.0"
 };
 
 const uiState = {
@@ -163,7 +164,8 @@ const interaction = {
 };
 
 const settings = {
-  getLanguage: vi.fn(() => settingsState.languageCode)
+  getLanguage: vi.fn(() => settingsState.languageCode),
+  getSystemInfo: vi.fn(() => ({ minAPI: settingsState.apiLevel }))
 };
 
 const ble = {
@@ -342,6 +344,7 @@ export function resetZeppRuntime() {
   interactionState.keyHandler = null;
   interactionState.gestureHandler = null;
   settingsState.languageCode = 2;
+  settingsState.apiLevel = "4.0";
   uiState.widgets = [];
   setLocalStorageState();
 
@@ -359,6 +362,7 @@ export function resetZeppRuntime() {
   interaction.onGesture.mockClear();
   interaction.offGesture.mockClear();
   settings.getLanguage.mockClear();
+  settings.getSystemInfo.mockClear();
   ble.createConnect.mockClear();
   ble.disConnect.mockClear();
   ble.send.mockReset();

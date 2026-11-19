@@ -132,7 +132,9 @@ Minimum UI set:
 
 ### Important rule
 
-After session start, do not read `RecipeRecord` from cache again in order to "pull in" changes. The session always runs on the startup snapshot.
+The session always runs on its startup snapshot. If the user backs out of an active brew and tries to start a recipe from the detail screen, the action resumes the existing brew.
+
+Existing recipe snapshots with an early Finish or a timed step without a valid duration remain usable. Those steps advance with Next, and the session completes after the final step.
 
 ## Watch flow 6 - active brew
 

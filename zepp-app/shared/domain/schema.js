@@ -85,6 +85,15 @@ export function cloneRecipeRecord(recipeRecord, overrides = {}) {
   };
 }
 
+export function isTimedStepKind(kind) {
+  return kind === "timed_action" || kind === "timed_wait";
+}
+
+export function hasStepCountdown(step) {
+  return !!step && isTimedStepKind(step.kind) &&
+    Number.isFinite(step.durationMs) && step.durationMs > 0;
+}
+
 export function sumRecipeStepDurations(steps = []) {
   return steps.reduce((total, step) => total + (toOptionalNumber(step.durationMs) || 0), 0);
 }
@@ -241,6 +250,26 @@ export function createHistoryIndexEntry(historyEntry) {
   };
 }
 
+export function calculateTimingDeviation(stepRunResults) {
+  let totalDeltaMs = 0;
+  let worstStepDeltaMs = 0;
+
+  for (const step of Array.isArray(stepRunResults) ? stepRunResults : []) {
+    if (!isTimedStepKind(step?.kind) || !Number.isFinite(step.plannedDurationMs) ||
+        step.plannedDurationMs <= 0 || !Number.isFinite(step.actualDurationMs)) {
+      continue;
+    }
+
+    const delta = step.actualDurationMs - step.plannedDurationMs;
+    totalDeltaMs += delta;
+    if (Math.abs(delta) > Math.abs(worstStepDeltaMs)) {
+      worstStepDeltaMs = delta;
+    }
+  }
+
+  return { totalDeltaMs, worstStepDeltaMs };
+}
+
 export function createLastResultSummary(historyEntry) {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -251,7 +280,8 @@ export function createLastResultSummary(historyEntry) {
     status: historyEntry.status,
     endedAt: historyEntry.endedAt,
     elapsedMs: historyEntry.elapsedMs,
-    totalDeltaMs: historyEntry.deviationSummary ? historyEntry.deviationSummary.totalDeltaMs : 0
+    totalDeltaMs: historyEntry.deviationSummary?.totalDeltaMs ||
+      calculateTimingDeviation(historyEntry.stepRunResults).totalDeltaMs
   };
 }
 

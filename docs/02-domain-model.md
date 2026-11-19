@@ -176,7 +176,7 @@ interface RecipeRecord {
 - `toolId` must exist in `ToolDefinition`.
 - `name` must not be empty.
 - `steps.length >= 1`.
-- The last step must have `kind: 'finish'`.
+- Exactly one step has `kind: 'finish'`, at the end. Each timed step needs a finite, positive duration in milliseconds.
 - `order` must be continuous from `0`.
 - `estimatedTotalDurationMs` is either the sum of timed steps or a manually calculated estimate, but it must not be smaller than the sum of `durationMs`.
 - `archived: false` means visible in the catalog. V1 does not need an additional trash state.
@@ -352,6 +352,8 @@ interface DeviationSummary {
   totalSteps: number
 }
 ```
+
+Only completed countdown steps with planned and actual durations contribute to the total. Each step contributes actual time minus planned time. The worst step delta keeps the sign of the largest absolute deviation. Older results with zeroed deviations can be recalculated where step timings are available.
 
 ### History rules
 

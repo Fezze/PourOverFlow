@@ -3,15 +3,13 @@ import {
   CURRENT_SCHEMA_VERSION,
   createLastResultSummary,
   createGeneratedId,
-  createRecipeSnapshot
+  createRecipeSnapshot,
+  calculateTimingDeviation,
+  hasStepCountdown
 } from "../domain/schema.js";
 
-function isTimedStep(step) {
-  return Boolean(step && (step.kind === "timed_action" || step.kind === "timed_wait"));
-}
-
 function deriveInitialStatus(step) {
-  return isTimedStep(step) ? "running" : "waiting_for_confirm";
+  return hasStepCountdown(step) ? "running" : "waiting_for_confirm";
 }
 
 export function createActiveBrewSession(recipeDefinition, options = {}) {
@@ -38,7 +36,7 @@ export function createActiveBrewSession(recipeDefinition, options = {}) {
     status: deriveInitialStatus(firstStep),
     sessionStartedAt,
     currentStepStartedAt: sessionStartedAt,
-    expectedStepEndAt: isTimedStep(firstStep) ? sessionStartedAt + (firstStep.durationMs || 0) : undefined,
+    expectedStepEndAt: hasStepCountdown(firstStep) ? sessionStartedAt + firstStep.durationMs : undefined,
     elapsedSessionMs: 0,
     completedStepIds: [],
     stepRunResults: [],
@@ -59,7 +57,7 @@ export function getCurrentSessionStep(activeSession) {
 export function getCurrentStepRemainingMs(activeSession, now = Date.now()) {
   const currentStep = getCurrentSessionStep(activeSession);
 
-  if (!isTimedStep(currentStep) || !Number.isFinite(activeSession.expectedStepEndAt)) {
+  if (!hasStepCountdown(currentStep) || !Number.isFinite(activeSession.expectedStepEndAt)) {
     return null;
   }
 
@@ -134,8 +132,7 @@ export function buildHistoryEntryFromSession(activeSession, options = {}) {
     elapsedMs: activeSession.elapsedSessionMs,
     stepRunResults: [...activeSession.stepRunResults],
     deviationSummary: {
-      totalDeltaMs: 0,
-      worstStepDeltaMs: 0,
+      ...calculateTimingDeviation(activeSession.stepRunResults),
       completedSteps: activeSession.completedStepIds.length,
       totalSteps: activeSession.recipeSnapshot.steps.length
     },
