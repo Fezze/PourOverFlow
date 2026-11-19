@@ -268,9 +268,11 @@ export function tickActiveSession(now = Date.now()) {
   };
 }
 
-export function advanceOrCompleteActiveSession() {
+export function advanceOrCompleteActiveSession(displayedStep = null) {
   const activeSession = readActiveSession();
-  if (!activeSession) {
+  if (!activeSession || (displayedStep &&
+      (activeSession.sessionId !== displayedStep.sessionId ||
+       activeSession.currentStepIndex !== displayedStep.currentStepIndex))) {
     return null;
   }
 

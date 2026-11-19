@@ -252,7 +252,7 @@ Restore a sensible state without pretending a full background engine exists.
 4. clear `active_session_v1`,
 5. send pending history and navigate to `result-summary`.
 
-If a write is interrupted, the next startup finishes saving the terminal session. The same recovery applies to an aborted brew. A delayed timer tick catches up from the recorded deadlines, stopping at the next manual checkpoint. The Stop confirmation stays visible while timed steps advance.
+If a write is interrupted, the next startup finishes saving the terminal session. The same recovery applies to an aborted brew. A delayed timer tick catches up from the recorded deadlines, stopping at the next manual checkpoint. The Stop confirmation stays visible while timed steps advance. A tap or shortcut advances only the step the user can see, even when the timer and the input fire together.
 
 Runtime note:
 

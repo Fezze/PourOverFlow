@@ -529,6 +529,45 @@ describe("page shell runtime coverage", () => {
     expect(runtime.triggerShortcutKey()).toBe(false);
   });
 
+  it("ignores taps and shortcut events for the step that just timed out", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
+    const now = 500_000;
+    vi.useFakeTimers({ now });
+    const session = createActiveBrewSession(fixture.primarySnapshot, { now });
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify({
+        ...session, currentStepIndex: 1, status: "running", expectedStepEndAt: now + 1_000
+      })
+    });
+
+    const oldPage = buildPage(pageDefinition);
+    try {
+      const [staleSkip] = runtime.findCreatedWidgetsByType("BUTTON");
+      expect(staleSkip.text).toBe("Skip");
+      vi.advanceTimersByTime(1_000);
+      expect(watchStore.readActiveSession()?.currentStepIndex).toBe(2);
+      staleSkip.click_func();
+      runtime.triggerShortcutKey();
+      expect(watchStore.readActiveSession()?.currentStepIndex).toBe(2);
+      expect(runtime.router.replace).toHaveBeenCalledTimes(1);
+    } finally {
+      pageDefinition.onDestroy.call(oldPage);
+    }
+
+    const nextPage = buildPage(pageDefinition);
+    try {
+      const activeSkip = runtime.findCreatedWidgetsByType("BUTTON").at(-2);
+      activeSkip.click_func();
+      activeSkip.click_func();
+      expect(watchStore.readActiveSession()?.currentStepIndex).toBe(3);
+    } finally {
+      pageDefinition.onDestroy.call(nextPage);
+      vi.useRealTimers();
+    }
+  });
+
   it("keeps one second visible until the countdown deadline", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());

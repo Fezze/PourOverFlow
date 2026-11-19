@@ -212,11 +212,16 @@ Page({
     }
 
     enableActiveSessionDisplayGuard(activeSession);
-    this.shortcutRegistered = registerShortcutKey(() => {
+    const displayedStep = {
+      sessionId: activeSession.sessionId,
+      currentStepIndex: activeSession.currentStepIndex
+    };
+    const advanceDisplayedStep = () => {
       if (!this.stopConfirmationOpen) {
-        advanceOrCompleteActiveSession();
+        advanceOrCompleteActiveSession(displayedStep);
       }
-    });
+    };
+    this.shortcutRegistered = registerShortcutKey(advanceDisplayedStep);
 
     const colors = SHARED_COLORS;
     const timerH = IS_SMALL ? 58 : 64;
@@ -244,11 +249,7 @@ Page({
       ...BUTTONS[0],
       text: this.actionLabel,
       text_size: BUTTONS[0].text_size,
-      click_func: () => {
-        if (!this.stopConfirmationOpen) {
-          advanceOrCompleteActiveSession();
-        }
-      }
+      click_func: advanceDisplayedStep
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[1],
