@@ -1,6 +1,9 @@
 import * as hmUI from "@zos/ui";
 import { getDeviceInfo } from "@zos/device";
 import { px } from "@zos/utils";
+import { ESPRESSO_COLORS as SHARED_COLORS } from "../constants/espresso-colors.js";
+
+export { SHARED_COLORS };
 
 const DEFAULT_LAYOUT_SIZE = {
   width: 480,
@@ -33,25 +36,6 @@ function readLayoutDeviceSize() {
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = readLayoutDeviceSize();
 const IS_COMPACT_ROUND_DEVICE = DEVICE_WIDTH < DEFAULT_LAYOUT_SIZE.width || DEVICE_HEIGHT < DEFAULT_LAYOUT_SIZE.height;
 const IS_TINY_ROUND_DEVICE = DEVICE_WIDTH <= 430 || DEVICE_HEIGHT <= 430;
-
-export const SHARED_COLORS = {
-  background: 0x11100e,
-  surface: 0x211e19,
-  surfaceMuted: 0x2c2822,
-  text: 0xf4eee3,
-  muted: 0xb9b0a0,
-  primary: 0xe6b877,
-  primaryPress: 0xc99b60,
-  secondary: 0x302b24,
-  secondaryPress: 0x42392e,
-  accent: 0xe6b877,
-  accentPress: 0xc99b60,
-  success: 0xa9bfa7,
-  danger: 0xd6675a,
-  dangerPress: 0xa14c43,
-  neutral: 0x302b24,
-  neutralPress: 0x42392e
-};
 
 export function isCompactRoundDevice() {
   return IS_COMPACT_ROUND_DEVICE;

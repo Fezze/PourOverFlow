@@ -205,10 +205,10 @@ export default {
       recipeListSubtitle: ({ recipeCountLabel }) => recipeCountLabel,
       historyTitle: "Historia parzeń",
       historySubtitle: ({ historyOverview }) => historyOverview,
-      historyDetailTitle: "Szczegóły historii",
+      historyDetailTitle: "Wynik parzenia",
       historyDetailSubtitle: "Notatki i oceny z telefonu zostają przy archiwalnym wpisie.",
-      syncTitle: "Status sync",
-      syncSubtitle: "Telefon pozostaje kanoniczny. Zegarek trzyma tylko to, czego potrzebuje.",
+      syncTitle: "Synchronizacja",
+      syncSubtitle: "Przepisy i historia parzeń są zapisane w telefonie. Zegarek przechowuje kopię przepisów, bieżące parzenie i ostatni wynik.",
       homeTitle: "PourOverFlow",
       homeSubtitle: ({ libraryOverview }) => libraryOverview
     },
@@ -224,12 +224,11 @@ export default {
         }
 
         return parts.join(" - ");
-      },
-      sync: ({ toolRevision, recipeRevision, historyRevision }) => `Rewizja metod: ${toolRevision}\nRewizja przepisów: ${recipeRevision}\nRewizja historii: ${historyRevision}`
+      }
     },
     messages: {
       noRecipesYet: "Brak przepisów dla tej metody.\nDodaj pierwszy tutaj.",
-      recipeDraftMissing: "Brak draftu przepisu.",
+      recipeDraftMissing: "Brak szkicu przepisu.",
       historyEntryNotFound: "Nie znaleziono wpisu historii.",
       noHistoryYet: "Brak wpisów historii.\nPojawią się tutaj po wysłaniu zakończonych lub przerwanych sesji z zegarka.",
       recipeSaved: ({ name }) => `Zapisano przepis: ${name}`,
@@ -260,7 +259,7 @@ export default {
       detailSubtitle: "Archiwalny snapshot, czasy i notatki z telefonu.",
       stepTimingTitle: "Czasy kroków",
       stepTimingSubtitle: "Wyniki przebiegu zapisane przy archiwalnym snapshocie przepisu.",
-      feedbackTitle: "Ocena z telefonu",
+      feedbackTitle: "Ocena i notatki",
       feedbackSubtitle: "Notatki i ocena zostają przy tej archiwalnej sesji.",
       noStepResults: "Dla tego parzenia nie zapisano wyników kroków.",
       saveNotes: "Zapisz notatki",
@@ -271,8 +270,10 @@ export default {
       filter: ({ filterLabel }) => `Filtr: ${filterLabel || "Brak"}`
     },
     sync: {
-      overviewTitle: "Przegląd synchronizacji",
-      overviewSubtitle: "Zegarek trzyma tylko przepisy, stan cache i ostatni wynik."
+      revisionsTitle: "Wersje danych",
+      brewers: "Metody",
+      recipes: "Przepisy",
+      history: "Historia"
     },
     editor: {
       editingExisting: "Edytujesz istniejący przepis.",
@@ -283,7 +284,7 @@ export default {
       recipeBasicsSubtitle: "Tożsamość, metoda i krótki opis.",
       brewProfileTitle: "Profil parzenia",
       brewProfileSubtitle: "Liczby widoczne w bibliotece, na zegarku i w historii.",
-      guidedStepsTitle: "Kroki prowadzone",
+      guidedStepsTitle: "Kroki parzenia",
       guidedStepsSubtitle: ({ stepCount }) => `${formatPolishCount(stepCount, "krok", "kroki", "kroków")} definiuje prowadzenie na zegarku.`,
       notesAndSaveTitle: "Notatki i zapis",
       notesAndSaveSubtitle: "Notatki przepisu zostają w rekordzie telefonu i pomagają przy kolejnych edycjach.",
@@ -297,6 +298,8 @@ export default {
       down: "W dół",
       delete: "Usuń",
       reset: "Reset",
+      openStepPicker: "Przejdź do kroku",
+      closeStepPicker: "Zamknij listę kroków",
       stepOf: ({ current, total }) => `Krok ${current} z ${total}`,
       stepSummary: ({ index, total, title, detail }) => `Krok ${index}/${total}: ${title}\n${detail}`,
       untitledRecipe: "Przepis bez nazwy",
@@ -309,24 +312,26 @@ export default {
       tool: "Metoda",
       color: "Kolor",
       description: "Opis",
-      doseG: "Doza g",
-      waterMl: "Woda ml",
-      tempC: "Temp C",
+      doseG: "Kawa (g)",
+      waterMl: "Woda (ml)",
+      tempC: "Temperatura (°C)",
       filter: "Filtr",
       grind: "Mielenie",
-      estimatedMs: "Szacowane ms",
-      kind: "Typ",
+      estimatedMs: "Szacowany czas (ms)",
+      kind: "Typ kroku",
       title: "Tytuł",
-      body: "Treść",
-      durationMs: "Czas ms",
-      targetTotalMl: "Cel łączny ml",
+      body: "Instrukcja",
+      durationMs: "Czas (ms)",
+      targetTotalMl: "Cel łączny (ml)",
       requiresConfirm: "Wymaga potwierdzenia",
-      feedbackCue: "Cue haptyczne",
+      feedbackCue: "Wibracja",
       notes: "Notatki",
       rating: "Ocena",
       note: "Notatka"
     },
     options: {
+      yes: "Tak",
+      no: "Nie",
       feedbackCue: {
         none: "brak",
         vibrate_short: "krótka haptyka",

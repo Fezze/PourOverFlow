@@ -22,9 +22,6 @@
 
 
 - Confirm the compact brewing header, wide instructions, a circle-safe reader and pinned actions, long description scrolling and dynamic recipe-name rows on physical round and rectangular watches; retain the Brewers/Latest Result gesture checks.
-- Confirm the warm Settings theme and native field rendering in the Zepp phone app.
-
-
 - Confirm on real hardware that the latest round-screen spacing pass clears the mask comfortably on `home`, `recipe-detail`, `brew-active`, and `result-summary`.
 - Re-check the new compact-round tuning on `Amazfit Balance` after the `API_LEVEL 3.6` floor change and confirm that the smaller round layout still preserves the intended spacing without over-tightening the 480 baseline.
 - Confirm on real hardware that the simplified paired-pill `brew-active` dock feels balanced and that the primary-right / secondary-left emphasis reads clearly during a live brew.
@@ -49,9 +46,7 @@
 
 ### Phone UX follow-up
 
-- Confirm on a real phone that the simplified `Library` screen reads clearly with only brewer and recipe counts in the shell header, compact left badges, and no secondary dashboard panel.
-- Confirm on a real phone that the shared brewer PNG icons render correctly in `setting/` and that the separate right-side count badges stay aligned across short and long brewer names.
-- Confirm on a real phone that the new Polish Settings copy still fits cleanly across `Library`, `History`, `Sync`, and the paginated recipe editor.
+- Verify the shared espresso theme in the physical Zepp app in light and dark appearance modes. Check native Select and multiline TextInput contrast, brewer icons and full-row tap behavior, and Polish wrapping across the library, recipe editor, history and sync.
 
 ### Localization follow-up
 

@@ -10,12 +10,13 @@ import {
   readRecipeRecord,
   saveHistoryEntry
 } from "../zepp-app/shared/storage/phone-store.js";
+import { ESPRESSO_COLORS } from "../zepp-app/shared/constants/espresso-colors.js";
 import { getPhoneHistoryRecordKey } from "../zepp-app/shared/storage/keys.js";
 
 type SettingsNode = {
   type: string;
   props: Record<string, unknown>;
-  children: SettingsNode[];
+  children: (SettingsNode | string)[];
 };
 
 type SettingsPageConfig = {
@@ -55,7 +56,7 @@ function makeNode(type: string) {
   return (props: Record<string, unknown> = {}, children: unknown = []): SettingsNode => ({
     type,
     props,
-    children: (Array.isArray(children) ? children : [children]).filter(Boolean) as SettingsNode[]
+    children: (Array.isArray(children) ? children : [children]).filter(Boolean) as (SettingsNode | string)[]
   });
 }
 
@@ -68,7 +69,7 @@ beforeAll(async () => {
     pageConfig = config;
   };
   globals.View = makeNode("View");
-  globals.Section = makeNode("Section");
+  globals.Text = makeNode("Text");
   globals.Button = (props: Record<string, unknown>) => makeNode("Button")(props);
   globals.TextInput = (props: Record<string, unknown>) => makeNode("TextInput")(props);
   globals.Select = (props: Record<string, unknown>) => makeNode("Select")(props);
@@ -88,35 +89,75 @@ function createPage() {
   return { instance, props };
 }
 
-function findButton(node: SettingsNode, label: string): SettingsNode | undefined {
-  if (node.type === "Button" && node.props.label === label) {
+function findNode(node: SettingsNode, matches: (node: SettingsNode) => boolean): SettingsNode | undefined {
+  if (matches(node)) {
     return node;
   }
 
   for (const child of node.children) {
-    const match = findButton(child, label);
-    if (match) {
-      return match;
-    }
+    if (typeof child === "string") continue;
+    const match = findNode(child, matches);
+    if (match) return match;
   }
 
   return undefined;
+}
+
+function findButton(node: SettingsNode, label: string) {
+  return findNode(node, (child) => child.type === "Button" && child.props.label === label);
+}
+
+function findText(node: SettingsNode, text: string) {
+  return findNode(node, (child) => child.type === "Text" && child.children.includes(text));
+}
+
+function findRecordRow(node: SettingsNode, title: string) {
+  return findNode(node, (child) =>
+    child.type === "View" && typeof child.props.onClick === "function" && Boolean(findText(child, title))
+  );
+}
+
+function click(node: SettingsNode | undefined) {
+  expect(node?.props.onClick).toBeTypeOf("function");
+  (node!.props.onClick as () => void)();
 }
 
 describe("phone settings page behavior", () => {
   it("navigates between the persistent Library, History, and Sync tabs", () => {
     const { instance, props } = createPage();
     const libraryTree = instance.build(props);
-    findButton(libraryTree, "History")?.props.onClick?.();
+    click(findButton(libraryTree, "History"));
     expect(instance.state.ui.view).toBe("history-list");
 
     const historyTree = instance.build(props);
-    findButton(historyTree, "Sync")?.props.onClick?.();
+    click(findButton(historyTree, "Sync"));
     expect(instance.state.ui.view).toBe("about-sync");
 
     const syncTree = instance.build(props);
-    findButton(syncTree, "Library")?.props.onClick?.();
+    click(findButton(syncTree, "Library"));
     expect(instance.state.ui.view).toBe("library-home");
+  });
+
+  it("uses the watch palette and opens a recipe through the brewer and recipe rows", () => {
+    const { instance, props } = createPage();
+    const library = instance.build(props);
+    expect(library.props.style).toMatchObject({
+      backgroundColor: `#${ESPRESSO_COLORS.background.toString(16)}`
+    });
+    const brewer = findRecordRow(library, "AeroPress");
+    expect(findText(brewer!, "4")).toBeDefined();
+    click(brewer);
+
+    const recipes = instance.build(props);
+    const recipe = instance.state.snapshot.recipesByTool.tool_aeropress[0];
+    click(findRecordRow(recipes, recipe.name));
+
+    const editor = instance.build(props);
+    expect(instance.state.ui.editingRecipeId).toBe(recipe.recipeId);
+    expect(findText(editor, recipe.name)).toBeDefined();
+    expect(findButton(editor, "Save recipe")?.props.style).toMatchObject({
+      backgroundColor: `#${ESPRESSO_COLORS.primary.toString(16)}`
+    });
   });
 
   it("creates and saves a recipe from the editor flow", () => {
@@ -138,10 +179,51 @@ describe("phone settings page behavior", () => {
     instance.hydrateFromStorage(props);
     instance.openRecipeEditor(props, recipe.recipeId);
 
-    instance.setStepPage(props, 1);
+    click(findButton(instance.build(props), "Next"));
+    const secondStep = instance.build(props);
     expect(instance.state.ui.stepPageIndex).toBe(1);
+    expect(findText(secondStep, `Step 2 of ${instance.state.ui.draftRecipe.steps.length}`)).toBeDefined();
+    expect(findNode(secondStep, (node) => node.type === "TextInput" && node.props.label === "Instructions")?.props)
+      .toMatchObject({ multiline: true, rows: 4, value: instance.state.ui.draftRecipe.steps[1].body });
+    click(findButton(secondStep, "Previous"));
+    expect(instance.state.ui.stepPageIndex).toBe(0);
     instance.setStepPage(props, 999);
     expect(instance.state.ui.stepPageIndex).toBe(instance.state.ui.draftRecipe.steps.length - 1);
+  });
+
+  it("opens and closes a titled picker for all 33 recipe steps", () => {
+    const { instance, props } = createPage();
+    const recipe = readPhoneSnapshot(props.settingsStorage).recipeIndex[0];
+    instance.hydrateFromStorage(props);
+    instance.openRecipeEditor(props, recipe.recipeId);
+
+    const draftSteps = instance.state.ui.draftRecipe.steps;
+    const steps = Array.from({ length: 33 }, (_, index) => ({
+      ...draftSteps[index === 32 ? draftSteps.length - 1 : 0],
+      title: index === 0 ? "Prepare" : index === 32 ? "Serve" : "Pour and swirl",
+      body: index === 32 ? "Serve the coffee." : "Follow the pouring target."
+    }));
+    instance.updateDraftField(props, "steps", steps);
+    instance.setStepPage(props, 16);
+
+    const form = instance.build(props);
+    expect(findText(form, "Step 17 of 33")).toBeDefined();
+    expect(findButton(form, "33. Serve")).toBeUndefined();
+    click(findButton(form, "Go to step"));
+
+    const picker = instance.build(props);
+    expect(findNode(picker, (node) => node.type === "View" && node.children.length === 33 &&
+      Boolean(findButton(node, "1. Prepare")) && Boolean(findButton(node, "33. Serve")))).toBeDefined();
+    click(findButton(picker, "Close step list"));
+    expect(findButton(instance.build(props), "33. Serve")).toBeUndefined();
+    click(findButton(instance.build(props), "Go to step"));
+
+    click(findButton(instance.build(props), "33. Serve"));
+    const finalStep = instance.build(props);
+    expect(findText(finalStep, "Step 33 of 33")).toBeDefined();
+    expect(findButton(finalStep, "Next")).toBeUndefined();
+    expect(findButton(finalStep, "33. Serve")).toBeUndefined();
+    expect(findNode(finalStep, (node) => node.props.label === "Instructions")?.props.value).toBe("Serve the coffee.");
   });
 
   it("duplicates a recipe and deletes the duplicate while retaining the original", () => {
@@ -181,11 +263,13 @@ describe("phone settings page behavior", () => {
       updatedAt: 1711111112222
     };
     expect(saveHistoryEntry(props.settingsStorage, historyEntry).ok).toBe(true);
-    instance.hydrateFromStorage(props);
-    instance.openHistoryDetail(props, historyEntry.historyId);
+    click(findButton(instance.build(props), "History"));
+    click(findRecordRow(instance.build(props), recipe.name));
+    const detail = instance.build(props);
+    expect(findText(detail, "00:01")).toBeDefined();
     instance.updateHistoryDraftField(props, "userRating", "5");
     instance.updateHistoryDraftField(props, "userNote", "Honey, cocoa, clean finish.");
-    instance.saveHistoryDraft(props);
+    click(findButton(instance.build(props), "Save notes"));
 
     expect(readHistoryEntry(props.settingsStorage, historyEntry.historyId)).toMatchObject({
       userRating: 5,

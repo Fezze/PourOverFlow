@@ -91,13 +91,11 @@ export function buildHistoryOverview(snapshot, localeOrTranslator = null) {
   });
 }
 
-export function buildSyncOverview(syncMeta, localeOrTranslator = null) {
+export function buildSyncRevisionRows(syncMeta, localeOrTranslator = null) {
   const translator = resolveTranslator(localeOrTranslator);
-  const meta = syncMeta || {};
-
-  return translator.t("settings.overview.sync", {
-    toolRevision: meta.toolCatalogRevision || 0,
-    recipeRevision: meta.recipeCatalogRevision || 0,
-    historyRevision: meta.historyRevision || 0
-  });
+  return [
+    { label: translator.t("settings.sync.brewers"), value: syncMeta?.toolCatalogRevision || 0 },
+    { label: translator.t("settings.sync.recipes"), value: syncMeta?.recipeCatalogRevision || 0 },
+    { label: translator.t("settings.sync.history"), value: syncMeta?.historyRevision || 0 }
+  ];
 }

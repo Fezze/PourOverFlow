@@ -4,7 +4,7 @@ import {
   buildHistoryOverview,
   buildLibraryOverview,
   buildRecipeShelfCountLabel,
-  buildSyncOverview,
+  buildSyncRevisionRows,
   buildToolBadgeLabel,
   buildToolCardLabel,
   buildToolCountBadgeLabel,
@@ -56,14 +56,19 @@ describe("settings view model", () => {
     expect(buildToolCardLabel(TOOL_CATALOG[5], 5, i18n)).toBe("French Press");
   });
 
-  it("formats history and sync summaries for simpler secondary screens", () => {
+  it("formats history counts and returns localized sync revision rows", () => {
     expect(buildHistoryOverview(snapshot as never)).toBe("2 archived brews on the phone.");
     expect(
-      buildSyncOverview({
+      buildSyncRevisionRows({
         toolCatalogRevision: 7,
         recipeCatalogRevision: 11,
         historyRevision: 13
-      } as never)
-    ).toBe("Tools revision: 7\nRecipes revision: 11\nHistory revision: 13");
+      }, "pl-PL")
+    ).toEqual([
+      { label: "Metody", value: 7 },
+      { label: "Przepisy", value: 11 },
+      { label: "Historia", value: 13 }
+    ]);
+    expect(buildSyncRevisionRows(null).map(({ value }) => value)).toEqual([0, 0, 0]);
   });
 });

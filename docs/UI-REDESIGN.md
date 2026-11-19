@@ -4,7 +4,7 @@
 
 The redesign preserves the six watch pages, six phone views, closed brewer catalog, existing CRUD, snapshot brewing, history, sync, resume, and English/Polish support. Runtime compatibility remains configVersion v3 / API level 3.6. No storage or message contract changes were made.
 
-The watch uses an espresso background (#11100E), warm surfaces (#211E19), cream text (#F4EEE3), and a caramel primary action (#E6B877). Main actions use dark text for contrast. Phone Settings uses warm paper with matching espresso and caramel accents.
+The watch uses an espresso background (#11100E), warm surfaces (#211E19), cream text (#F4EEE3), and a caramel primary action (#E6B877). Main actions use dark text for contrast. Phone Settings now shares the watch palette through the same source tokens. Its wider canvas keeps contextual headings, full-width brewer and record cards, readable form groups and larger controls.
 
 The brewing screen shows the step timer, session time and water target above a wide instruction. Recipe notes and active-brew instructions scroll between a stationary instrument header and stationary actions. Recipe-list rows expand to fit longer names. Result summaries emphasize total duration while keeping status and timing delta. The Stop button opens a localized system confirmation before aborting the brew.
 
@@ -45,7 +45,7 @@ On Balance 2 and Active 2 Square, the native test tapped Start directly on entry
 
 The old preview duplicated layouts and approximated list rows with CSS. The updated exporter reads real layouts, and the renderer honors every list text/image subview and row type. Browser assertions compare row geometry with serialized widget properties.
 
-`npm run preview:phone` renders the real AppSettingsPage component tree at 390 and 430 pixels, plus selected 360-pixel views. It includes populated/empty views and a later editor step, plus full-page images. Set `PHONE_PREVIEW_OUTPUT` or use `-- --output <path>`. Native input chrome is approximated by HTML; these are source-backed browser previews, not physical phone captures.
+`npm run preview:phone` renders the real AppSettingsPage component tree at 360, 390 and 430 pixels. It checks text clipping, horizontal overflow, 44 px touch targets and the selected step instructions in English and Polish. Captures include empty states, long recipe names and instructions, and full-page views. Set `PHONE_PREVIEW_OUTPUT` or use `-- --output <path>`. Native input chrome is approximated by HTML; these are source-backed browser previews, not physical phone captures.
 
 ## Evidence and limitations
 
@@ -69,3 +69,12 @@ The preview matrix includes realistic long English/Polish instructions, manual a
 Long recipe headers in details, active brewing and saved results are fitted to the circular mask, retaining native marquee. The empty brewing-state title grows for Polish wrapping. Native round lists can scroll beyond a very long single item; the final instruction remains reachable by scrolling back, as in the preceding firmware baseline.
 
 The final space-review batch passed 289 tests in 26 files (86.56% statement / 76.99% branch / 79.21% function / 86.51% line coverage), browser module smoke/coverage, the 240-state preview matrix and production packaging for all five targets. The review and native evidence live under `/home/krzysztof/Documents/ChatGPT/PourOverFlow/space-review-2026-11-15/`.
+
+
+## Phone Settings alignment
+
+The phone and watch share espresso, cream and caramel color tokens. On the phone, each brewer is one tap target with its familiar PNG icon and a separate count. Recipe cards show dose, water and duration below the name. History uses the watch's clock format, with elapsed time prominent in a brew result. Sync shows individually labeled data revisions.
+
+The recipe editor puts the current recipe and its main figures at the top. The selected step, navigation and editable instructions share one section. A scrollable picker opens on demand and lists step titles with their positions. Descriptions, instructions and notes use the native multiline TextInput. Select captions include the current value for the simulator renderer, which initializes its unbound Select control with an empty display. Settings control chrome remains host-rendered and should be checked on a phone with both Zepp appearance modes.
+
+[Zepp Settings View](https://docs.zepp.com/docs/reference/app-settings-api/ui/view/), [Text](https://docs.zepp.com/docs/reference/app-settings-api/ui/text/), [TextInput](https://docs.zepp.com/docs/reference/app-settings-api/ui/textinput/)

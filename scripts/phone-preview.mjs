@@ -6,6 +6,9 @@ import { runInNewContext } from "node:vm";
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 
+import { LONG_WATCH_COPY } from "../test/support/watch-long-content.js";
+import { COLORS, FIELD_LABEL } from "../zepp-app/setting/appearance.js";
+import { createTranslator } from "../zepp-app/shared/i18n/index.js";
 import { createRecipeSnapshot } from "../zepp-app/shared/domain/schema.js";
 import {
   ensurePhoneStorage,
@@ -13,7 +16,7 @@ import {
   readRecipeRecord,
   saveHistoryEntry
 } from "../zepp-app/shared/storage/phone-store.js";
-import { getPhoneHistoryRecordKey, getPhoneRecipeRecordKey, PHONE_STORAGE_KEYS, SETTINGS_UI_STORAGE_KEY } from "../zepp-app/shared/storage/keys.js";
+import { getPhoneRecipeRecordKey, PHONE_STORAGE_KEYS, SETTINGS_UI_STORAGE_KEY } from "../zepp-app/shared/storage/keys.js";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const OUT_DIR = resolve(
@@ -21,8 +24,7 @@ const OUT_DIR = resolve(
 );
 const APP_ROOT = resolve(readOption("--app-root") || resolve(ROOT, "zepp-app"));
 const FIXTURE_TIME = 1794690000000;
-const VIEWPORTS = [390, 430];
-const NARROW_VIEWPORT = 360;
+const VIEWPORTS = [360, 390, 430];
 const DEVICE_HEIGHT = 844;
 const LOCALES = ["en-US", "pl-PL"];
 const TOOL_IDS = [
@@ -140,7 +142,8 @@ function makeUiState(storage, state) {
     historyDraft: null,
     stepPageIndex: 0,
     flashMessage: "",
-    errorMessage: ""
+    errorMessage: "",
+    stepPickerOpen: false
   }));
 }
 
@@ -186,33 +189,48 @@ function renderNode(value, iconDataUris) {
 
   const { type, props = {}, children = [] } = value;
   const style = escapeHtml(styleToCss(props.style, iconDataUris));
-  if (type === "View" || type === "Section") {
-    return `<div style="${style}">${renderNode(children, iconDataUris)}</div>`;
+  if (type === "View") {
+    const role = typeof props.onClick === "function" ? ' role="button" tabindex="0"' : "";
+    return `<div${role} style="${style}">${renderNode(children, iconDataUris)}</div>`;
+  }
+  if (type === "Text") {
+    return `<div data-text style="${style};text-align:${escapeHtml(props.align || "left")}">${renderNode(children, iconDataUris)}</div>`;
   }
   if (type === "Button") {
     return `<button style="${style}" type="button">${escapeHtml(props.label)}</button>`;
   }
   if (type === "TextInput") {
-    return `<label class="field"><span>${escapeHtml(props.label)}</span><input value="${escapeHtml(props.value)}" readonly></label>`;
+    const field = props.multiline
+      ? `<textarea rows="${props.rows || 3}" readonly>${escapeHtml(props.value)}</textarea>`
+      : `<input value="${escapeHtml(props.value)}" readonly>`;
+    return `<label class="field"><span style="${escapeHtml(styleToCss(props.labelStyle))}">${escapeHtml(props.label)}</span>${field}</label>`;
   }
   if (type === "Select") {
     const options = Array.isArray(props.options) ? props.options : [];
-    return `<label class="field"><span>${escapeHtml(props.label)}</span><select disabled>${options.map((option) => `<option ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
+    return `<label class="field"><span>${escapeHtml(props.label)}</span><select>${options.map((option) => `<option ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
   }
   return renderNode(children, iconDataUris);
 }
 
 function renderPageHtml(tree, iconDataUris) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
-    *{box-sizing:border-box}html,body{margin:0;background:#ede9e1;color:#171512;font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-    #device{width:100%;height:${DEVICE_HEIGHT}px;overflow:hidden;background:#F3EEE5}#root{height:100%;overflow:auto;scrollbar-width:none}#root::-webkit-scrollbar{display:none}
-    button,input,select{font:inherit}button{border:0;cursor:default;white-space:pre-line;min-height:36px}label.field{display:flex;flex-direction:column;gap:7px;color:#776F63;font-size:13px}label.field input,label.field select{width:100%;min-height:44px;padding:10px 12px;border:1px solid #DED6C9;border-radius:12px;background:#FBF9F4;color:#24211C;font-size:15px}
+    *{box-sizing:border-box}
+    html,body{margin:0;background:${COLORS.background};color:${COLORS.text};font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark}
+    #device{width:100%;height:${DEVICE_HEIGHT}px;overflow:hidden}
+    #root{height:100%;overflow:auto;scrollbar-width:none}
+    #root::-webkit-scrollbar{display:none}
+    button,input,textarea,select{font:inherit}
+    button{white-space:pre-wrap}
+    button,[role="button"]{cursor:pointer}
+    label.field{display:flex;flex-direction:column;gap:7px;color:${FIELD_LABEL.color};font-weight:${FIELD_LABEL.fontWeight}}
+    label.field :is(input,textarea,select){width:100%;min-height:44px;padding:10px 12px;border:1px solid ${COLORS.secondaryPress};border-radius:12px;background:${COLORS.surfaceMuted};color:${COLORS.text};font-size:16px;font-weight:400}
+    textarea{resize:none}
   </style></head><body><div id="device"><div id="root">${renderNode(tree, iconDataUris)}</div></div></body></html>`;
 }
 
 async function createHarnessBundle() {
   const result = await build({
-    entryPoints: [resolve(APP_ROOT, "setting/app-settings.jsx")],
+    entryPoints: [resolve(APP_ROOT, "setting/index.js")],
     bundle: true,
     format: "iife",
     platform: "browser",
@@ -232,7 +250,7 @@ async function readToolIcons() {
   return iconDataUris;
 }
 
-function buildScenarios(storage) {
+function buildScenarios(storage, locale) {
   const populated = readPhoneSnapshot(storage);
   const recipeId = populated.recipeIndex[0].recipeId;
   const selectedRecipe = readRecipeRecord(storage, recipeId);
@@ -241,23 +259,95 @@ function buildScenarios(storage) {
   removeBrewerRecipes(emptyRecipeStorage, "tool_french_press");
   const emptyHistoryStorage = new PreviewStorage(storage.toJSON());
   emptyHistoryStorage.setItem(PHONE_STORAGE_KEYS.historyIndex, "[]");
-  const emptyLibraryStorage = new PreviewStorage(storage.toJSON());
-  emptyLibraryStorage.setItem(PHONE_STORAGE_KEYS.recipeIndex, "[]");
-  Object.keys(emptyLibraryStorage.toJSON())
-    .filter((key) => key.startsWith("pof_recipe_"))
-    .forEach((key) => emptyLibraryStorage.removeItem(key));
+  const longRecipeStorage = new PreviewStorage(storage.toJSON());
+  const longCopy = LONG_WATCH_COPY[locale];
+  const updatedAt = populated.recipeIndex[0].updatedAt + 1;
+  longRecipeStorage.setItem(PHONE_STORAGE_KEYS.recipeIndex, JSON.stringify(populated.recipeIndex.map((entry) =>
+    entry.recipeId === recipeId ? { ...entry, name: longCopy.recipeName, updatedAt } : entry
+  )));
+  longRecipeStorage.setItem(getPhoneRecipeRecordKey(recipeId), JSON.stringify({
+    ...selectedRecipe,
+    name: longCopy.recipeName,
+    updatedAt,
+    description: longCopy.description,
+    steps: selectedRecipe.steps.map((step, index) =>
+      index === 3 ? { ...step, title: longCopy.stepTitle, body: longCopy.instruction } : step
+    )
+  }));
+
+  const manyStepsStorage = new PreviewStorage(storage.toJSON());
+  const steps = Array.from({ length: 33 }, (_, index) => {
+    const source = selectedRecipe.steps[index === 32
+      ? selectedRecipe.steps.length - 1
+      : index % (selectedRecipe.steps.length - 1)];
+    return { ...source, stepId: `preview_step_${index}`, order: index };
+  });
+  manyStepsStorage.setItem(getPhoneRecipeRecordKey(recipeId), JSON.stringify({ ...selectedRecipe, steps }));
 
   return [
     { name: "library", storage, state: { view: "library-home" } },
     { name: "recipe-list", storage, state: { view: "recipe-list", toolId: selectedRecipe.toolId } },
     { name: "recipe-editor", storage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId } },
     { name: "recipe-editor-step-4", storage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 3 } },
+    { name: "recipe-list-long", storage: longRecipeStorage, state: { view: "recipe-list", toolId: selectedRecipe.toolId } },
+    { name: "recipe-editor-long-step", storage: longRecipeStorage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 3 } },
+    { name: "recipe-editor-33-steps", storage: manyStepsStorage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 16 } },
+    { name: "recipe-step-picker-33", storage: manyStepsStorage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 16, stepPickerOpen: true } },
     { name: "recipe-list-empty", storage: emptyRecipeStorage, state: { view: "recipe-list", toolId: "tool_french_press" } },
     { name: "history-list", storage, state: { view: "history-list" } },
     { name: "history-list-empty", storage: emptyHistoryStorage, state: { view: "history-list" } },
     { name: "history-detail", storage, state: { view: "history-detail", historyId } },
     { name: "sync", storage, state: { view: "about-sync" } }
   ];
+}
+
+async function verifyLayout(page, scenario, locale, width) {
+  const problems = await page.locator("#root").evaluate((root) => {
+    const issues = [];
+    for (const element of root.querySelectorAll('[data-text], button, [role="button"], label, input, textarea, select')) {
+      const bounds = element.getBoundingClientRect();
+      const label = element.textContent.trim().slice(0, 60) || element.tagName;
+      if (bounds.left < -1 || bounds.right > root.clientWidth + 1) {
+        issues.push(`outside the viewport: ${label}`);
+      }
+      if (element.matches('[data-text], button') && element.scrollWidth > element.clientWidth + 1) {
+        issues.push(`clipped text: ${label}`);
+      }
+      if (element.matches('button, [role="button"], input, textarea, select') && bounds.height < 44) {
+        issues.push(`target shorter than 44px: ${label}`);
+      }
+    }
+    return issues;
+  });
+
+  if (problems.length) {
+    throw new Error(`${locale}/${scenario.name}/${width}px: ${problems.join("; ")}`);
+  }
+  if (scenario.state.stepPageIndex) {
+    const i18n = createTranslator(locale);
+    const heading = page.getByText(i18n.t("settings.editor.guidedStepsTitle"), { exact: true })
+      .and(page.locator("[data-text]"));
+    const input = page.getByRole("textbox", { name: i18n.t("settings.labels.body"), exact: true });
+    const steps = readRecipeRecord(scenario.storage, scenario.state.recipeId).steps;
+    if (await input.inputValue() !== steps[scenario.state.stepPageIndex].body) {
+      throw new Error(`${locale}/${scenario.name}: selected step instructions do not match the fixture`);
+    }
+    if (scenario.state.stepPickerOpen) {
+      const lastOption = page.getByRole("button", { name: /^33\. / });
+      const optionReached = await lastOption.evaluate((element) => {
+        const list = element.parentElement;
+        if (list.scrollHeight <= list.clientHeight || list.clientHeight > 264) return false;
+        list.scrollTop = list.scrollHeight;
+        const reached = element.getBoundingClientRect().bottom <= list.getBoundingClientRect().bottom + 1;
+        list.scrollTop = 0;
+        return reached;
+      });
+      if (!optionReached) throw new Error(`${locale}/${scenario.name}: the final step cannot be reached in the picker`);
+    }
+    await heading.evaluate((element) => {
+      element.closest("#root").scrollTop += element.getBoundingClientRect().top - 22;
+    });
+  }
 }
 
 async function main() {
@@ -272,7 +362,7 @@ async function main() {
   if (browserPath) browserOptions.executablePath = browserPath;
 
   const browser = await chromium.launch(browserOptions);
-  const page = await browser.newPage({ viewport: { width: VIEWPORTS[0], height: 900 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: VIEWPORTS[0], height: DEVICE_HEIGHT }, deviceScaleFactor: 1 });
 
   let screenshotCount = 0;
   for (const locale of LOCALES) {
@@ -282,19 +372,15 @@ async function main() {
       console,
       navigator: { language: locale },
       AppSettingsPage: (config) => { pageConfig = config; },
-      View: make("View"), Section: make("Section"), Button: make("Button"),
+      View: make("View"), Text: make("Text"), Button: make("Button"),
       TextInput: make("TextInput"), Select: make("Select"),
       Date: class extends Date { static now() { return FIXTURE_TIME; } }
     });
     const storage = seedPreviewStorage(locale);
     await mkdir(resolve(OUT_DIR, locale), { recursive: true });
-    const scenarios = buildScenarios(storage);
+    const scenarios = buildScenarios(storage, locale);
     for (const scenario of scenarios) {
-      const widths = [
-        ...VIEWPORTS,
-        ...(scenario.name === "library" || scenario.name === "recipe-editor-step-4" || scenario.name === "history-detail" ? [NARROW_VIEWPORT] : [])
-      ];
-      for (const width of widths) {
+      for (const width of VIEWPORTS) {
         makeUiState(scenario.storage, scenario.state);
         const settingsStorage = new PreviewStorage(scenario.storage.toJSON());
         const instance = createPageInstance(pageConfig);
@@ -303,19 +389,14 @@ async function main() {
         if (scenario.state.view === "recipe-editor") {
           instance.openRecipeEditor(props, scenario.state.recipeId);
           if (scenario.state.stepPageIndex) instance.setStepPage(props, scenario.state.stepPageIndex);
+          if (scenario.state.stepPickerOpen) instance.persistUiState(props, { stepPickerOpen: true });
         } else if (scenario.state.view === "history-detail") {
           instance.openHistoryDetail(props, scenario.state.historyId);
         }
         const tree = instance.build(props);
-        await page.setViewportSize({ width, height: 900 });
+        await page.setViewportSize({ width, height: DEVICE_HEIGHT });
         await page.setContent(renderPageHtml(tree, icons));
-        if (scenario.name === "recipe-editor-step-4") {
-          await page.locator("#root").evaluate((root, stepLabel) => {
-            const title = [...root.querySelectorAll("button")].find(el => el.textContent.trim() === stepLabel);
-            if (!title) throw new Error(`Step panel missing: ${stepLabel}`);
-            root.scrollTop += title.getBoundingClientRect().top - root.getBoundingClientRect().top - 24;
-          }, locale === "pl-PL" ? "Krok 4 z 7" : "Step 4 of 7");
-        }
+        await verifyLayout(page, scenario, locale, width);
         await page.locator("#device").screenshot({ path: resolve(OUT_DIR, locale, `${scenario.name}-${width}.png`) });
         await page.locator("#root").evaluate(root => {
           root.style.height = "auto";
@@ -331,7 +412,7 @@ async function main() {
   await browser.close();
   await writeFile(
     resolve(OUT_DIR, "README.txt"),
-    `Phone Settings preview screenshots\n\nThese images render the current AppSettingsPage tree from zepp-app/setting/app-settings.jsx through a small browser adapter for the native Zepp Settings primitives. Layout and colors come from the actual component style props; native input chrome is approximated in HTML. This is a source-backed preview, not a Zepp companion app capture.\n\nLocales: en-US, pl-PL\nWidths: ${NARROW_VIEWPORT}px selected narrow screens; ${VIEWPORTS.join("px and ")}px all screens\nScenarios: library, recipe list, recipe editor, later recipe step, empty recipe shelf, populated and empty history list, history detail, sync.\nScreenshots written: ${screenshotCount}\n`
+    `Phone Settings preview screenshots\n\nThese images render the current AppSettingsPage tree from zepp-app/setting/app-settings.jsx through a small browser adapter for the native Zepp Settings primitives. Layout and colors come from the actual component style props; native input chrome is approximated in HTML. This is a source-backed preview, not a Zepp companion app capture.\n\nLocales: en-US, pl-PL\nWidths: ${VIEWPORTS.join(", ")}px\nScenarios: library, recipe list, recipe editor, later recipe step, long recipe name and instruction, 33-step editor with the picker open and closed, empty recipe shelf, populated and empty history list, history detail, sync.\nScenarios verified: ${screenshotCount}\nImages written: ${screenshotCount * 2}\n`
   );
   console.log(`Rendered ${screenshotCount} phone previews to ${OUT_DIR}`);
 }

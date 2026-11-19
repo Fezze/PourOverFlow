@@ -188,10 +188,10 @@ export default {
       recipeListSubtitle: ({ recipeCountLabel }) => recipeCountLabel,
       historyTitle: "Brew history",
       historySubtitle: ({ historyOverview }) => historyOverview,
-      historyDetailTitle: "History detail",
+      historyDetailTitle: "Brew result",
       historyDetailSubtitle: "Phone notes and ratings stay attached to the archived snapshot.",
       syncTitle: "Sync status",
-      syncSubtitle: "Phone stays canonical. The watch mirrors only what it needs.",
+      syncSubtitle: "Recipes and brew history are stored on your phone. The watch keeps a local copy of recipes, the active brew and the latest result.",
       homeTitle: "PourOverFlow",
       homeSubtitle: ({ libraryOverview }) => libraryOverview
     },
@@ -204,8 +204,7 @@ export default {
         }
 
         return parts.join(" - ");
-      },
-      sync: ({ toolRevision, recipeRevision, historyRevision }) => `Tools revision: ${toolRevision}\nRecipes revision: ${recipeRevision}\nHistory revision: ${historyRevision}`
+      }
     },
     messages: {
       noRecipesYet: "No recipes yet for this brewer.\nCreate the first one here.",
@@ -251,8 +250,10 @@ export default {
       filter: ({ filterLabel }) => `Filter: ${filterLabel || "Not specified"}`
     },
     sync: {
-      overviewTitle: "Sync overview",
-      overviewSubtitle: "The watch mirrors recipes, cache state, and the latest result only."
+      revisionsTitle: "Data revisions",
+      brewers: "Brewers",
+      recipes: "Recipes",
+      history: "History"
     },
     editor: {
       editingExisting: "Editing an existing recipe.",
@@ -277,6 +278,8 @@ export default {
       down: "Down",
       delete: "Delete",
       reset: "Reset",
+      openStepPicker: "Go to step",
+      closeStepPicker: "Close step list",
       stepOf: ({ current, total }) => `Step ${current} of ${total}`,
       stepSummary: ({ index, total, title, detail }) => `Step ${index}/${total}: ${title}\n${detail}`,
       untitledRecipe: "Untitled recipe",
@@ -286,27 +289,29 @@ export default {
     },
     labels: {
       name: "Name",
-      tool: "Tool",
+      tool: "Brewer",
       color: "Color",
       description: "Description",
-      doseG: "Dose g",
-      waterMl: "Water ml",
-      tempC: "Temp C",
+      doseG: "Coffee (g)",
+      waterMl: "Water (ml)",
+      tempC: "Temperature (°C)",
       filter: "Filter",
       grind: "Grind",
-      estimatedMs: "Estimated ms",
-      kind: "Kind",
+      estimatedMs: "Estimated time (ms)",
+      kind: "Step type",
       title: "Title",
-      body: "Body",
-      durationMs: "Duration ms",
-      targetTotalMl: "Target total ml",
-      requiresConfirm: "Requires confirm",
+      body: "Instructions",
+      durationMs: "Duration (ms)",
+      targetTotalMl: "Total target (ml)",
+      requiresConfirm: "Requires confirmation",
       feedbackCue: "Feedback cue",
       notes: "Notes",
       rating: "Rating",
       note: "Note"
     },
     options: {
+      yes: "Yes",
+      no: "No",
       feedbackCue: {
         none: "none",
         vibrate_short: "short haptic",

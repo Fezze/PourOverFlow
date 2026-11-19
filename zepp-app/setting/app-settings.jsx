@@ -1,4 +1,5 @@
 import { TOOL_CATALOG, getLocalizedToolLabel } from "../shared/constants/tool-catalog";
+import { formatDurationLabel } from "../shared/engine/recipe-engine.js";
 import { DEFAULT_LOCALE } from "../shared/i18n/index.js";
 import { createPhoneTranslator, resolvePhoneLocale } from "../shared/i18n/phone-locale.js";
 import {
@@ -25,355 +26,86 @@ import {
   buildHistoryOverview,
   buildLibraryOverview,
   buildRecipeShelfCountLabel,
-  buildSyncOverview,
+  buildSyncRevisionRows,
   buildToolCardLabel,
   buildToolCountBadgeLabel,
-  buildToolSettingsIconPath,
-  getSnapshotCounts
+  buildToolSettingsIconPath
 } from "./view-model";
+import {
+  ACTION,
+  BODY,
+  COLORS,
+  DANGER_ACTION,
+  FIELD_LABEL,
+  PANEL,
+  PRIMARY_ACTION,
+  PRIMARY_VALUE,
+  ROOT_VIEW,
+  ROW,
+  STACK,
+  TITLE
+} from "./appearance.js";
 
-const NAV_BUTTON_STYLE = {
-  fontSize: "14px",
-  fontWeight: "650",
-  lineHeight: "40px",
-  borderRadius: "32px",
-  background: "#E9E1D4",
-  color: "#3B352C",
-  textAlign: "center",
-  padding: "0 10px",
-  width: "31%"
+const NAV_STYLE = {
+  ...ROW,
+  gap: "4px",
+  padding: "4px",
+  borderRadius: "999px",
+  backgroundColor: COLORS.surface
 };
 
-const ROOT_VIEW_STYLE = {
-  padding: "18px 18px 36px",
-  background: "#F3EEE5",
-  display: "flex",
-  flexDirection: "column",
-  gap: "16px"
+const HEADER_STYLE = {
+  ...STACK,
+  gap: "5px",
+  padding: "8px 2px 16px",
+  borderBottom: `1px solid ${COLORS.surfaceMuted}`
 };
 
-const CARD_STACK_STYLE = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "16px"
-};
+const HEADER_TITLE = { ...TITLE, fontSize: "30px", lineHeight: "36px" };
 
-const ACTION_BUTTON_STYLE = {
-  fontSize: "14px",
-  fontWeight: "650",
-  borderRadius: "18px",
-  background: "#776F63",
-  color: "white"
-};
-
-const PRIMARY_BUTTON_STYLE = {
-  fontSize: "14px",
-  fontWeight: "700",
-  borderRadius: "18px",
-  background: "#E6B877",
-  color: "#171512"
-};
-
-const DANGER_BUTTON_STYLE = {
-  fontSize: "14px",
-  fontWeight: "650",
-  borderRadius: "18px",
-  background: "#8B473B",
-  color: "white"
-};
-
-const INFO_BUTTON_STYLE = {
-  fontSize: "14px",
-  borderRadius: "18px",
-  background: "#F8F5EF",
-  color: "#302B24"
-};
-
-const SUCCESS_CARD_STYLE = {
-  ...INFO_BUTTON_STYLE,
-  background: "#E5ECE0",
-  color: "#344334",
-  textAlign: "left",
-  padding: "12px 14px",
-  lineHeight: "18px"
-};
-
-const ERROR_CARD_STYLE = {
-  ...INFO_BUTTON_STYLE,
-  background: "#F3E4DE",
-  color: "#713A31",
-  textAlign: "left",
-  padding: "12px 14px",
-  lineHeight: "18px"
-};
-
-const HERO_BUTTON_STYLE = {
-  fontSize: "16px",
-  lineHeight: "24px",
-  fontWeight: "700",
-  borderRadius: "24px",
-  background: "#24211C",
-  color: "#F7F3EB",
-  textAlign: "left",
-  padding: "16px 18px"
-};
-
-const SECTION_TITLE_STYLE = {
-  fontSize: "14px",
-  fontWeight: "650",
-  lineHeight: "20px",
-  borderRadius: "18px",
-  background: "#E9E1D4",
-  color: "#302B24",
-  textAlign: "left",
-  padding: "10px 14px"
-};
-
-const CARD_BUTTON_STYLE = {
-  fontSize: "15px",
-  lineHeight: "23px",
-  borderRadius: "18px",
-  background: "#FBF9F4",
-  color: "#24211C",
-  textAlign: "left",
-  padding: "16px 18px"
-};
-
-const LIST_CARD_BUTTON_STYLE = {
-  ...CARD_BUTTON_STYLE,
-  flex: "1",
-  padding: "16px 18px"
-};
-
-const SOFT_ACTION_BUTTON_STYLE = {
-  fontSize: "14px",
-  fontWeight: "650",
-  borderRadius: "18px",
-  background: "#E9E1D4",
-  color: "#302B24"
-};
-
-const SHELL_HEADER_STYLE = {
-  fontSize: "22px",
-  lineHeight: "28px",
-  fontWeight: "750",
-  borderRadius: "22px",
-  background: "#24211C",
-  color: "#F7F3EB",
-  textAlign: "left",
-  padding: "18px 20px"
-};
-
-const SHELL_SUBTITLE_STYLE = {
-  fontSize: "14px",
-  lineHeight: "20px",
-  fontWeight: "500",
-  borderRadius: "0px",
-  background: "transparent",
-  color: "#D8CDBB",
-  textAlign: "left",
-  padding: "0 20px 2px"
-};
-
-const SHELL_TITLE_STYLE = {
-  ...SHELL_HEADER_STYLE,
-  padding: "0 20px",
-  lineHeight: "28px"
-};
-
-const SHELL_HEADER_CONTAINER_STYLE = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "6px",
-  borderRadius: "22px",
-  background: "#24211C",
-  padding: "18px 0",
-  border: "1px solid #38332B"
-};
-
-const PANEL_BASE_STYLE = {
-  borderRadius: "22px",
-  padding: "18px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "14px",
-  boxShadow: "0 5px 16px rgba(48, 39, 25, 0.06)"
-};
-
-const PANEL_TONES = {
-  mint: {
-    background: "#E9EFE4",
-    border: "1px solid #D2DDC9"
-  },
-  sky: {
-    background: "#F7F3EB",
-    border: "1px solid #DED6C9"
-  },
-  sand: {
-    background: "#F1E8D9",
-    border: "1px solid #DED6C9"
-  },
-  slate: {
-    background: "#24211C",
-    border: "1px solid #38332B"
-  },
-  white: {
-    background: "#FBF9F4",
-    border: "1px solid #DED6C9"
-  }
-};
-
-const PANEL_HEADER_STYLE = {
-  fontSize: "15px",
-  fontWeight: "700",
-  lineHeight: "20px",
-  color: "#24211C"
-};
-
-const PANEL_SUBTITLE_STYLE = {
-  fontSize: "14px",
-  lineHeight: "18px",
-  color: "#776F63"
-};
-
-const PANEL_HEADER_DARK_STYLE = {
-  ...PANEL_HEADER_STYLE,
-  color: "#F7F3EB"
-};
-
-const PANEL_SUBTITLE_DARK_STYLE = {
-  ...PANEL_SUBTITLE_STYLE,
-  color: "#D8CDBB"
-};
-
-const STEPPER_PAGER_STYLE = {
-  fontSize: "14px",
-  fontWeight: "600",
-  lineHeight: "16px",
-  borderRadius: "16px",
-  background: "#E9E1D4",
-  color: "#302B24",
-  textAlign: "center",
-  padding: "8px 10px"
-};
-
-const STEP_BADGE_STYLE = {
-  fontSize: "14px",
-  fontWeight: "700",
-  lineHeight: "18px",
-  borderRadius: "16px",
-  background: "#A9BFA7",
-  color: "#20281F",
-  textAlign: "center",
-  padding: "8px 12px"
-};
-
-const MINI_STAT_STYLE = {
-  fontSize: "14px",
-  lineHeight: "18px",
-  borderRadius: "14px",
-  background: "#FBF9F4",
-  color: "#302B24",
-  textAlign: "left",
-  padding: "10px 12px"
-};
-
-const STEP_JUMP_STYLE = {
-  fontSize: "14px",
-  fontWeight: "700",
-  lineHeight: "16px",
-  borderRadius: "16px",
-  background: "#E9E1D4",
-  color: "#302B24",
-  textAlign: "center",
-  padding: "8px 10px",
-  minWidth: "48px"
-};
-
-const STATIC_NOTE_STYLE = {
-  fontSize: "14px",
-  lineHeight: "18px",
-  background: "transparent",
-  color: "#776F63",
-  textAlign: "left",
-  padding: "0",
-  borderRadius: "0px"
-};
-
-const STATIC_NOTE_DARK_STYLE = {
-  ...STATIC_NOTE_STYLE,
-  color: "#D8CDBB"
-};
-
-const TOOL_LIST_STYLE = {
-  display: "flex",
-  flexDirection: "column",
-  gap: "12px"
-};
-
-const TOOL_ROW_STYLE = {
-  display: "flex",
-  flexDirection: "row",
-  alignItems: "center",
-  gap: "10px"
-};
-
-const TOOL_ICON_STYLE = {
-  width: "58px",
-  minWidth: "58px",
-  height: "58px",
-  borderRadius: "21px",
-  backgroundColor: "#E9E1D4",
-  backgroundPosition: "center",
-  backgroundRepeat: "no-repeat",
-  backgroundSize: "36px 36px",
+const CARD_STYLE = {
+  ...PANEL,
+  gap: "0",
   padding: "0"
 };
 
-const TOOL_ICON_TONES = {
-  tool_aeropress: { backgroundColor: "#EFE1CA" },
-  tool_v60: { backgroundColor: "#EFE1CA" },
-  tool_kalita_wave: { backgroundColor: "#EFE1CA" },
-  tool_chemex: { backgroundColor: "#EFE1CA" },
-  tool_clever_dripper: { backgroundColor: "#EFE1CA" },
-  tool_french_press: { backgroundColor: "#EFE1CA" }
+const RECORD_ROW = {
+  ...ROW,
+  padding: "14px 16px",
+  borderRadius: "20px"
 };
 
-const TOOL_COUNT_BADGE_STYLE = {
-  minWidth: "34px",
-  fontSize: "14px",
-  fontWeight: "700",
-  lineHeight: "38px",
-  borderRadius: "19px",
-  background: "#E9E1D4",
-  color: "#302B24",
-  textAlign: "center",
-  padding: "0 10px"
-};
-
-const PANEL_TITLE_RIBBON_STYLE = {
-  fontSize: "13px",
-  fontWeight: "700",
-  lineHeight: "18px",
+const TOOL_ICON = {
+  width: "44px",
+  height: "44px",
+  flex: "0 0 44px",
   borderRadius: "14px",
-  background: "rgba(255,255,255,0.08)",
-  color: "#F7F3EB",
-  textAlign: "center",
-  padding: "6px 12px"
+  backgroundColor: COLORS.surfaceMuted,
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  backgroundSize: "33px 33px"
 };
 
-const PANEL_TITLE_LIGHT_STYLE = {
-  ...PANEL_TITLE_RIBBON_STYLE,
-  background: "rgba(255,255,255,0.55)",
-  color: "#302B24"
+const COUNT_BADGE = {
+  ...PRIMARY_VALUE,
+  flexShrink: "0",
+  minWidth: "34px",
+  padding: "5px 8px",
+  borderRadius: "999px",
+  backgroundColor: COLORS.surfaceMuted
+};
+
+const DIVIDED_ROW = {
+  ...ROW,
+  borderTop: `1px solid ${COLORS.surfaceMuted}`,
+  paddingTop: "12px",
+  justifyContent: "space-between"
 };
 
 const COLOR_OPTIONS = RECIPE_COLOR_TOKENS.map((colorToken) => ({
   name: colorToken,
   value: colorToken
 }));
-
-const NOOP = () => {};
 
 function resolveSettingsTranslator(pageInstance = null) {
   if (pageInstance && pageInstance.i18n && typeof pageInstance.i18n.t === "function") {
@@ -406,8 +138,8 @@ function buildFeedbackOptions(i18n) {
 
 function buildBooleanOptions(i18n) {
   return [
-    { name: i18n.t("common.bool.true"), value: "true" },
-    { name: i18n.t("common.bool.false"), value: "false" }
+    { name: i18n.t("settings.options.yes"), value: "true" },
+    { name: i18n.t("settings.options.no"), value: "false" }
   ];
 }
 
@@ -431,6 +163,7 @@ function createDefaultUiState(selectedToolId) {
     draftRecipe: null,
     historyDraft: null,
     stepPageIndex: 0,
+    stepPickerOpen: false,
     flashMessage: "",
     errorMessage: ""
   };
@@ -474,91 +207,82 @@ function createHistoryDraft(historyEntry) {
   };
 }
 
-function createButtonRow(buttons) {
-  return View(
-    {
-      style: {
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "space-between",
-        gap: "8px",
-        marginTop: "8px"
-      }
-    },
-    buttons
-  );
+function createButtonRow(buttons, style = {}) {
+  return View({ style: { ...ROW, flexWrap: "wrap", ...style } }, buttons);
 }
 
-function createWrapRow(children, gap = "8px") {
-  return View(
-    {
-      style: {
-        display: "flex",
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap
-      }
-    },
-    children
-  );
+function createText(label, style = BODY, align = "left") {
+  return Text({ style, align }, [label]);
 }
 
-function createPanel(tone, title, subtitle, content) {
-  const isDark = tone === "slate";
-  const headerStyle = {
-    ...(isDark ? PANEL_TITLE_RIBBON_STYLE : PANEL_TITLE_LIGHT_STYLE),
-    alignSelf: "center"
-  };
-  const subtitleStyle = {
-    ...(isDark ? STATIC_NOTE_DARK_STYLE : STATIC_NOTE_STYLE),
-    background: "transparent",
-    borderRadius: "0px"
-  };
-
-  return View(
-    {
-      style: {
-        ...PANEL_BASE_STYLE,
-        ...(PANEL_TONES[tone] || PANEL_TONES.white)
-      }
-    },
-    [
-      View(
-        {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px"
-          }
-        },
-        [
-          title ? createStaticCard(title, headerStyle) : null,
-          subtitle ? createStaticCard(subtitle, subtitleStyle) : null
-        ].filter(Boolean)
-      ),
-      ...content
-    ]
-  );
+function createPanel(title, content) {
+  return View({ style: PANEL }, [
+    title && createText(title, TITLE),
+    ...content
+  ].filter(Boolean));
 }
 
-function createStaticCard(label, style = INFO_BUTTON_STYLE) {
-  return Button({
-    label,
-    style,
-    onClick: NOOP
-  });
-}
-
-function createSectionTitle(title, subtitle = "") {
-  return createStaticCard(subtitle ? `${title}\n${subtitle}` : title, SECTION_TITLE_STYLE);
+function createMessage(message, color = COLORS.muted) {
+  return View({ style: PANEL }, [createText(message, { ...BODY, color })]);
 }
 
 function createNavButtonStyle(isActive) {
   return {
-    ...NAV_BUTTON_STYLE,
-    background: isActive ? "#E6B877" : "#E9E1D4",
-    color: "#171512"
+    ...(isActive ? PRIMARY_ACTION : ACTION),
+    flex: "1 1 0",
+    minWidth: "0",
+    padding: "10px 4px",
+    backgroundColor: isActive ? COLORS.primary : COLORS.surface
   };
+}
+
+function createFieldRow(fields) {
+  return createButtonRow(fields.map((field) =>
+    View({ style: { flex: "1 1 120px", minWidth: "0" } }, [field])
+  ), { alignItems: "flex-start" });
+}
+
+function createTextField(props) {
+  return View({
+    style: {
+      backgroundColor: COLORS.surfaceMuted,
+      borderRadius: "12px",
+      minHeight: "44px",
+      padding: "8px 12px"
+    }
+  }, [TextInput({
+    labelStyle: FIELD_LABEL,
+    subStyle: {
+      ...BODY,
+      color: COLORS.text,
+      wordBreak: "normal",
+      maxHeight: "110px",
+      overflow: "hidden"
+    },
+    ...props
+  })]);
+}
+
+function createSelectField({ label, options, value, onChange }) {
+  const currentOption = options.find((option) => option.value === value);
+  return Select({
+    label: currentOption ? `${label} · ${currentOption.name}` : label,
+    options,
+    value,
+    onChange,
+    style: {
+      maxWidth: "100%",
+      label: FIELD_LABEL,
+      select: {
+        backgroundColor: COLORS.muted,
+        color: COLORS.background,
+        borderRadius: "10px",
+        minHeight: "32px",
+        marginTop: "6px",
+        paddingLeft: "12px"
+      }
+    }
+  });
 }
 
 function getStepPageCount(stepCount) {
@@ -582,7 +306,7 @@ function getActiveNavKey(viewName) {
   return "library";
 }
 
-function formatDurationLabel(durationMs) {
+function formatDeltaDuration(durationMs) {
   const durationSeconds = Math.max(0, Math.round((Number(durationMs) || 0) / 1000));
   const minutes = Math.floor(durationSeconds / 60);
   const seconds = durationSeconds % 60;
@@ -610,64 +334,45 @@ function getToolMeta(toolId) {
   return TOOL_CATALOG.find((tool) => tool.toolId === toolId) || null;
 }
 
-function createToolIconStyle(tool) {
-  return {
-    ...TOOL_ICON_STYLE,
-    ...(TOOL_ICON_TONES[tool.toolId] || {}),
-    backgroundImage: `url(${buildToolSettingsIconPath(tool)})`
-  };
-}
-
 function createToolBrowseCard(tool, recipeCount, onClick, i18n) {
-  return View({ style: TOOL_ROW_STYLE }, [
-    View(
-      {
-        style: createToolIconStyle(tool)
-      },
-      []
-    ),
-    Button({
-      label: buildToolCardLabel(tool, recipeCount, i18n),
-      style: LIST_CARD_BUTTON_STYLE,
-      onClick
-    }),
-    Button({
-      label: buildToolCountBadgeLabel(recipeCount),
-      style: TOOL_COUNT_BADGE_STYLE,
-      onClick
-    })
+  return View({ style: { ...RECORD_ROW, backgroundColor: COLORS.surface }, onClick }, [
+    View({
+      style: { ...TOOL_ICON, backgroundImage: `url(${buildToolSettingsIconPath(tool)})` }
+    }, []),
+    createText(buildToolCardLabel(tool, recipeCount, i18n), { ...TITLE, flex: "1 1 0", minWidth: "0" }),
+    createText(buildToolCountBadgeLabel(recipeCount), COUNT_BADGE, "center"),
+    createText("›", { ...BODY, fontSize: "22px" })
   ]);
 }
 
-function buildRecipeCardLabel(recipeSummary, recipeRecord, i18n) {
-  const metrics = recipeRecord
-    ? `${recipeRecord.coffeeDoseG}g - ${recipeRecord.totalWaterMl}ml - ${formatDurationLabel(
-        recipeRecord.estimatedTotalDurationMs
-      )}`
-    : i18n.t("common.unknownMetrics");
-  const sourceLabel = i18n.t(`settings.library.recipeSource.${recipeSummary.source}`, {}, recipeSummary.source);
-
-  return `${recipeSummary.name}\n${metrics}\n${sourceLabel} - ${i18n.t("settings.library.updatedAt", {
-    dateLabel: formatDateLabel(recipeSummary.updatedAt, i18n)
-  })}`;
+function createRecordRow(title, details, onClick) {
+  return View({ style: RECORD_ROW, onClick }, [
+    View({ style: { ...STACK, gap: "4px", flex: "1 1 0" } }, [
+      createText(title, TITLE),
+      ...details
+    ]),
+    createText("›", { ...BODY, fontSize: "24px", flexShrink: "0" })
+  ]);
 }
 
-function buildDraftOverview(draftRecipe, i18n) {
-  return `${draftRecipe.name || i18n.t("settings.editor.untitledRecipe")}\n${
-    getLocalizedToolLabel(getToolMeta(draftRecipe.toolId), i18n) || i18n.t("settings.editor.noBrewer")
-  } - ${i18n.t("settings.editor.guidedStepsSubtitle", { stepCount: draftRecipe.steps.length })} - ${formatDurationLabel(
-    draftRecipe.estimatedTotalDurationMs
-  )}`;
-}
-
-function buildRecipeStatCards(draftRecipe, i18n) {
+function formatBrewMetrics(recipe) {
+  const { coffeeDoseG, totalWaterMl } = recipe;
+  const durationMs = Number(recipe.estimatedTotalDurationMs);
   return [
-    i18n.t("settings.stats.dose", { value: draftRecipe.coffeeDoseG || "-" }),
-    i18n.t("settings.stats.water", { value: draftRecipe.totalWaterMl || "-" }),
-    i18n.t("settings.stats.temp", { value: draftRecipe.waterTempC || "-" }),
-    i18n.t("settings.stats.time", { value: formatDurationLabel(draftRecipe.estimatedTotalDurationMs) }),
-    i18n.t("settings.stats.steps", { value: draftRecipe.steps.length }),
-    i18n.t("settings.stats.color", { value: draftRecipe.colorToken || "-" })
+    coffeeDoseG && `${coffeeDoseG} g`,
+    totalWaterMl && `${totalWaterMl} ml`,
+    durationMs > 0 && formatDurationLabel(durationMs)
+  ].filter(Boolean).join(" · ");
+}
+
+function buildRecipeDetails(recipeSummary, recipeRecord, i18n) {
+  const metrics = recipeRecord ? formatBrewMetrics(recipeRecord) : "";
+  const source = i18n.t(`settings.library.recipeSource.${recipeSummary.source}`, {}, recipeSummary.source);
+  const updated = i18n.t("settings.library.updatedAt", { dateLabel: formatDateLabel(recipeSummary.updatedAt, i18n) });
+
+  return [
+    createText(metrics || i18n.t("common.unknownMetrics"), PRIMARY_VALUE),
+    createText(`${source} · ${updated}`)
   ];
 }
 
@@ -675,49 +380,16 @@ function humanizeStepKind(stepKind, i18n) {
   return i18n.getStepKindLabel(stepKind || "instruction");
 }
 
-function buildStepSummaryLabel(step, index, totalSteps, i18n) {
-  const detailParts = [humanizeStepKind(step.kind, i18n)];
-
-  if (step.durationMs) {
-    detailParts.push(formatDurationLabel(step.durationMs));
-  }
-
-  if (step.waterMl) {
-    detailParts.push(`${step.waterMl}ml`);
-  }
-
-  if (step.requiresConfirm === "true" || step.requiresConfirm === true) {
-    detailParts.push(i18n.t("schema.fallbackSteps.confirm"));
-  }
-
-  return i18n.t("settings.editor.stepSummary", {
-    index: index + 1,
-    total: totalSteps,
-    title: step.title || step.kind,
-    detail: detailParts.join(" - ")
-  });
+function buildHistoryDetails(entry, i18n) {
+  return [
+    i18n.getHistoryStatus(entry.status),
+    formatDateLabel(entry.endedAt, i18n),
+    entry.userRating ? i18n.t("settings.history.rated", { rating: entry.userRating }) : null
+  ].filter(Boolean).join(" · ");
 }
 
-function chunkItems(items, size) {
-  const rows = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    rows.push(items.slice(index, index + size));
-  }
-
-  return rows;
-}
-
-function buildHistoryCardLabel(historyEntry, i18n) {
-  const ratingLabel = historyEntry.userRating
-    ? ` - ${i18n.t("settings.history.rated", { rating: historyEntry.userRating })}`
-    : "";
-  return `${historyEntry.recipeSnapshot.name}\n${i18n.getHistoryStatus(historyEntry.status)} - ${formatDurationLabel(
-    historyEntry.elapsedMs
-  )} - ${formatDateLabel(historyEntry.endedAt, i18n)}${ratingLabel}`;
-}
-
-function buildShellHeader(viewName, snapshot, selectedToolId, i18n) {
+function buildShellHeader(ui, snapshot, i18n) {
+  const { view: viewName, selectedToolId, draftRecipe } = ui;
   const selectedTool = getToolMeta(selectedToolId);
   const selectedRecipeCount = selectedTool
     ? (((snapshot && snapshot.recipesByTool) || {})[selectedTool.toolId] || []).length
@@ -731,14 +403,17 @@ function buildShellHeader(viewName, snapshot, selectedToolId, i18n) {
             toolLabel: getLocalizedToolLabel(selectedTool, i18n)
           })
           : i18n.t("watch.recipeList.titleFallback"),
-        subtitle: selectedTool
-          ? buildRecipeShelfCountLabel(selectedRecipeCount, i18n)
-          : i18n.t("settings.library.recipeListSubtitle")
+        subtitle: buildRecipeShelfCountLabel(selectedRecipeCount, i18n)
       };
     case "recipe-editor":
       return {
-        title: i18n.t("settings.editor.recipeEditorTitle"),
-        subtitle: i18n.t("settings.editor.recipeEditorSubtitle")
+        title: draftRecipe?.name || i18n.t(draftRecipe?.recipeId
+          ? "settings.editor.untitledRecipe"
+          : "settings.library.newRecipe"),
+        subtitle: draftRecipe ? [
+          getLocalizedToolLabel(getToolMeta(draftRecipe.toolId), i18n),
+          formatBrewMetrics(draftRecipe)
+        ].filter(Boolean).join(" · ") : ""
       };
     case "history-list":
       return {
@@ -747,8 +422,7 @@ function buildShellHeader(viewName, snapshot, selectedToolId, i18n) {
       };
     case "history-detail":
       return {
-        title: i18n.t("settings.shell.historyDetailTitle"),
-        subtitle: i18n.t("settings.shell.historyDetailSubtitle")
+        title: i18n.t("settings.shell.historyDetailTitle")
       };
     case "about-sync":
       return {
@@ -805,6 +479,7 @@ AppSettingsPage({
   setView(props, viewName, patch = {}) {
     this.persistUiState(props, {
       view: viewName,
+      stepPickerOpen: false,
       errorMessage: "",
       ...patch
     });
@@ -903,6 +578,7 @@ AppSettingsPage({
   },
   setStepPage(props, nextPageIndex) {
     this.persistUiState(props, {
+      stepPickerOpen: false,
       stepPageIndex: clampStepPageIndex(
         nextPageIndex,
         (this.state.ui.draftRecipe && this.state.ui.draftRecipe.steps
@@ -1044,14 +720,7 @@ AppSettingsPage({
     const i18n = resolveSettingsTranslator(this);
 
     return View(
-      {
-        style: {
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          gap: "8px"
-        }
-      },
+      { style: NAV_STYLE },
       [
         Button({
           label: i18n.t("settings.nav.library"),
@@ -1077,29 +746,23 @@ AppSettingsPage({
       ]);
   },
   renderMessages() {
-    const messageViews = [];
+    const { flashMessage, errorMessage } = this.state.ui;
+    const messages = [
+      flashMessage && createMessage(flashMessage, COLORS.success),
+      errorMessage && createMessage(errorMessage, DANGER_ACTION.color)
+    ].filter(Boolean);
 
-    if (this.state.ui.flashMessage) {
-      messageViews.push(createStaticCard(this.state.ui.flashMessage, SUCCESS_CARD_STYLE));
-    }
-
-    if (this.state.ui.errorMessage) {
-      messageViews.push(createStaticCard(this.state.ui.errorMessage, ERROR_CARD_STYLE));
-    }
-
-    return messageViews.length ? Section({}, messageViews) : null;
+    return messages.length ? View({ style: STACK }, messages) : null;
   },
   renderLibraryHome(props) {
     const i18n = resolveSettingsTranslator(this);
-    const recipesByTool = this.state.snapshot ? this.state.snapshot.recipesByTool : {};
+    const recipesByTool = this.state.snapshot?.recipesByTool || {};
 
-    return View({ style: TOOL_LIST_STYLE }, TOOL_CATALOG.map((tool) =>
+    return View({ style: STACK }, TOOL_CATALOG.map((tool) =>
       createToolBrowseCard(
         tool,
         (recipesByTool[tool.toolId] || []).length,
-        () => {
-          this.openRecipeList(props, tool.toolId);
-        },
+        () => this.openRecipeList(props, tool.toolId),
         i18n
       )
     ));
@@ -1109,544 +772,325 @@ AppSettingsPage({
     const recipes = this.state.snapshot.recipesByTool[this.state.ui.selectedToolId] || [];
 
     if (!recipes.length) {
-      return [
-        createStaticCard(
-          i18n.t("settings.messages.noRecipesYet"),
-          CARD_BUTTON_STYLE
-        )
-      ];
+      return [createMessage(i18n.t("settings.messages.noRecipesYet"))];
     }
 
     return recipes.map((recipeSummary) => {
-      const recipeRecord = readRecipeRecord(props.settingsStorage, recipeSummary.recipeId);
+      const { recipeId, name } = recipeSummary;
+      const recipeRecord = readRecipeRecord(props.settingsStorage, recipeId);
 
-      return View(
-        {
-          style: {
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            marginBottom: "10px"
-          }
-        },
-        [
+      return View({ style: CARD_STYLE }, [
+        createRecordRow(
+          name,
+          buildRecipeDetails(recipeSummary, recipeRecord, i18n),
+          () => this.openRecipeEditor(props, recipeId)
+        ),
+        createButtonRow([
           Button({
-            label: buildRecipeCardLabel(recipeSummary, recipeRecord, i18n),
-            style: CARD_BUTTON_STYLE,
-            onClick: () => {
-              this.openRecipeEditor(props, recipeSummary.recipeId);
-            }
+            label: i18n.t("settings.library.duplicate"),
+            style: ACTION,
+            onClick: () => this.duplicateRecipe(props, recipeId)
           }),
-          createButtonRow([
-            Button({
-              label: i18n.t("settings.library.duplicate"),
-              style: SOFT_ACTION_BUTTON_STYLE,
-              onClick: () => {
-                this.duplicateRecipe(props, recipeSummary.recipeId);
-              }
-            }),
-            Button({
-              label: i18n.t("settings.library.delete"),
-              style: DANGER_BUTTON_STYLE,
-              onClick: () => {
-                this.deleteRecipe(props, recipeSummary.recipeId);
-              }
-            })
-          ])
-        ]
-      );
+          Button({
+            label: i18n.t("settings.library.delete"),
+            style: DANGER_ACTION,
+            onClick: () => this.deleteRecipe(props, recipeId)
+          })
+        ], { padding: "0 16px 14px" })
+      ]);
     });
   },
   renderRecipeList(props) {
     const i18n = resolveSettingsTranslator(this);
-    const selectedTool =
-      TOOL_CATALOG.find((tool) => tool.toolId === this.state.ui.selectedToolId) || TOOL_CATALOG[0];
-    const recipeCount = ((this.state.snapshot.recipesByTool || {})[selectedTool.toolId] || []).length;
-    const toolLabel = getLocalizedToolLabel(selectedTool, i18n);
 
-    return View({ style: CARD_STACK_STYLE }, [
+    return View({ style: STACK }, [
       createButtonRow([
         Button({
-          label: i18n.t("settings.library.newRecipe"),
-          style: PRIMARY_BUTTON_STYLE,
-          onClick: () => {
-            this.openRecipeEditor(props, null);
-          }
+          label: i18n.t("settings.library.brewers"),
+          style: ACTION,
+          onClick: () => this.openLibraryHome(props)
         }),
         Button({
-          label: i18n.t("settings.library.brewers"),
-          style: SOFT_ACTION_BUTTON_STYLE,
-          onClick: () => {
-            this.openLibraryHome(props);
-          }
+          label: i18n.t("settings.library.newRecipe"),
+          style: PRIMARY_ACTION,
+          onClick: () => this.openRecipeEditor(props, null)
         })
-      ]),
-      createPanel(
-        "sand",
-        recipeCount ? i18n.t("settings.library.recipesTitle") : i18n.t("settings.library.emptyShelfTitle"),
-        recipeCount
-          ? i18n.t("settings.library.recipeListSubtitle")
-          : i18n.t("settings.library.recipeListEmptySubtitle", { toolLabel }),
-        this.renderRecipeCards(props)
-      )
+      ], { justifyContent: "space-between" }),
+      ...this.renderRecipeCards(props)
     ]);
   },
-  renderStepEditor(props, step, index, totalSteps) {
+  renderStepEditor(props, steps, index) {
     const i18n = resolveSettingsTranslator(this);
+    const step = steps[index];
+    const updateStep = (key) => (value) => this.updateDraftStepField(props, index, key, value);
+    const stepTextField = (key, label, options = {}) => createTextField({
+      label: i18n.t(`settings.labels.${label}`),
+      value: String(step[key] ?? ""),
+      onChange: updateStep(key),
+      ...options
+    });
+    const stepPickerOpen = this.state.ui.stepPickerOpen;
+    const stepOptions = stepPickerOpen ? View({
+      style: {
+        ...STACK,
+        gap: "4px",
+        maxHeight: "264px",
+        overflowY: "auto",
+        backgroundColor: COLORS.background,
+        borderRadius: "14px",
+        padding: "4px"
+      }
+    }, steps.map((option, stepIndex) => Button({
+      label: `${stepIndex + 1}. ${option.title || i18n.t("settings.editor.untitledStep")}`,
+      style: {
+        ...ACTION,
+        flexShrink: "0",
+        borderRadius: "10px",
+        textAlign: "left",
+        justifyContent: "flex-start",
+        backgroundColor: stepIndex === index ? COLORS.secondary : COLORS.background,
+        color: stepIndex === index ? COLORS.primary : COLORS.text,
+        whiteSpace: "normal",
+        overflowWrap: "anywhere"
+      },
+      onClick: () => this.setStepPage(props, stepIndex)
+    }))) : null;
+    const stepTitle = i18n.t("settings.editor.stepOf", { current: index + 1, total: steps.length });
 
-    return createPanel(
-      "white",
-      i18n.t("settings.editor.stepOf", { current: index + 1, total: totalSteps }),
-      buildStepSummaryLabel(step, index, totalSteps, i18n).split("\n")[1] || i18n.t("settings.editor.stepEditorSubtitle"),
-      [
-        createStaticCard(
-          `${humanizeStepKind(step.kind, i18n)}\n${step.title || i18n.t("settings.editor.untitledStep")}`,
-          {
-            ...CARD_BUTTON_STYLE,
-            background: "#F1E8D9",
-            color: "#302B24"
-          }
-        ),
-        Select({
-          label: i18n.t("settings.labels.kind"),
-          options: buildStepKindOptions(i18n),
-          value: step.kind,
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "kind", value);
-          }
+    return createPanel(i18n.t("settings.editor.guidedStepsTitle"), [
+      createButtonRow([
+        index > 0 ? Button({
+          label: i18n.t("settings.editor.previous"),
+          style: ACTION,
+          onClick: () => this.setStepPage(props, index - 1)
+        }) : View({ style: { width: "78px" } }, []),
+        createText(stepTitle, { ...PRIMARY_VALUE, flex: "1 1 auto" }, "center"),
+        index < steps.length - 1 ? Button({
+          label: i18n.t("settings.editor.next"),
+          style: ACTION,
+          onClick: () => this.setStepPage(props, index + 1)
+        }) : View({ style: { width: "78px" } }, [])
+      ], { gap: "6px" }),
+      steps.length > 1 && Button({
+        label: i18n.t(stepPickerOpen ? "settings.editor.closeStepPicker" : "settings.editor.openStepPicker"),
+        style: ACTION,
+        onClick: () => this.persistUiState(props, { stepPickerOpen: !stepPickerOpen })
+      }),
+      stepOptions,
+      createSelectField({
+        label: i18n.t("settings.labels.kind"),
+        options: buildStepKindOptions(i18n),
+        value: step.kind,
+        onChange: updateStep("kind")
+      }),
+      stepTextField("title", "title"),
+      stepTextField("body", "body", { multiline: true, rows: 4 }),
+      createFieldRow([
+        stepTextField("durationMs", "durationMs"),
+        stepTextField("waterMl", "waterMl"),
+        stepTextField("targetTotalWaterMl", "targetTotalMl")
+      ]),
+      createSelectField({
+        label: i18n.t("settings.labels.requiresConfirm"),
+        options: buildBooleanOptions(i18n),
+        value: String(step.requiresConfirm ?? "false"),
+        onChange: updateStep("requiresConfirm")
+      }),
+      createSelectField({
+        label: i18n.t("settings.labels.feedbackCue"),
+        options: buildFeedbackOptions(i18n),
+        value: step.feedbackCue,
+        onChange: updateStep("feedbackCue")
+      }),
+      createButtonRow([
+        Button({
+          label: i18n.t("settings.editor.up"),
+          style: ACTION,
+          onClick: () => this.moveDraftStep(props, index, -1)
         }),
-        TextInput({
-          label: i18n.t("settings.labels.title"),
-          value: step.title || "",
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "title", value);
-          }
+        Button({
+          label: i18n.t("settings.editor.down"),
+          style: ACTION,
+          onClick: () => this.moveDraftStep(props, index, 1)
         }),
-        TextInput({
-          label: i18n.t("settings.labels.body"),
-          value: step.body || "",
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "body", value);
-          }
-        }),
-        TextInput({
-          label: i18n.t("settings.labels.durationMs"),
-          value: step.durationMs || "",
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "durationMs", value);
-          }
-        }),
-        TextInput({
-          label: i18n.t("settings.labels.waterMl"),
-          value: step.waterMl || "",
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "waterMl", value);
-          }
-        }),
-        TextInput({
-          label: i18n.t("settings.labels.targetTotalMl"),
-          value: step.targetTotalWaterMl || "",
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "targetTotalWaterMl", value);
-          }
-        }),
-        Select({
-          label: i18n.t("settings.labels.requiresConfirm"),
-          options: buildBooleanOptions(i18n),
-          value: step.requiresConfirm,
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "requiresConfirm", value);
-          }
-        }),
-        Select({
-          label: i18n.t("settings.labels.feedbackCue"),
-          options: buildFeedbackOptions(i18n),
-          value: step.feedbackCue,
-          onChange: (value) => {
-            this.updateDraftStepField(props, index, "feedbackCue", value);
-          }
-        }),
-        createButtonRow([
-          Button({
-            label: i18n.t("settings.editor.up"),
-            style: SOFT_ACTION_BUTTON_STYLE,
-            onClick: () => {
-              this.moveDraftStep(props, index, -1);
-            }
-          }),
-          Button({
-            label: i18n.t("settings.editor.down"),
-            style: SOFT_ACTION_BUTTON_STYLE,
-            onClick: () => {
-              this.moveDraftStep(props, index, 1);
-            }
-          }),
-          Button({
-            label: totalSteps > 1 ? i18n.t("settings.editor.delete") : i18n.t("settings.editor.reset"),
-            style: DANGER_BUTTON_STYLE,
-            onClick: () => {
-              this.deleteDraftStep(props, index);
-            }
-          })
-        ])
-      ]
-    );
+        Button({
+          label: i18n.t(steps.length > 1 ? "settings.editor.delete" : "settings.editor.reset"),
+          style: DANGER_ACTION,
+          onClick: () => this.deleteDraftStep(props, index)
+        })
+      ]),
+      createButtonRow([
+        Button({
+          label: i18n.t("settings.editor.addStep"),
+          style: ACTION,
+          onClick: () => this.addDraftStep(props)
+        })
+      ], DIVIDED_ROW)
+    ]);
   },
   renderRecipeEditor(props) {
     const i18n = resolveSettingsTranslator(this);
     const draftRecipe = this.state.ui.draftRecipe;
 
     if (!draftRecipe) {
-      return Section({}, [
-        createStaticCard(i18n.t("settings.messages.recipeDraftMissing"), ERROR_CARD_STYLE)
-      ]);
+      return createMessage(i18n.t("settings.messages.recipeDraftMissing"), DANGER_ACTION.color);
     }
 
+    const updateDraft = (key) => (value) => this.updateDraftField(props, key, value);
+    const recipeTextField = (key, label, options = {}) => createTextField({
+      label: i18n.t(`settings.labels.${label}`),
+      value: String(draftRecipe[key] ?? ""),
+      onChange: updateDraft(key),
+      ...options
+    });
     const currentStepIndex = clampStepPageIndex(this.state.ui.stepPageIndex, draftRecipe.steps.length);
-    const currentStep = draftRecipe.steps[currentStepIndex];
-    const stepJumpButtons = chunkItems(
-      (draftRecipe.steps || []).map((step, index) =>
-        Button({
-          label: `${index + 1}`,
-          style:
-            index === currentStepIndex
-              ? {
-                  ...STEP_JUMP_STYLE,
-                  background: "#A9BFA7",
-                  color: "#20281F"
-                }
-              : STEP_JUMP_STYLE,
-          onClick: () => {
-            this.setStepPage(props, index);
-          }
-        })
-      ),
-      5
-    );
 
-    return View({ style: CARD_STACK_STYLE }, [
-      createPanel(
-        "slate",
-        draftRecipe.name || i18n.t("settings.editor.untitledRecipe"),
-        draftRecipe.recipeId ? i18n.t("settings.editor.editingExisting") : i18n.t("settings.editor.creatingNew"),
-        [
-          createStaticCard(buildDraftOverview(draftRecipe, i18n), {
-            ...SUCCESS_CARD_STYLE,
-            background: "#314352",
-            color: "#D7F3EA"
-          }),
-          createWrapRow(
-            buildRecipeStatCards(draftRecipe, i18n).map((label) =>
-              createStaticCard(label, MINI_STAT_STYLE)
-            )
-          )
-        ]
-      ),
-      createPanel(
-        "mint",
-        i18n.t("settings.editor.recipeBasicsTitle"),
-        i18n.t("settings.editor.recipeBasicsSubtitle"),
-        [
-          TextInput({
-            label: i18n.t("settings.labels.name"),
-            value: draftRecipe.name || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "name", value);
-            }
-          }),
-          Select({
-            label: i18n.t("settings.labels.tool"),
-            options: buildToolOptions(i18n),
-            value: draftRecipe.toolId,
-            onChange: (value) => {
-              this.updateDraftField(props, "toolId", value);
-            }
-          }),
-          Select({
-            label: i18n.t("settings.labels.color"),
-            options: COLOR_OPTIONS,
-            value: draftRecipe.colorToken,
-            onChange: (value) => {
-              this.updateDraftField(props, "colorToken", value);
-            }
-          }),
-          TextInput({
-            label: i18n.t("settings.labels.description"),
-            value: draftRecipe.description || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "description", value);
-            }
-          })
-        ]
-      ),
-      createPanel(
-        "sky",
-        i18n.t("settings.editor.brewProfileTitle"),
-        i18n.t("settings.editor.brewProfileSubtitle"),
-        [
-          TextInput({
-            label: i18n.t("settings.labels.doseG"),
-            value: draftRecipe.coffeeDoseG || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "coffeeDoseG", value);
-            }
-          }),
-          TextInput({
-            label: i18n.t("settings.labels.waterMl"),
-            value: draftRecipe.totalWaterMl || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "totalWaterMl", value);
-            }
-          }),
-          TextInput({
-            label: i18n.t("settings.labels.tempC"),
-            value: draftRecipe.waterTempC || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "waterTempC", value);
-            }
-          }),
-          TextInput({
-            label: i18n.t("settings.labels.filter"),
-            value: draftRecipe.filterLabel || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "filterLabel", value);
-            }
-          }),
-          TextInput({
-            label: i18n.t("settings.labels.grind"),
-            value: draftRecipe.grindLabel || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "grindLabel", value);
-            }
-          }),
-          TextInput({
-            label: i18n.t("settings.labels.estimatedMs"),
-            value: draftRecipe.estimatedTotalDurationMs || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "estimatedTotalDurationMs", value);
-            }
-          })
-        ]
-      ),
-      createPanel(
-        "sand",
-        i18n.t("settings.editor.guidedStepsTitle"),
-        i18n.t("settings.editor.guidedStepsSubtitle", { stepCount: draftRecipe.steps.length }),
-        [
-          createButtonRow([
-            Button({
-              label: i18n.t("settings.editor.previous"),
-              style: currentStepIndex > 0 ? SOFT_ACTION_BUTTON_STYLE : INFO_BUTTON_STYLE,
-              onClick: () => {
-                this.setStepPage(props, currentStepIndex - 1);
-              }
-            }),
-            Button({
-              label: i18n.t("settings.editor.stepLabel", {
-                index: currentStepIndex + 1,
-                total: draftRecipe.steps.length
-              }),
-              style: STEPPER_PAGER_STYLE,
-              onClick: NOOP
-            }),
-            Button({
-              label: i18n.t("settings.editor.next"),
-              style:
-                currentStepIndex < draftRecipe.steps.length - 1
-                  ? SOFT_ACTION_BUTTON_STYLE
-                  : INFO_BUTTON_STYLE,
-              onClick: () => {
-                this.setStepPage(props, currentStepIndex + 1);
-              }
-            })
-          ]),
+    return View({ style: STACK }, [
+      createPanel(i18n.t("settings.editor.recipeBasicsTitle"), [
+        recipeTextField("name", "name"),
+        createSelectField({
+          label: i18n.t("settings.labels.tool"),
+          options: buildToolOptions(i18n),
+          value: draftRecipe.toolId,
+          onChange: updateDraft("toolId")
+        }),
+        createSelectField({
+          label: i18n.t("settings.labels.color"),
+          options: COLOR_OPTIONS,
+          value: draftRecipe.colorToken,
+          onChange: updateDraft("colorToken")
+        }),
+        recipeTextField("description", "description", { multiline: true, rows: 3 })
+      ]),
+      createPanel(i18n.t("settings.editor.brewProfileTitle"), [
+        createFieldRow([
+          recipeTextField("coffeeDoseG", "doseG"),
+          recipeTextField("totalWaterMl", "waterMl"),
+          recipeTextField("waterTempC", "tempC"),
+          recipeTextField("estimatedTotalDurationMs", "estimatedMs")
+        ]),
+        recipeTextField("filterLabel", "filter"),
+        recipeTextField("grindLabel", "grind")
+      ]),
+      this.renderStepEditor(props, draftRecipe.steps, currentStepIndex),
+      createPanel(null, [
+        recipeTextField("notes", "notes", { multiline: true, rows: 3 }),
+        createButtonRow([
           Button({
-            label: buildStepSummaryLabel(currentStep, currentStepIndex, draftRecipe.steps.length, i18n),
-            style: STEP_BADGE_STYLE,
-            onClick: NOOP
+            label: i18n.t("settings.editor.cancel"),
+            style: ACTION,
+            onClick: () => this.openRecipeList(props, draftRecipe.toolId || this.state.ui.selectedToolId)
           }),
-          ...stepJumpButtons.map((buttonRow) => createWrapRow(buttonRow)),
           Button({
-            label: i18n.t("settings.editor.addStep"),
-            style: PRIMARY_BUTTON_STYLE,
-            onClick: () => {
-              this.addDraftStep(props);
-            }
+            label: i18n.t("settings.editor.saveRecipe"),
+            style: PRIMARY_ACTION,
+            onClick: () => this.saveDraftRecipe(props)
           })
-        ]
-      ),
-      this.renderStepEditor(props, currentStep, currentStepIndex, draftRecipe.steps.length),
-      createPanel(
-        "white",
-        i18n.t("settings.editor.notesAndSaveTitle"),
-        i18n.t("settings.editor.notesAndSaveSubtitle"),
-        [
-          TextInput({
-            label: i18n.t("settings.labels.notes"),
-            value: draftRecipe.notes || "",
-            onChange: (value) => {
-              this.updateDraftField(props, "notes", value);
-            }
-          }),
-          createButtonRow([
-            Button({
-              label: i18n.t("settings.editor.saveRecipe"),
-              style: PRIMARY_BUTTON_STYLE,
-              onClick: () => {
-                this.saveDraftRecipe(props);
-              }
-            }),
-            Button({
-              label: i18n.t("settings.editor.cancel"),
-              style: SOFT_ACTION_BUTTON_STYLE,
-              onClick: () => {
-                this.openRecipeList(props, draftRecipe.toolId || this.state.ui.selectedToolId);
-              }
-            })
-          ])
-        ]
-      )
+        ], { justifyContent: "space-between" })
+      ])
     ]);
   },
   renderHistoryList(props) {
     const i18n = resolveSettingsTranslator(this);
-    const historyIndex = this.state.snapshot ? this.state.snapshot.historyIndex : [];
+    const historyIndex = this.state.snapshot?.historyIndex || [];
 
     if (!historyIndex.length) {
-      return Section({}, [
-        createStaticCard(
-          i18n.t("settings.messages.noHistoryYet"),
-          CARD_BUTTON_STYLE
-        )
-      ]);
+      return createMessage(i18n.t("settings.messages.noHistoryYet"));
     }
 
-    return View({ style: CARD_STACK_STYLE }, [
-      createPanel(
-        "white",
-        i18n.t("settings.history.recentBrews"),
-        i18n.t("settings.history.recentBrewsSubtitle"),
-        historyIndex.map((historyIndexEntry) => {
-          const historyEntry = readHistoryEntry(props.settingsStorage, historyIndexEntry.historyId);
+    return View({ style: STACK }, historyIndex.map((indexEntry) => {
+      const { historyId, recipeName } = indexEntry;
+      const historyEntry = readHistoryEntry(props.settingsStorage, historyId) || indexEntry;
 
-          return Button({
-            label: historyEntry
-              ? buildHistoryCardLabel(historyEntry, i18n)
-              : `${historyIndexEntry.recipeName}\n${i18n.getHistoryStatus(historyIndexEntry.status)} - ${formatDurationLabel(
-                  historyIndexEntry.elapsedMs
-                )}`,
-            style: CARD_BUTTON_STYLE,
-            onClick: () => {
-              this.openHistoryDetail(props, historyIndexEntry.historyId);
-            }
-          });
-        })
-      )
-    ]);
+      return View({ style: CARD_STYLE }, [
+        createRecordRow(
+          historyEntry.recipeSnapshot?.name || recipeName,
+          [
+            createText(buildHistoryDetails(historyEntry, i18n)),
+            createText(formatDurationLabel(historyEntry.elapsedMs), PRIMARY_VALUE)
+          ],
+          () => this.openHistoryDetail(props, historyId)
+        )
+      ]);
+    }));
   },
   renderHistoryDetail(props) {
     const i18n = resolveSettingsTranslator(this);
     const historyEntry = readHistoryEntry(props.settingsStorage, this.state.ui.selectedHistoryId);
 
     if (!historyEntry) {
-      return Section({}, [
-        createStaticCard(i18n.t("settings.messages.historyEntryNotFound"), ERROR_CARD_STYLE)
-      ]);
+      return createMessage(i18n.t("settings.messages.historyEntryNotFound"), DANGER_ACTION.color);
     }
 
     const historyDraft = this.state.ui.historyDraft || createHistoryDraft(historyEntry);
-    const snapshotTool = getToolMeta(historyEntry.recipeSnapshot.toolId);
-    const stepSummaries = (historyEntry.stepRunResults || []).map((stepRunResult) =>
-      createStaticCard(
-        `${stepRunResult.order + 1}. ${stepRunResult.title || i18n.t("settings.editor.untitledStep")}\n${humanizeStepKind(stepRunResult.kind, i18n)} - ${formatDurationLabel(
-          stepRunResult.actualDurationMs || 0
-        )}`,
-        CARD_BUTTON_STYLE
-      )
+    const snapshot = historyEntry.recipeSnapshot;
+    const brewer = getLocalizedToolLabel(getToolMeta(snapshot.toolId), i18n) || snapshot.toolId;
+    const deltaMs = historyEntry.deviationSummary.totalDeltaMs || 0;
+    const delta = i18n.t(deltaMs >= 0 ? "settings.history.deltaOver" : "settings.history.deltaUnder", {
+      duration: formatDeltaDuration(Math.abs(deltaMs))
+    });
+    const stepSummaries = (historyEntry.stepRunResults || []).map((result) =>
+      View({ style: DIVIDED_ROW }, [
+        View({ style: { ...STACK, gap: "2px", flex: "1 1 0" } }, [
+          createText(`${result.order + 1}. ${result.title || i18n.t("settings.editor.untitledStep")}`, TITLE),
+          createText(humanizeStepKind(result.kind, i18n))
+        ]),
+        createText(formatDurationLabel(result.actualDurationMs || 0), PRIMARY_VALUE, "right")
+      ])
     );
 
-    return View({ style: CARD_STACK_STYLE }, [
-      createPanel("slate", i18n.t("settings.history.detailTitle"), i18n.t("settings.history.detailSubtitle"), [
-        createStaticCard(buildHistoryCardLabel(historyEntry, i18n), {
-          ...SUCCESS_CARD_STYLE,
-          background: "#38332B",
-          color: "#F2E7D5"
-        }),
-        createStaticCard(
-          `${snapshotTool ? getLocalizedToolLabel(snapshotTool, i18n) : historyEntry.recipeSnapshot.toolId}\n${i18n.t("settings.history.filter", {
-            filterLabel: historyEntry.recipeSnapshot.filterLabel || i18n.t("settings.misc.notSpecified")
-          })}\n${(historyEntry.deviationSummary.totalDeltaMs || 0) >= 0
-            ? i18n.t("settings.history.deltaOver", {
-              duration: formatDurationLabel(Math.abs(historyEntry.deviationSummary.totalDeltaMs || 0))
-            })
-            : i18n.t("settings.history.deltaUnder", {
-              duration: formatDurationLabel(Math.abs(historyEntry.deviationSummary.totalDeltaMs || 0))
-            })}`,
-          CARD_BUTTON_STYLE
-        )
+    return View({ style: STACK }, [
+      createPanel(snapshot.name, [
+        createText(formatDurationLabel(historyEntry.elapsedMs), { ...PRIMARY_VALUE, fontSize: "34px", lineHeight: "40px" }),
+        createText(`${buildHistoryDetails(historyEntry, i18n)} · ${delta}`),
+        createText(brewer, { ...BODY, borderTop: DIVIDED_ROW.borderTop, paddingTop: "12px" }),
+        createText(i18n.t("settings.history.filter", {
+          filterLabel: snapshot.filterLabel || i18n.t("settings.misc.notSpecified")
+        }))
       ]),
-      createPanel(
-        "sky",
-        i18n.t("settings.history.stepTimingTitle"),
-        i18n.t("settings.history.stepTimingSubtitle"),
-        (
-          stepSummaries.length
-            ? stepSummaries
-            : [createStaticCard(i18n.t("settings.history.noStepResults"), CARD_BUTTON_STYLE)]
-        )
+      createPanel(i18n.t("settings.history.stepTimingTitle"), stepSummaries.length
+        ? stepSummaries
+        : [createText(i18n.t("settings.history.noStepResults"))]
       ),
-      createPanel(
-        "mint",
-        i18n.t("settings.history.feedbackTitle"),
-        i18n.t("settings.history.feedbackSubtitle"),
-        [
-          Select({
-            label: i18n.t("settings.labels.rating"),
-            options: buildRatingOptions(i18n),
-            value: historyDraft.userRating || "",
-            onChange: (value) => {
-              this.updateHistoryDraftField(props, "userRating", value);
-            }
+      createPanel(i18n.t("settings.history.feedbackTitle"), [
+        createSelectField({
+          label: i18n.t("settings.labels.rating"),
+          options: buildRatingOptions(i18n),
+          value: historyDraft.userRating || "",
+          onChange: (value) => this.updateHistoryDraftField(props, "userRating", value)
+        }),
+        createTextField({
+          label: i18n.t("settings.labels.note"),
+          value: historyDraft.userNote || "",
+          multiline: true,
+          rows: 3,
+          onChange: (value) => this.updateHistoryDraftField(props, "userNote", value)
+        }),
+        createButtonRow([
+          Button({
+            label: i18n.t("settings.history.backToHistory"),
+            style: ACTION,
+            onClick: () => this.openHistoryList(props)
           }),
-          TextInput({
-            label: i18n.t("settings.labels.note"),
-            value: historyDraft.userNote || "",
-            onChange: (value) => {
-              this.updateHistoryDraftField(props, "userNote", value);
-            }
-          }),
-          createButtonRow([
-            Button({
-              label: i18n.t("settings.history.saveNotes"),
-              style: PRIMARY_BUTTON_STYLE,
-              onClick: () => {
-                this.saveHistoryDraft(props);
-              }
-            }),
-            Button({
-              label: i18n.t("settings.history.backToHistory"),
-              style: SOFT_ACTION_BUTTON_STYLE,
-              onClick: () => {
-                this.openHistoryList(props);
-              }
-            })
-          ])
-        ]
-      )
+          Button({
+            label: i18n.t("settings.history.saveNotes"),
+            style: PRIMARY_ACTION,
+            onClick: () => this.saveHistoryDraft(props)
+          })
+        ], { justifyContent: "space-between" })
+      ])
     ]);
   },
   renderSyncInfo() {
     const i18n = resolveSettingsTranslator(this);
-    const syncMeta = this.state.syncMeta || {};
+    const rows = buildSyncRevisionRows(this.state.syncMeta, i18n);
 
-    return View({ style: CARD_STACK_STYLE }, [
-      createPanel("white", i18n.t("settings.sync.overviewTitle"), i18n.t("settings.sync.overviewSubtitle"), [
-        createStaticCard(
-          buildSyncOverview(syncMeta, i18n),
-          CARD_BUTTON_STYLE
-        )
+    return createPanel(i18n.t("settings.sync.revisionsTitle"), rows.map(({ label, value }, index) =>
+      View({ style: index ? DIVIDED_ROW : { ...ROW, justifyContent: "space-between" } }, [
+        createText(label, TITLE),
+        createText(String(value), PRIMARY_VALUE, "right")
       ])
-    ]);
+    ));
   },
   renderView(props) {
     if (this.state.ui.view === "recipe-list") {
@@ -1675,22 +1119,21 @@ AppSettingsPage({
     this.hydrateFromStorage(props);
     const i18n = resolveSettingsTranslator(this);
     const shellHeader = buildShellHeader(
-      this.state.ui.view,
+      this.state.ui,
       this.state.snapshot,
-      this.state.ui.selectedToolId,
       i18n
     );
 
     return View(
       {
-        style: ROOT_VIEW_STYLE
+        style: ROOT_VIEW
       },
       [
         this.renderNav(props),
-        View({ style: SHELL_HEADER_CONTAINER_STYLE }, [
-          createStaticCard(shellHeader.title, SHELL_TITLE_STYLE),
-          createStaticCard(shellHeader.subtitle, SHELL_SUBTITLE_STYLE)
-        ]),
+        View({ style: HEADER_STYLE }, [
+          createText(shellHeader.title, HEADER_TITLE),
+          shellHeader.subtitle && createText(shellHeader.subtitle)
+        ].filter(Boolean)),
         this.renderMessages(),
         this.renderView(props)
       ].filter(Boolean)

@@ -291,13 +291,14 @@ Do not create extra hidden views for experiments.
 ### Base components
 
 - Keep the top navigation visible and stable across views.
-- Use visibly different section backgrounds or panel tones so recipe basics, brew profile, guided steps, history, and sync do not blur into one flat column.
-- Prefer one dominant hero or overview panel near the top of each view instead of many equally weighted cards.
+- Use clear headings, spacing, and warm surfaces to distinguish groups.
+- Put the most relevant title and figures in the contextual header.
 - The recipe-step editor should paginate or otherwise segment steps; do not render every step form expanded in one long scrolling wall by default.
 
-The implementer should build `setting/` mainly from:
+The implementer should build `setting/` mainly from the following components.
 
-- `Section`
+- `View`
+- `Text`
 - `TextInput`
 - `Select`
 - `Button`
@@ -307,7 +308,7 @@ This is intentional. V1 should stay simple, readable, and aligned with Zepp docu
 ### Form policy
 
 - One logical form = one section or group of sections.
-- Every important action should have an explicit `Button`.
+- Use explicit `Button` labels for saving, secondary actions, and destructive actions.
 - Fields with a restricted option set should use `Select`, not free text.
 - `toolId`, `colorToken`, `kind`, and `feedbackCue` must not be plain text inputs.
 
@@ -315,7 +316,7 @@ This is intentional. V1 should stay simple, readable, and aligned with Zepp docu
 
 - Keep a small persistent top navigation for `Library`, `History`, and `Sync`.
 - Use one contextual shell header per view to explain where the user is and what the screen is for.
-- Prefer card-like read-only summary buttons for counts, latest result summaries, recipe cards, and history cards.
+- Use the shared espresso palette, static Text for headings and values, and tappable rows for opening recipe and history records.
 - A card tap may be the primary "open/edit" action. Do not keep a second redundant `Edit` button next to the same card if the card already opens the record.
 - Prefer a few grouped sections with clear subtitles over many short utility rows.
 - `library-home` should stay selector-first: let the shell header carry the high-level brewer and recipe counts instead of adding a second dashboard panel with repeated numbers.
@@ -424,7 +425,7 @@ Must contain:
 
 ### Rendering
 
-Steps should be edited as a list of sections one below another. V1 does not need drag-and-drop.
+Show one editable step at a time. Keep adjacent-step navigation and a scrollable picker of step titles together with the selected step's fields.
 
 ### Step fields
 
