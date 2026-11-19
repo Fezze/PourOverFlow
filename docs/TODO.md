@@ -46,7 +46,7 @@
 
 ### Phone UX follow-up
 
-- Verify the shared espresso theme in the physical Zepp app in light and dark appearance modes. Check native Select and multiline TextInput contrast, brewer icons and full-row tap behavior, and Polish wrapping across the library, recipe editor, history and sync.
+- Verify the shared espresso theme in the physical Zepp app in light and dark appearance modes. Check the updated Select rows, their native menus and multiline TextInput contrast, brewer icons and full-row tap behavior, and Polish wrapping across the library, recipe editor, history and sync.
 
 ### Localization follow-up
 

@@ -103,6 +103,11 @@ function findNode(node: SettingsNode, matches: (node: SettingsNode) => boolean):
   return undefined;
 }
 
+function findSelect(node: SettingsNode, label: string) {
+  return findNode(node, (child) => child.type === "Select" && child.props.label === label)?.props as
+    { options: { name: string; value: string }[]; value: string; onChange: (value: string) => void } | undefined;
+}
+
 function findButton(node: SettingsNode, label: string) {
   return findNode(node, (child) => child.type === "Button" && child.props.label === label);
 }
@@ -206,17 +211,10 @@ describe("phone settings page behavior", () => {
     instance.updateDraftField(props, "steps", steps);
     instance.setStepPage(props, 16);
 
-    const getStepSelect = () => findNode(instance.build(props), (node) =>
-      node.type === "Select" && node.props.title === "Go to step"
-    )!.props as {
-      label: string;
-      options: { name: string; value: string }[];
-      value: string;
-      onChange: (value: string) => void;
-    };
+    const getStepSelect = () => findSelect(instance.build(props), "Go to step")!;
 
     const initial = getStepSelect();
-    expect(initial.label).toBe("17. Pour and swirl");
+    expect(findText(instance.build(props), "17. Pour and swirl")).toBeDefined();
     expect(initial.options).toHaveLength(33);
     expect(new Set(initial.options.map(({ value }) => value)).size).toBe(33);
     expect(initial.options[32].name).toBe("33. Serve");
@@ -228,7 +226,7 @@ describe("phone settings page behavior", () => {
 
     click(findButton(finalStep, "Previous"));
     const previous = getStepSelect();
-    expect(previous.label).toBe("32. Pour and swirl");
+    expect(findText(instance.build(props), "32. Pour and swirl")).toBeDefined();
     expect(previous.options[31].value).toBe(previous.value);
     expect(previous.options[32].value).not.toBe(initial.options[32].value);
     previous.onChange(previous.options[32].value);
@@ -236,7 +234,35 @@ describe("phone settings page behavior", () => {
 
     click(findButton(instance.build(props), "Previous"));
     click(findButton(instance.build(props), "Next"));
-    expect(getStepSelect().label).toBe("33. Serve");
+    expect(findText(instance.build(props), "33. Serve")).toBeDefined();
+  });
+
+  it("shows confirmation values in the field and allows the same choice on successive steps", () => {
+    const { instance, props } = createPage();
+    const recipe = readPhoneSnapshot(props.settingsStorage).recipeIndex[0];
+    instance.hydrateFromStorage(props);
+    instance.openRecipeEditor(props, recipe.recipeId);
+    instance.setStepPage(props, 1);
+    instance.updateDraftStepField(props, 1, "requiresConfirm", "false");
+    instance.updateDraftStepField(props, 2, "requiresConfirm", "false");
+
+    const firstStep = instance.build(props);
+    expect(findText(firstStep, "Requires confirmation")).toBeDefined();
+    expect(findText(firstStep, "No")).toBeDefined();
+    const firstSelect = findSelect(firstStep, "Requires confirmation")!;
+    const yes = firstSelect.options.find(({ name }) => name === "Yes")!;
+    firstSelect.onChange(yes.value);
+    expect(instance.state.ui.draftRecipe.steps[1].requiresConfirm).toBe("true");
+    expect(findText(instance.build(props), "Yes")).toBeDefined();
+
+    click(findButton(instance.build(props), "Next"));
+    const nextStep = instance.build(props);
+    const nextSelect = findSelect(nextStep, "Requires confirmation")!;
+    expect(nextSelect.options.find(({ value }) => value === nextSelect.value)?.name).toBe("No");
+    const nextYes = nextSelect.options.find(({ name }) => name === "Yes")!;
+    expect(nextYes.value).not.toBe(yes.value);
+    nextSelect.onChange(nextYes.value);
+    expect(instance.state.ui.draftRecipe.steps[2].requiresConfirm).toBe("true");
   });
 
   it("duplicates a recipe and deletes the duplicate while retaining the original", () => {

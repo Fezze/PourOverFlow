@@ -262,26 +262,52 @@ function createTextField(props) {
   })]);
 }
 
-function createSelectField({ label, options, value, onChange }) {
-  const currentOption = options.find((option) => option.value === value);
-  return Select({
-    label: currentOption ? `${label} · ${currentOption.name}` : label,
-    options,
-    value,
-    onChange,
+function createSelectField({ label, currentLabel, options, value, onChange }) {
+  return View({
     style: {
-      maxWidth: "100%",
-      label: FIELD_LABEL,
-      select: {
-        backgroundColor: COLORS.muted,
-        color: COLORS.background,
-        borderRadius: "10px",
-        minHeight: "32px",
-        marginTop: "6px",
-        paddingLeft: "12px"
-      }
+      ...ROW,
+      position: "relative",
+      boxSizing: "border-box",
+      backgroundColor: COLORS.surfaceMuted,
+      borderRadius: "12px",
+      minHeight: "62px",
+      padding: "8px 14px"
     }
-  });
+  }, [
+    View({ style: { ...STACK, gap: "2px", flex: "1" } }, [
+      createText(label, { ...BODY, fontSize: "14px" }),
+      createText(currentLabel, { ...FIELD_LABEL, fontSize: "16px" })
+    ]),
+    View({
+      style: {
+        width: "8px",
+        height: "8px",
+        flexShrink: "0",
+        margin: "0 4px 5px 6px",
+        borderRight: `2px solid ${COLORS.primary}`,
+        borderBottom: `2px solid ${COLORS.primary}`,
+        transform: "rotate(45deg)"
+      }
+    }, []),
+    // Android ignores Select substyles. Keep the host's menu and put its touch
+    // surface over the row. Zoom expands the host's capped, short trigger.
+    View({
+      style: {
+        position: "absolute",
+        top: "0",
+        right: "0",
+        bottom: "0",
+        left: "0",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        paddingBottom: "20px",
+        overflow: "hidden",
+        opacity: "0",
+        zoom: "1.5"
+      }
+    }, [Select({ label, options, value, onChange })])
+  ]);
 }
 
 function getStepPageCount(stepCount) {
@@ -441,7 +467,7 @@ AppSettingsPage({
     snapshot: null,
     syncMeta: null,
     ui: null,
-    stepSelectValue: ""
+    selectValues: {}
   },
   hydrateFromStorage(props) {
     this.i18n = createPhoneTranslator(resolvePhoneLocale());
@@ -477,7 +503,7 @@ AppSettingsPage({
     writeSettingsJson(props.settingsStorage, SETTINGS_UI_STORAGE_KEY, nextUi);
   },
   setView(props, viewName, patch = {}) {
-    this.state.stepSelectValue = "";
+    this.state.selectValues = {};
     this.persistUiState(props, {
       view: viewName,
       errorMessage: "",
@@ -625,7 +651,7 @@ AppSettingsPage({
     }
 
     currentSteps.splice(index, 1);
-    if (currentSteps.length === 1) this.state.stepSelectValue = "";
+    if (currentSteps.length === 1) delete this.state.selectValues.stepPage;
     this.persistUiState(props, {
       draftRecipe: {
         ...this.state.ui.draftRecipe,
@@ -819,54 +845,41 @@ AppSettingsPage({
       ...this.renderRecipeCards(props)
     ]);
   },
-  renderStepSelect(props, steps, index, i18n) {
-    // The simulator Select keeps the last value it emitted. Associate that value with
-    // the active step so tapping Previous or Next also updates the menu selection.
-    const value = this.state.stepSelectValue;
-    const prefix = value.startsWith("a") ? "b" : "a";
-    const options = steps.map((step, stepIndex) => ({
-      name: `${stepIndex + 1}. ${step.title?.trim() || i18n.t("settings.editor.untitledStep")}`,
-      value: stepIndex === index ? value : `${prefix}${stepIndex}`
+  renderSelectField({ field, label, options, value, onChange }) {
+    // An unbound Zepp Select retains its last emitted value. Keep that value
+    // associated with the current option, even when another control changes it.
+    const currentToken = this.state.selectValues[field] || "";
+    const firstPrefix = `${field}:a:`;
+    const prefix = currentToken.startsWith(firstPrefix) ? `${field}:b:` : firstPrefix;
+    const currentOption = options.find((option) => option.value === value);
+    const choices = options.map((option, index) => ({
+      name: option.name,
+      value: option === currentOption ? currentToken : `${prefix}${index}`
     }));
 
-    return Select({
-      title: i18n.t("settings.editor.jumpToStep"),
-      label: options[index].name,
-      options,
-      value,
-      onChange: (selectedValue) => {
-        const nextIndex = options.findIndex((option) => option.value === selectedValue);
-        if (nextIndex < 0 || nextIndex === index) return;
-        this.state.stepSelectValue = selectedValue;
-        this.setStepPage(props, nextIndex);
-      },
-      style: {
-        position: "relative",
-        maxWidth: "100%",
-        title: FIELD_LABEL,
-        // Unbound simulator Selects can show an empty value at startup.
-        label: {
-          ...FIELD_LABEL,
-          position: "absolute",
-          zIndex: "1",
-          right: "38px",
-          bottom: "11px",
-          left: "14px",
-          color: COLORS.background,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          pointerEvents: "none"
-        },
-        select: {
-          backgroundColor: COLORS.muted,
-          color: "transparent",
-          borderRadius: "10px",
-          minHeight: "44px",
-          marginTop: "6px"
-        },
-        option: { whiteSpace: "normal", overflowWrap: "anywhere" }
+    return createSelectField({
+      label,
+      currentLabel: currentOption?.name || "—",
+      options: choices,
+      value: currentToken,
+      onChange: (token) => {
+        const selected = options[choices.findIndex((choice) => choice.value === token)];
+        if (!selected || selected === currentOption) return;
+        this.state.selectValues[field] = token;
+        onChange(selected.value);
       }
+    });
+  },
+  renderStepSelect(props, steps, index, i18n) {
+    return this.renderSelectField({
+      field: "stepPage",
+      label: i18n.t("settings.editor.jumpToStep"),
+      options: steps.map((step, stepIndex) => ({
+        name: `${stepIndex + 1}. ${step.title?.trim() || i18n.t("settings.editor.untitledStep")}`,
+        value: stepIndex
+      })),
+      value: index,
+      onChange: (nextIndex) => this.setStepPage(props, nextIndex)
     });
   },
   renderStepEditor(props, steps, index) {
@@ -896,7 +909,8 @@ AppSettingsPage({
         }) : View({ style: { width: "78px" } }, [])
       ], { gap: "6px" }),
       steps.length > 1 && this.renderStepSelect(props, steps, index, i18n),
-      createSelectField({
+      this.renderSelectField({
+        field: "stepKind",
         label: i18n.t("settings.labels.kind"),
         options: buildStepKindOptions(i18n),
         value: step.kind,
@@ -909,13 +923,15 @@ AppSettingsPage({
         stepTextField("waterMl", "waterMl"),
         stepTextField("targetTotalWaterMl", "targetTotalMl")
       ]),
-      createSelectField({
+      this.renderSelectField({
+        field: "stepConfirm",
         label: i18n.t("settings.labels.requiresConfirm"),
         options: buildBooleanOptions(i18n),
         value: String(step.requiresConfirm ?? "false"),
         onChange: updateStep("requiresConfirm")
       }),
-      createSelectField({
+      this.renderSelectField({
+        field: "stepFeedback",
         label: i18n.t("settings.labels.feedbackCue"),
         options: buildFeedbackOptions(i18n),
         value: step.feedbackCue,
@@ -967,13 +983,15 @@ AppSettingsPage({
     return View({ style: STACK }, [
       createPanel(i18n.t("settings.editor.recipeBasicsTitle"), [
         recipeTextField("name", "name"),
-        createSelectField({
+        this.renderSelectField({
+          field: "recipeTool",
           label: i18n.t("settings.labels.tool"),
           options: buildToolOptions(i18n),
           value: draftRecipe.toolId,
           onChange: updateDraft("toolId")
         }),
-        createSelectField({
+        this.renderSelectField({
+          field: "recipeColor",
           label: i18n.t("settings.labels.color"),
           options: COLOR_OPTIONS,
           value: draftRecipe.colorToken,
@@ -1072,7 +1090,8 @@ AppSettingsPage({
         : [createText(i18n.t("settings.history.noStepResults"))]
       ),
       createPanel(i18n.t("settings.history.feedbackTitle"), [
-        createSelectField({
+        this.renderSelectField({
+          field: "historyRating",
           label: i18n.t("settings.labels.rating"),
           options: buildRatingOptions(i18n),
           value: historyDraft.userRating || "",

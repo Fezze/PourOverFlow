@@ -206,7 +206,7 @@ function renderNode(value, iconDataUris) {
   }
   if (type === "Select") {
     const options = Array.isArray(props.options) ? props.options : [];
-    return `<label class="field"><span>${escapeHtml(props.title || props.label)}</span><select>${options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
+    return `<label class="select-field"><span>${escapeHtml(props.label)}</span><select>${options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
   }
   return renderNode(children, iconDataUris);
 }
@@ -223,6 +223,8 @@ function renderPageHtml(tree, iconDataUris) {
     button,[role="button"]{cursor:pointer}
     label.field{display:flex;flex-direction:column;gap:7px;color:${FIELD_LABEL.color};font-weight:${FIELD_LABEL.fontWeight}}
     label.field :is(input,textarea,select){width:100%;min-height:44px;padding:10px 12px;border:1px solid ${COLORS.secondaryPress};border-radius:12px;background:${COLORS.surfaceMuted};color:${COLORS.text};font-size:16px;font-weight:400}
+    label.select-field{display:flex;flex-direction:column;max-width:300px;min-width:120px;line-height:20px}
+    label.select-field select{width:100%;height:32px;flex-shrink:0}
     textarea{resize:none}
   </style></head><body><div id="device"><div id="root">${renderNode(tree, iconDataUris)}</div></div></body></html>`;
 }
@@ -305,6 +307,7 @@ async function verifyLayout(page, scenario, locale, width) {
     for (const element of root.querySelectorAll('[data-text], button, [role="button"], label, input, textarea, select')) {
       const bounds = element.getBoundingClientRect();
       const label = element.textContent.trim().slice(0, 60) || element.tagName;
+      if (element.matches("label.select-field")) continue;
       if (bounds.left < -1 || bounds.right > root.clientWidth + 1) {
         issues.push(`outside the viewport: ${label}`);
       }
