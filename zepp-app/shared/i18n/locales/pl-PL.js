@@ -294,7 +294,6 @@ export default {
       previous: "Wcześniej",
       next: "Dalej",
       addStep: "Dodaj krok",
-      addBeforeFinish: "Dodaj krok przed zakończeniem",
       up: "W górę",
       down: "W dół",
       delete: "Usuń",

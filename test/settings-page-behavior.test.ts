@@ -222,7 +222,7 @@ describe("phone settings page behavior", () => {
     expect(savedSteps.at(-1)?.kind).toBe("finish");
   });
 
-  it("offers insertion before the final Finish and opens the new step", () => {
+  it("hides Add step on Finish and lets the preceding step insert before it", () => {
     const { instance, props } = createPage();
     const recipe = readRecipeRecord(props.settingsStorage, "seed_ap_bypass_bright")!;
     instance.hydrateFromStorage(props);
@@ -231,7 +231,9 @@ describe("phone settings page behavior", () => {
 
     const editor = instance.build(props);
     expect(findButton(editor, "Add step")).toBeUndefined();
-    click(findButton(editor, "Add step before finish"));
+    expect(findButton(editor, "Add step before finish")).toBeUndefined();
+    click(findButton(editor, "Previous"));
+    click(findButton(instance.build(props), "Add step"));
     instance.build(props);
     const steps = instance.state.ui.draftRecipe.steps;
     expect(instance.state.ui.stepPageIndex).toBe(recipe.steps.length - 1);

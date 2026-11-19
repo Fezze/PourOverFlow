@@ -274,7 +274,6 @@ export default {
       previous: "Previous",
       next: "Next",
       addStep: "Add step",
-      addBeforeFinish: "Add step before finish",
       up: "Up",
       down: "Down",
       delete: "Delete",

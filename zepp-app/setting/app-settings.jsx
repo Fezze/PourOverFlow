@@ -892,7 +892,6 @@ AppSettingsPage({
       ...options
     });
     const stepTitle = i18n.t("settings.editor.stepOf", { current: index + 1, total: steps.length });
-    const isFinalFinish = index === steps.length - 1 && step.kind === "finish";
 
     return createPanel(i18n.t("settings.editor.guidedStepsTitle"), [
       createButtonRow([
@@ -954,11 +953,11 @@ AppSettingsPage({
           onClick: () => this.deleteDraftStep(props, index)
         })
       ]),
-      createButtonRow([
+      step.kind !== "finish" && createButtonRow([
         Button({
-          label: i18n.t(isFinalFinish ? "settings.editor.addBeforeFinish" : "settings.editor.addStep"),
+          label: i18n.t("settings.editor.addStep"),
           style: ACTION,
-          onClick: () => this.addDraftStep(props, isFinalFinish ? index : index + 1)
+          onClick: () => this.addDraftStep(props, index + 1)
         })
       ], DIVIDED_ROW)
     ]);
