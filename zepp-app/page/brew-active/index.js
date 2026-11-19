@@ -39,7 +39,7 @@ const READING = getReadingFrame(BACKGROUND, ACTION_DOCK.y ?? BUTTONS[0].y);
 
 function buildTimerText(activeSession) {
   const remaining = getCurrentStepRemainingMs(activeSession);
-  return formatDurationLabel(remaining === null ? getElapsedSessionMs(activeSession) : remaining);
+  return formatDurationLabel(remaining === null ? getElapsedSessionMs(activeSession) : Math.ceil(remaining / 1000) * 1000);
 }
 
 function buildProgressText(activeSession, i18n) {

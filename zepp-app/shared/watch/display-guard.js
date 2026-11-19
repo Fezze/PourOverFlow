@@ -41,10 +41,9 @@ export function enableActiveSessionDisplayGuard(activeSession = readActiveSessio
   }
 
   try {
-    setPageBrightTime({
+    brightEnabled = setPageBrightTime({
       brightTime: recommendedBrightTime
-    });
-    brightEnabled = true;
+    }) === 0;
   } catch (error) {
     console.log("Failed to extend page bright time", error);
   }
@@ -82,7 +81,7 @@ export function disableActiveSessionDisplayGuard() {
   }
 
   try {
-    resetPageBrightTime();
+    brightReset = resetPageBrightTime() === 0;
   } catch (error) {
     console.log("Failed to reset page bright time", error);
     brightReset = false;

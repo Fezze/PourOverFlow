@@ -7,7 +7,8 @@ import {
   RECIPE_COLOR_TOKENS,
   RECIPE_STEP_KINDS,
   createDefaultRecipeSteps,
-  createLastResultSummary
+  createLastResultSummary,
+  repairLegacyRecipeSteps
 } from "../shared/domain/schema";
 import {
   createUserRecipeRecord,
@@ -176,7 +177,7 @@ function createDraftFromRecipe(recipeRecord) {
     totalWaterMl: String(recipeRecord.totalWaterMl ?? ""),
     waterTempC: String(recipeRecord.waterTempC ?? ""),
     estimatedTotalDurationMs: String(recipeRecord.estimatedTotalDurationMs ?? ""),
-    steps: (recipeRecord.steps || []).map((step) => ({
+    steps: repairLegacyRecipeSteps(recipeRecord.steps || []).map((step) => ({
       ...step,
       durationMs: step.durationMs === undefined ? "" : String(step.durationMs),
       waterMl: step.waterMl === undefined ? "" : String(step.waterMl),
@@ -188,7 +189,7 @@ function createDraftFromRecipe(recipeRecord) {
 }
 
 function createFreshDraft(toolId, i18n) {
-  return createDraftFromRecipe(
+  const draft = createDraftFromRecipe(
     createUserRecipeRecord({
       toolId,
       locale: i18n ? i18n.locale : DEFAULT_LOCALE,
@@ -197,6 +198,8 @@ function createFreshDraft(toolId, i18n) {
       })
     })
   );
+  draft.estimatedTotalDurationMs = "";
+  return draft;
 }
 
 function createHistoryDraft(historyEntry) {
@@ -1004,7 +1007,9 @@ AppSettingsPage({
           recipeTextField("coffeeDoseG", "doseG"),
           recipeTextField("totalWaterMl", "waterMl"),
           recipeTextField("waterTempC", "tempC"),
-          recipeTextField("estimatedTotalDurationMs", "estimatedMs")
+          recipeTextField("estimatedTotalDurationMs", "estimatedMs", {
+            placeholder: i18n.t("settings.labels.estimatedAutoHint")
+          })
         ]),
         recipeTextField("filterLabel", "filter"),
         recipeTextField("grindLabel", "grind")
@@ -1031,17 +1036,20 @@ AppSettingsPage({
     const i18n = resolveSettingsTranslator(this);
     const historyIndex = this.state.snapshot?.historyIndex || [];
 
-    if (!historyIndex.length) {
+    const entries = historyIndex
+      .map(({ historyId }) => readHistoryEntry(props.settingsStorage, historyId))
+      .filter(Boolean);
+
+    if (!entries.length) {
       return createMessage(i18n.t("settings.messages.noHistoryYet"));
     }
 
-    return View({ style: STACK }, historyIndex.map((indexEntry) => {
-      const { historyId, recipeName } = indexEntry;
-      const historyEntry = readHistoryEntry(props.settingsStorage, historyId) || indexEntry;
+    return View({ style: STACK }, entries.map((historyEntry) => {
+      const { historyId } = historyEntry;
 
       return View({ style: CARD_STYLE }, [
         createRecordRow(
-          historyEntry.recipeSnapshot?.name || recipeName,
+          historyEntry.recipeSnapshot.name,
           [
             createText(buildHistoryDetails(historyEntry, i18n)),
             createText(formatDurationLabel(historyEntry.elapsedMs), PRIMARY_VALUE)

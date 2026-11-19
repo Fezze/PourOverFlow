@@ -529,6 +529,26 @@ describe("page shell runtime coverage", () => {
     expect(runtime.triggerShortcutKey()).toBe(false);
   });
 
+  it("keeps one second visible until the countdown deadline", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const start = 500_000;
+    const session = createActiveBrewSession(fixture.primarySnapshot, { now: start });
+    vi.useFakeTimers({ now: start + 500 });
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify({
+        ...session, currentStepIndex: 1, status: "running", expectedStepEndAt: start + 1_000
+      })
+    });
+    const page = buildPage(pageDefinition);
+    try {
+      expect(runtime.findCreatedWidgetsByType("TEXT").some((widget) => widget.text === "00:01")).toBe(true);
+    } finally {
+      pageDefinition.onDestroy.call(page);
+      vi.useRealTimers();
+    }
+  });
+
   it("refreshes the active-brew widgets in place while a timed step is still running", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());

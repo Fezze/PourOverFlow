@@ -11,6 +11,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_RECIPE_COLOR_TOKEN,
   normalizeRecipeSteps,
+  repairLegacyRecipeSteps,
   normalizeText,
   sumRecipeStepDurations,
   toOptionalNumber
@@ -108,7 +109,8 @@ function updatePhoneSyncMeta(settingsStorage, updater) {
 function recoverRecipeChange(settingsStorage) {
   const meta = readPhoneSyncMeta(settingsStorage);
   const change = meta.pendingRecipeChange;
-  if (!change) {
+  if (typeof change?.operationId !== "string" || typeof change.recipeId !== "string" ||
+      (change.record !== null && change.record?.recipeId !== change.recipeId)) {
     return meta;
   }
 
@@ -207,7 +209,11 @@ export function ensurePhoneStorage(settingsStorage, options = {}) {
 }
 
 export function readToolCatalog(settingsStorage) {
-  return readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.tools, TOOL_CATALOG);
+  const tools = readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.tools, TOOL_CATALOG);
+  return Array.isArray(tools) && tools.length &&
+    tools.every((tool) => typeof tool?.toolId === "string" && typeof tool.label === "string")
+    ? tools
+    : TOOL_CATALOG;
 }
 
 export function readRecipeIndex(settingsStorage) {
@@ -281,7 +287,12 @@ export function readRecipeRecord(settingsStorage, recipeId) {
     return null;
   }
 
-  return readSettingsJson(settingsStorage, getPhoneRecipeRecordKey(recipeId), null);
+  const record = readSettingsJson(settingsStorage, getPhoneRecipeRecordKey(recipeId), null);
+  return record?.recipeId === recipeId && typeof record.name === "string" &&
+    Array.isArray(record.steps) && record.steps.length &&
+    record.steps.every((step) => step && typeof step === "object")
+    ? record
+    : null;
 }
 
 export function readHistoryEntry(settingsStorage, historyId) {
@@ -289,7 +300,11 @@ export function readHistoryEntry(settingsStorage, historyId) {
     return null;
   }
 
-  return readSettingsJson(settingsStorage, getPhoneHistoryRecordKey(historyId), null);
+  const record = readSettingsJson(settingsStorage, getPhoneHistoryRecordKey(historyId), null);
+  return record?.historyId === historyId && typeof record.recipeSnapshot?.name === "string" &&
+    Array.isArray(record.recipeSnapshot.steps) && Number.isFinite(record.endedAt)
+    ? record
+    : null;
 }
 
 export function listRecipeRecords(settingsStorage) {
@@ -310,9 +325,13 @@ export function readPhoneSnapshot(settingsStorage) {
   const recipeIndex = readRecipeIndex(settingsStorage);
   const historyIndex = readHistoryIndex(settingsStorage);
   const recipesByTool = buildRecipesByTool(tools, recipeIndex);
-  const latestHistoryEntry = historyIndex.length
-    ? readHistoryEntry(settingsStorage, historyIndex[0].historyId)
-    : null;
+  let latestHistoryEntry = null;
+  for (const { historyId } of historyIndex) {
+    latestHistoryEntry = readHistoryEntry(settingsStorage, historyId);
+    if (latestHistoryEntry) {
+      break;
+    }
+  }
 
   return {
     tools,
@@ -390,7 +409,7 @@ function normalizeRecipeRecordInput(recipeDraft, existingRecipeRecord = null) {
     grindLabel: normalizeText(recipeDraft.grindLabel),
     estimatedTotalDurationMs: readRecipeNumber(
       recipeDraft.estimatedTotalDurationMs,
-      existingRecipeRecord ? existingRecipeRecord.estimatedTotalDurationMs : minimumDurationMs
+      minimumDurationMs
     ),
     notes: normalizeText(recipeDraft.notes),
     steps: normalizedSteps,
@@ -428,6 +447,7 @@ export function saveRecipeRecord(settingsStorage, recipeDraft) {
 }
 
 export function duplicateRecipeRecord(settingsStorage, recipeId) {
+  recoverRecipeChange(settingsStorage);
   const recipeRecord = readRecipeRecord(settingsStorage, recipeId);
 
   if (!recipeRecord) {
@@ -444,7 +464,7 @@ export function duplicateRecipeRecord(settingsStorage, recipeId) {
     source: "user",
     createdAt: undefined,
     updatedAt: undefined,
-    steps: recipeRecord.steps.map((step) => ({
+    steps: repairLegacyRecipeSteps(recipeRecord.steps).map((step) => ({
       ...step,
       stepId: ""
     }))
@@ -455,7 +475,7 @@ export function deleteRecipeRecord(settingsStorage, recipeId) {
   recoverRecipeChange(settingsStorage);
   const existingRecipeRecord = readRecipeRecord(settingsStorage, recipeId);
 
-  if (!existingRecipeRecord) {
+  if (!existingRecipeRecord && !readRecipeIndex(settingsStorage).some((entry) => entry.recipeId === recipeId)) {
     return false;
   }
 

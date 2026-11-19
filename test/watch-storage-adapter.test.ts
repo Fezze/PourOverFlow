@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as store from "../zepp-app/shared/storage/watch-store.js";
 import { WATCH_STORAGE_KEYS as keys } from "../zepp-app/shared/storage/keys.js";
-import { createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
+import { buildHistoryEntryFromSession, createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
+import { abortSession } from "../zepp-app/shared/engine/session-reducer.js";
 import { createCatalogFixture } from "./support/watch-page-harness.ts";
 import { getLocalStorageSnapshot, resetZeppRuntime, setLocalStorageState } from "./zeus-runtime/runtime.ts";
 
@@ -125,4 +126,18 @@ it("keeps the last good catalog after malformed snapshots and resyncs lost cache
   expect(store.applyHistorySnapshot({ historyRevision: 102 })).toBeNull();
   expect(store.getRecipeSnapshotById(primarySnapshot.recipeId)).toEqual(primarySnapshot);
   expect(store.readWatchSyncMeta().historyRevision).toBe(0);
+});
+
+it("ignores damaged restored sessions and entries without dropping valid pending results", () => {
+  const entry = buildHistoryEntryFromSession(abortSession(session, { now: 200 }), { now: 200 });
+  setLocalStorageState({
+    [keys.activeSession]: JSON.stringify({ ...session, currentStepStartedAt: null }),
+    [keys.lastResult]: JSON.stringify({ ...lastResult, recipeName: {} }),
+    [keys.syncMeta]: JSON.stringify({ pendingHistoryQueue: [null, { historyId: "unusable" }, entry] })
+  });
+  expect(store.readActiveSession()).toBeNull();
+  expect(store.readLastResult()).toBeNull();
+  expect(store.getPendingHistoryQueue()).toEqual([entry]);
+  store.applyHistorySnapshot({ historyRevision: 1, latestResult: null });
+  expect(store.readLastResult()?.historyId).toBe(entry.historyId);
 });

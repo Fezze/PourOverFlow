@@ -49,3 +49,15 @@ it("keeps the available guard when a device API throws and releases guards indep
     diagnostics.mockRestore();
   }
 });
+
+it("does not record a rejected brightness change or reset as successful", () => {
+  const session = { recipeId: "open", pageBrightModeEnabled: true };
+  vi.mocked(setPageBrightTime).mockReturnValueOnce(1);
+  vi.mocked(resetPageBrightTime).mockReturnValueOnce(2);
+  expect(enableActiveSessionDisplayGuard(session)).toBe(true); // Wake relaunch is still available.
+  expect(store.writeActiveSession).toHaveBeenCalledWith({
+    ...session, wakeUpResumeEnabled: true, pageBrightModeEnabled: false
+  });
+  disableActiveSessionDisplayGuard();
+  expect(log).toHaveBeenCalledWith("display_guard_disable", { wakeDisabled: true, brightReset: false });
+});

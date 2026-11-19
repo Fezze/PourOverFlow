@@ -1,6 +1,6 @@
 import { LocalStorage } from "@zos/storage";
 import { TOOL_CATALOG } from "../constants/tool-catalog";
-import { CURRENT_SCHEMA_VERSION, createLastResultSummary } from "../domain/schema";
+import { CURRENT_SCHEMA_VERSION, SESSION_STATUSES, createLastResultSummary } from "../domain/schema";
 import { WATCH_STORAGE_KEYS } from "./keys";
 import { emitRuntimeEvent } from "../watch/runtime-events";
 
@@ -53,11 +53,15 @@ function createDefaultCatalogCache() {
 }
 
 function normalizeActiveSession(activeSession) {
-  if (!activeSession || typeof activeSession !== "object") {
+  if (!isObject(activeSession) || typeof activeSession.sessionId !== "string" ||
+      !SESSION_STATUSES.includes(activeSession.status) || !Number.isFinite(activeSession.sessionStartedAt) ||
+      !Number.isFinite(activeSession.currentStepStartedAt)) {
     return null;
   }
 
-  if (!activeSession.recipeSnapshot || !Array.isArray(activeSession.recipeSnapshot.steps)) {
+  const snapshot = activeSession.recipeSnapshot;
+  if (!snapshot || typeof snapshot.name !== "string" || !Array.isArray(snapshot.steps) ||
+      !snapshot.steps.every((step) => step && typeof step.stepId === "string")) {
     return null;
   }
 
@@ -91,7 +95,9 @@ function normalizeLastResult(lastResult) {
     return null;
   }
 
-  if (!lastResult.historyId || !lastResult.recipeName) {
+  if (typeof lastResult.historyId !== "string" || !lastResult.historyId ||
+      typeof lastResult.recipeName !== "string" || !lastResult.recipeName ||
+      !Number.isFinite(lastResult.endedAt)) {
     return null;
   }
 
@@ -171,6 +177,10 @@ function getInitialSelectedToolId(catalogCache) {
 function createDefaultRuntimeState() {
   const catalogCache = normalizeCatalogCache(readWatchJson(WATCH_STORAGE_KEYS.catalogCache, createDefaultCatalogCache()));
   const syncMeta = normalizeWatchSyncMeta(readWatchJson(WATCH_STORAGE_KEYS.syncMeta, createDefaultWatchSyncMeta()));
+  syncMeta.pendingHistoryQueue = syncMeta.pendingHistoryQueue.filter((entry) =>
+    typeof entry?.historyId === "string" && typeof entry.recipeSnapshot?.name === "string" &&
+    Number.isFinite(entry.endedAt)
+  );
   const activeSession = normalizeActiveSession(readWatchJson(WATCH_STORAGE_KEYS.activeSession, null));
   const lastResult = normalizeLastResult(readWatchJson(WATCH_STORAGE_KEYS.lastResult, null));
 
@@ -324,7 +334,8 @@ export function getRecipesForTool(toolId) {
   const catalogCache = readCatalogCache();
   return catalogCache.recipesByTool && Array.isArray(catalogCache.recipesByTool[toolId])
     ? catalogCache.recipesByTool[toolId].filter((recipe) =>
-      recipe && catalogCache.recipeSnapshotsById[recipe.recipeId]?.steps?.length
+      recipe && Array.isArray(catalogCache.recipeSnapshotsById[recipe.recipeId]?.steps) &&
+      catalogCache.recipeSnapshotsById[recipe.recipeId].steps.length
     )
     : [];
 }

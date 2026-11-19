@@ -297,6 +297,7 @@ export default {
       filter: "Filter",
       grind: "Grind",
       estimatedMs: "Estimated time (ms)",
+      estimatedAutoHint: "Calculated from steps",
       kind: "Step type",
       title: "Title",
       body: "Instructions",

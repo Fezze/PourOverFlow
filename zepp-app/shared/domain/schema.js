@@ -123,6 +123,16 @@ function resolveSchemaTranslator(localeOrOptions = null) {
   return createTranslator(locale || DEFAULT_LOCALE);
 }
 
+export function repairLegacyRecipeSteps(steps) {
+  return steps.map((step, index) => {
+    const earlyFinish = step.kind === "finish" && index < steps.length - 1;
+    const invalidCountdown = isTimedStepKind(step.kind) && !hasStepCountdown(step);
+    return earlyFinish || invalidCountdown
+      ? { ...step, kind: "instruction", durationMs: undefined }
+      : step;
+  });
+}
+
 export function normalizeRecipeSteps(steps = [], localeOrOptions = null) {
   const i18n = resolveSchemaTranslator(localeOrOptions);
   return steps.map((step, index) => {

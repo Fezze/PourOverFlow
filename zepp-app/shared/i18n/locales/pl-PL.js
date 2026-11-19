@@ -317,6 +317,7 @@ export default {
       filter: "Filtr",
       grind: "Mielenie",
       estimatedMs: "Szacowany czas (ms)",
+      estimatedAutoHint: "Wyliczany z kroków",
       kind: "Typ kroku",
       title: "Tytuł",
       body: "Instrukcja",

@@ -314,6 +314,7 @@ This remains separate from `seedCatalogVersion`:
 
 - keep the previous cache when a snapshot has invalid fields. Read the catalog versions from the persisted cache when the watch starts, so a lost cache can be requested again,
 - hide recipes without a usable snapshot,
+- skip unreadable local session, history, and cache records. Keep valid pending results and prefer the latest readable phone history record,
 - discard incomplete transfers at disconnect and reject transfers whose chunk sizes do not match the declared total,
 - use the newest available result from the received phone snapshot and the unsent local queue. An empty snapshot clears the display when no local result is pending.
 

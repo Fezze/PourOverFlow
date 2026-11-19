@@ -75,8 +75,8 @@ const router = {
 
 const display = {
   setWakeUpRelaunch: vi.fn(() => true),
-  setPageBrightTime: vi.fn(() => true),
-  resetPageBrightTime: vi.fn(() => true)
+  setPageBrightTime: vi.fn(() => 0),
+  resetPageBrightTime: vi.fn(() => 0)
 };
 
 const ui = {

@@ -14,6 +14,7 @@ import {
   readPhoneSnapshot,
   readPhoneSyncMeta,
   readRecipeRecord,
+  readToolCatalog,
   safeParseJson,
   saveHistoryEntry,
   saveRecipeRecord,
@@ -548,4 +549,46 @@ test("accepts decimal commas for recipe measurements and rejects invalid or nega
   expect(invalid).toMatchObject({ ok: false });
   expect(invalid.issues).toContain("Recipe coffeeDoseG must be a number.");
   expect(invalid.issues).toContain("Recipe totalWaterMl must be non-negative.");
+});
+
+test("derives a cleared recipe estimate and keeps an explicit larger estimate", () => {
+  const storage = createMockSettingsStorage();
+  const created = saveRecipeRecord(storage, { ...createValidDraft(), estimatedTotalDurationMs: " " });
+  expect(created).toMatchObject({ ok: true, recipeRecord: { estimatedTotalDurationMs: 45_000 } });
+  const edited = saveRecipeRecord(storage, { ...created.recipeRecord, estimatedTotalDurationMs: 60_000 });
+  expect(edited).toMatchObject({ ok: true, recipeRecord: { estimatedTotalDurationMs: 60_000 } });
+  expect(saveRecipeRecord(storage, { ...edited.recipeRecord, estimatedTotalDurationMs: "" }))
+    .toMatchObject({ ok: true, recipeRecord: { estimatedTotalDurationMs: 45_000 } });
+});
+
+test("duplicates a legacy recipe while preserving all instructions", () => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const recipe = readRecipeRecord(storage, "seed_ap_daily_clean");
+  recipe.steps[0] = { ...recipe.steps[0], kind: "finish" };
+  recipe.steps[1] = { ...recipe.steps[1], durationMs: undefined };
+  storage.setItem(getPhoneRecipeRecordKey(recipe.recipeId), JSON.stringify(recipe));
+  const result = duplicateRecipeRecord(storage, recipe.recipeId);
+  expect(result.ok).toBe(true);
+  expect(result.recipeRecord.steps.map(({ title }) => title)).toEqual(recipe.steps.map(({ title }) => title));
+  expect(result.recipeRecord.steps.slice(0, 2).map(({ kind }) => kind)).toEqual(["instruction", "instruction"]);
+  expect(readRecipeRecord(storage, recipe.recipeId).steps[0].kind).toBe("finish");
+});
+
+test("uses the latest readable result and allows deleting a recipe whose record was lost", () => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const { recipeRecord } = saveRecipeRecord(storage, createValidDraft());
+  const session = createActiveBrewSession(recipeRecord, { now: 1_000 });
+  const older = buildHistoryEntryFromSession(abortSession(session, { now: 2_000 }), { now: 2_000 });
+  const latest = { ...older, historyId: "newer_result", endedAt: 3_000 };
+  saveHistoryEntry(storage, older);
+  saveHistoryEntry(storage, latest);
+  storage.setItem(getPhoneHistoryRecordKey(latest.historyId), "true");
+  storage.setItem(PHONE_STORAGE_KEYS.tools, "[null]");
+  storage.removeItem(getPhoneRecipeRecordKey(recipeRecord.recipeId));
+  expect(readToolCatalog(storage)).toHaveLength(6);
+  expect(readPhoneSnapshot(storage).latestResult?.historyId).toBe(older.historyId);
+  expect(deleteRecipeRecord(storage, recipeRecord.recipeId)).toBe(true);
+  expect(readPhoneSnapshot(storage).recipeIndex.some(({ recipeId }) => recipeId === recipeRecord.recipeId)).toBe(false);
 });

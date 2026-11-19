@@ -178,7 +178,8 @@ interface RecipeRecord {
 - `steps.length >= 1`.
 - Exactly one step has `kind: 'finish'`, at the end. Each timed step needs a finite, positive duration in milliseconds.
 - `order` must be continuous from `0`.
-- `estimatedTotalDurationMs` is either the sum of timed steps or a manually calculated estimate, but it must not be smaller than the sum of `durationMs`.
+- A blank estimated duration uses the sum of the step durations. A manual estimate must be at least that long.
+- Opening or duplicating a legacy recipe converts an early Finish or a timed step without a valid duration into a manual instruction. Titles and instructions are preserved.
 - `archived: false` means visible in the catalog. V1 does not need an additional trash state.
 
 ## `RecipeStep`
