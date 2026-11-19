@@ -1,6 +1,6 @@
 {
   "name": "pouroverflow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "PourOverFlow Zepp OS scaffold",
@@ -9,9 +9,17 @@
     "npm": ">=11 <12"
   },
   "scripts": {
+    "hooks:install": "git config --local core.hooksPath .githooks",
+    "version:bump:patch": "node scripts/version-proxy.mjs patch",
+    "version:bump:minor": "node scripts/version-proxy.mjs minor",
+    "version:bump:major": "node scripts/version-proxy.mjs major",
     "build": "node scripts/run-zeus-command.mjs build",
+    "build:raw": "node scripts/run-zeus-command.mjs build --no-version-bump",
     "dev": "node scripts/run-zeus-command.mjs dev",
     "zepp:dev": "node scripts/run-zeus-command.mjs dev",
+    "preview": "node scripts/run-zeus-command.mjs preview",
+    "bridge": "node scripts/run-zeus-command.mjs bridge",
+    "push": "node scripts/git-push-proxy.mjs",
     "doctor:ubuntu": "node scripts/doctor-ubuntu.mjs",
     "test": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts",
     "test:coverage": "node node_modules/vitest/vitest.mjs run --config test/vitest.config.ts --coverage",
@@ -25,8 +33,8 @@
     "validation:logs": "node scripts/validation-log-report.mjs",
     "sim:doctor": "node scripts/simulator-doctor.mjs",
     "sim:smoke": "node scripts/playwright-simulator-coverage.mjs",
-    "verify": "npm test && npm run test:coverage && npm run verify:visual && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build",
-    "verify:fast": "npm test && npm run build"
+    "verify": "npm test && npm run test:coverage && npm run verify:visual && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build:raw",
+    "verify:fast": "npm test && npm run build:raw"
   },
   "devDependencies": {
     "@zeppos/zeus-cli": "^1.9.0",

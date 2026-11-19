@@ -78,7 +78,8 @@
       "command": "node",
       "args": [
         "scripts/run-zeus-command.mjs",
-        "build"
+        "build",
+        "--no-version-bump"
       ],
       "options": {
         "cwd": "${workspaceFolder}"

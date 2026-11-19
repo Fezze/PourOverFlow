@@ -135,7 +135,7 @@ Current verified platform note:
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
 - Run `npm run build` after larger changes to keep the device package healthy from the repo root. It executes Zeus inside `zepp-app/`.
-- For Parallax-style simulator validation, use `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build`.
+- For Parallax-style simulator validation, use `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build:raw` to package the tested version. See [Versioning and commits](../README.md#versioning-and-commits) for hook setup and push behavior.
 - Any new watch page or screen must add at least one deterministic Playwright screenshot scenario before close-out.
 - Before every commit, run the repo-standard verify stack and make sure it is green.
 - After finishing a meaningful chunk of work, commit it unless the user explicitly asked you not to commit yet.

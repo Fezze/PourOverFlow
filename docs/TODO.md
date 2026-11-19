@@ -60,7 +60,7 @@
 - `npm run verify:visual`
 - `npm run test:playwright:harness`
 - `npm run test:playwright:coverage:harness`
-- `npm run build`
+- `npm run build:raw`
 
 ## Simulator checks
 

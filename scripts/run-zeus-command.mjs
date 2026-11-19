@@ -2,10 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { resolveZeppAppRoot } from "./zepp-app-root.mjs";
+import { bumpVersion } from "./project-version.mjs";
 
 const zeppAppRoot = resolveZeppAppRoot();
 const repoRoot = path.resolve(zeppAppRoot, "..");
-const zeusArgs = process.argv.slice(2);
+const wrapperArgs = process.argv.slice(2);
+const noVersionBump = wrapperArgs.includes("--no-version-bump");
+const dryRun = wrapperArgs.includes("--dry-run");
+const zeusArgs = wrapperArgs.filter((arg) => arg !== "--no-version-bump" && arg !== "--dry-run");
 const localZeusPath = path.join(
   repoRoot,
   "node_modules",
@@ -30,6 +34,20 @@ if (zeusArgs.length === 0) {
   process.exit(1);
 }
 
+if (!noVersionBump && ["build", "dev"].includes(zeusArgs[0])) {
+  try {
+    bumpVersion(repoRoot, "patch", { dryRun });
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+if (dryRun) {
+  console.log(`Dry run: zeus ${zeusArgs.join(" ")}`);
+  process.exit(0);
+}
+
 const child = spawn(zeusCommand, zeusArgs, {
   cwd: zeppAppRoot,
   stdio: zeusArgs[0] === "build" ? ["inherit", "pipe", "pipe"] : "inherit",
@@ -43,6 +61,10 @@ const child = spawn(zeusCommand, zeusArgs, {
           : localZeusPrivateModulesPath
         : process.env.NODE_PATH
   }
+});
+
+child.on("error", (error) => {
+  console.error(`Cannot run Zeus: ${error.message}`);
 });
 
 let unresolvedImport = false;

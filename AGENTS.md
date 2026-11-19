@@ -82,6 +82,7 @@ If a task touches Zepp runtime and the agent is not using `zepp-miniapp-builder`
 
 ## Commit and verification discipline
 
+- Enable the repo-local version hook with `npm run hooks:install` in each checkout. Stage the intended changes and commit after the verification pass. See [Versioning and commits](README.md#versioning-and-commits).
 - Before every commit, run the repo-standard verification stack or an equivalent full local verify pass and make sure it is green.
 - The preferred verify path is the VS Code compound task `Verify: all tests and coverage`; command-line equivalents are acceptable when they cover the same stack.
 - After any successful build that closes a meaningful code change, create a commit before moving on unless the user explicitly says not to commit.
@@ -193,7 +194,7 @@ The first implementation task from the current repo state is the nearest sensibl
 - The mocked Zepp runtime harness now covers page-shell behavior too. It aliases `@zos/ui`, `@zos/device`, and `@zos/interaction`, mocks each page's `index.layout.js` facade, captures `Page(...)` definitions, and asserts widget creation, scroll-list routing, empty or stale-state fallbacks, and runtime-event-driven `replace(...)` refreshes without relying on the simulator.
 - The repo includes `npm run test:playwright` and `npm run test:playwright:harness` as no-coverage Playwright smoke runs, so the simulator path and the browser module harness can both be exercised without writing coverage reports.
 - Parallax-compatible aliases are available: `npm run dev`, `npm run sim:doctor`, `npm run sim:smoke`, and `npm run test:playwright:screens`.
-- The Parallax-style simulator workflow is `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build`.
+- The Parallax-style simulator workflow is `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build:raw` to package the tested version.
 - The same script supports `npm run test:playwright:coverage:harness`, which opens a local browser harness page and executes real browser-safe project modules for Playwright/V8 coverage without a simulator; keep treating it as complementary to Vitest, not as proof of Zepp-only runtime behavior.
 - The repo also includes `npm run validation:logs`, which summarizes `[pof-validation]` events from the simulator `renderer.log` by default or from an explicit `--file` path when you are reviewing exported real-device logs.
 - The simulator smoke script now resolves simulator metadata from `%APPDATA%/simulator` on Windows, `${XDG_CONFIG_HOME:-~/.config}/simulator` on Linux, or an explicit `ZEPP_SIMULATOR_ROOT` override.

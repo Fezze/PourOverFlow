@@ -111,6 +111,15 @@ Current platform note:
 export ZEPP_SIMULATOR_ROOT="$HOME/.config/simulator"
 ```
 
+## Versioning and commits
+
+Run `npm run hooks:install` once per checkout to enable the Git pre-commit hook. Stage the intended changes and run the full verification stack before committing. The hook adds a patch bump or stages the synchronized version already prepared by a build, simulator deployment, or explicit bump. Stage non-version edits to the version files before committing.
+
+- `npm run build`, `npm run dev`, and `npm run zepp:dev` bump the patch before starting Zeus. The version name stays in sync across `package.json`, `package-lock.json`, and `zepp-app/app.json`, and each bump increments the Zepp version code by one.
+- Use `npm run build:raw` or pass `--no-version-bump` to reuse the current version. Preview, bridge, the full verification task, `npm run verify`, and `npm run verify:fast` also reuse it.
+- `npm run version:bump:patch`, `npm run version:bump:minor`, and `npm run version:bump:major` prepare an explicit bump. Add `-- --stage` to stage it immediately, or `-- --dry-run` to see the next version.
+- `npm run push` publishes the current branch to its upstream, then creates and publishes a separate `Bump version to …` commit with a minor bump. Use `npm run push -- -u origin <branch>` to set the upstream. Commit pending version-file changes first. If the second push fails, retry the existing commit with plain `git push` to the same destination.
+
 ## Most important documents
 
 - [Project review and regression fixes](docs/REVIEW-2026-09-08.md)
@@ -181,7 +190,7 @@ Parallax-style simulator validation sequence:
 npm run sim:doctor
 npm run dev
 npm run sim:smoke
-npm run build
+npm run build:raw
 ```
 
 The simulator-side Playwright commands now also verify that `last_app_info.json` points at this repo's [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app) subtree and that the deployed simulator app is not older than the latest app-facing source files. If the deployment is stale, rerun `npm run zepp:dev -- ...` or `zeus dev` from `zepp-app/` before trusting the simulator test result.
