@@ -6,7 +6,7 @@ import { readHistoryEntry, readPhoneSnapshot, readRecipeRecord } from "../../../
 
 export async function verifyPhoneFlows(page, storage, locale, flushActions) {
   const i18n = createTranslator(locale);
-  const label = (key) => i18n.t(`settings.${key}`);
+  const label = (key, params) => i18n.t(`settings.${key}`, params);
   const button = (key) => page.getByRole("button", { name: label(key), exact: true });
   const textbox = (key) => page.getByRole("textbox", { name: label(key), exact: true });
   const select = (key) => page.getByRole("combobox", { name: label(key), exact: true });
@@ -62,6 +62,29 @@ export async function verifyPhoneFlows(page, storage, locale, flushActions) {
   await choose(stepSelect, { label: `2. ${stepTitle}` });
   assert.equal(await textbox("labels.body").inputValue(), instructions);
 
+  await click(button("editor.cancel"));
+  await click(row(recipeName).locator("..").getByRole("button", { name: label("library.duplicate"), exact: true }));
+  const afterDuplicate = readPhoneSnapshot(storage);
+  const copy = afterDuplicate.recipeIndex.find((recipe) => recipe.recipeId !== newRecipe.recipeId && recipe.name === `${recipeName} Copy`);
+  assert.ok(copy, "Duplicating the recipe must create a separate record");
+  const storedCopy = readRecipeRecord(storage, copy.recipeId);
+  assert.deepEqual(storedCopy.steps.map(({ title }) => title), steps.map(({ title }) => title));
+  assert.equal(afterDuplicate.syncMeta.recipeCatalogRevision, saved.syncMeta.recipeCatalogRevision + 1);
+
+  await click(row(copy.name));
+  await click(button("editor.down"));
+  assert.equal(await stepSelect.locator("option").first().textContent(), `1. ${stepTitle}`);
+  assert.equal(await textbox("labels.title").inputValue(), steps[0].title);
+  await click(button("editor.delete"));
+  assert.equal(await stepSelect.locator("option").count(), 2);
+  assert.equal(await textbox("labels.title").inputValue(), steps.at(-1).title);
+  await fill("labels.name", "Unsaved draft title");
+  await click(button("editor.cancel"));
+  assert.deepEqual(readRecipeRecord(storage, copy.recipeId), storedCopy);
+  assert.equal(readPhoneSnapshot(storage).syncMeta.recipeCatalogRevision, afterDuplicate.syncMeta.recipeCatalogRevision);
+  await click(row(copy.name));
+  assert.equal(await stepSelect.locator("option").count(), 3);
+
   const { historyId, recipeName: archivedName, toolId } = initial.historyIndex[0];
   const archivedSnapshot = readHistoryEntry(storage, historyId).recipeSnapshot;
   await click(button("nav.history"));
@@ -72,6 +95,8 @@ export async function verifyPhoneFlows(page, storage, locale, flushActions) {
   await click(button("history.saveNotes"));
   assert.equal(readHistoryEntry(storage, historyId).userRating, 3);
 
+  await click(button("history.backToHistory"));
+  await page.getByText(label("history.rated", { rating: 3 }), { exact: false }).waitFor();
   await click(button("nav.library"));
   const brewer = getLocalizedToolLabel(getToolById(toolId), i18n);
   await click(row(brewer));
@@ -85,4 +110,17 @@ export async function verifyPhoneFlows(page, storage, locale, flushActions) {
   assert.equal(await textbox("labels.note").inputValue(), note);
   assert.equal(await select("labels.rating").locator("option:checked").textContent(), "3");
   assert.deepEqual(readHistoryEntry(storage, historyId).recipeSnapshot, archivedSnapshot);
+
+  await click(button("nav.sync"));
+  await page.getByText(label("sync.revisionsTitle"), { exact: true }).waitFor();
+  const final = readPhoneSnapshot(storage);
+  const revisionPanel = page.getByText(label("sync.revisionsTitle"), { exact: true }).locator("..");
+  for (const [labelKey, value] of [
+    ["sync.brewers", final.syncMeta.toolCatalogRevision],
+    ["sync.recipes", final.syncMeta.recipeCatalogRevision],
+    ["sync.history", final.syncMeta.historyRevision]
+  ]) {
+    const revisionRow = revisionPanel.getByText(label(labelKey), { exact: true }).locator("..");
+    assert.equal(await revisionRow.getByText(String(value), { exact: true }).count(), 1);
+  }
 }

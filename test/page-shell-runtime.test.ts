@@ -414,6 +414,38 @@ describe("page shell runtime coverage", () => {
     }
   });
 
+  it.each([
+    { water: { waterMl: 35, targetTotalWaterMl: 120 }, waterLabel: "Cel 120 ml" },
+    { water: { waterMl: 35 }, waterLabel: "Wlej 35 ml" }
+  ])("renders Polish timing and water guidance with $waterLabel", async ({ water, waterLabel }) => {
+    const fixture = createCatalogFixture("pl-PL");
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const startedAt = 310_000;
+    const [firstStep, ...otherSteps] = fixture.primarySnapshot.steps;
+    const recipe = {
+      ...fixture.primarySnapshot,
+      steps: [
+        { ...firstStep, kind: "timed_action", durationMs: 10_000, targetTotalWaterMl: undefined, ...water },
+        ...otherSteps
+      ]
+    };
+    const session = createActiveBrewSession(recipe, { now: startedAt });
+    runtime.setLanguageCode(9);
+    runtime.setLocalStorageState({ [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify(session) });
+    vi.useFakeTimers({ now: startedAt + 1_000 });
+
+    const page = buildPage(pageDefinition);
+    try {
+      const text = runtime.findCreatedWidgetsByType("TEXT").map(({ text }) => text);
+      expect(text).toContain(`Krok 1/${recipe.steps.length}`);
+      expect(text).toContain(`${waterLabel} · Sesja 00:01`);
+      expect(text).toContain("00:09");
+    } finally {
+      pageDefinition.onDestroy.call(page);
+      vi.useRealTimers();
+    }
+  });
+
   it("closes the stop confirmation when the active brew page is destroyed", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());

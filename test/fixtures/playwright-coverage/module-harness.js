@@ -1,5 +1,7 @@
 import { getSupportedTools, getToolById } from "../../../zepp-app/shared/constants/tool-catalog.js";
-import { getSeedRecipeRecordById, getSeedRecipeRecords } from "../../../zepp-app/shared/domain/seed-library.js";
+import {
+  getSeedRecipeRecordById, getSeedRecipeRecords, getSeedRecipeRecordsForVersion, SEED_LIBRARY_VERSION
+} from "../../../zepp-app/shared/domain/seed-library.js";
 import {
   CURRENT_SCHEMA_VERSION,
   cloneRecipeRecord,
@@ -112,6 +114,7 @@ import {
   readRecipeRecord,
   safeParseJson,
   saveHistoryEntry,
+  saveWatchHistoryEntry,
   saveRecipeRecord,
   updateHistoryEntryFeedback
 } from "../../../zepp-app/shared/storage/phone-store.js";
@@ -558,6 +561,37 @@ async function runHarness() {
       );
     });
 
+    runFlow(state, "legacy-phone-library-migration", () => {
+      const settingsStorage = createMockSettingsStorage();
+      const deletedId = "seed_ap_daily_clean";
+      const recipeIndex = getSeedRecipeRecordsForVersion(1, 1_000).filter(({ recipeId }) => recipeId !== deletedId);
+      const retained = { ...recipeIndex[0], notes: "Keep this personal edit." };
+      recipeIndex[0] = retained;
+      for (const recipe of recipeIndex) {
+        settingsStorage.setItem(getPhoneRecipeRecordKey(recipe.recipeId), JSON.stringify(recipe));
+      }
+      settingsStorage.setItem(PHONE_STORAGE_KEYS.recipeIndex, JSON.stringify(recipeIndex.map(createRecipeSummary)));
+      settingsStorage.setItem(PHONE_STORAGE_KEYS.syncMeta, JSON.stringify({
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        seedCatalogVersion: 1,
+        recipeCatalogRevision: 7,
+        historyRevision: 3,
+        seededAt: 1_000
+      }));
+
+      const migrated = ensurePhoneStorage(settingsStorage, { preferredLocale: "pl-PL" });
+      assert(migrated.syncMeta.seedLocale === "en-US", "A legacy install should keep its original English seed locale.", state);
+      assert(migrated.syncMeta.seedCatalogVersion === SEED_LIBRARY_VERSION, "Migration should record the new seed catalog version.", state);
+      assert(migrated.syncMeta.recipeCatalogRevision === 8, "Migration should increment the catalog revision once.", state);
+      assert(migrated.syncMeta.historyRevision === 3, "Catalog migration should preserve the history revision.", state);
+      assert(readRecipeRecord(settingsStorage, deletedId) === null, "Migration must preserve deleted starter recipes.", state);
+      assert(readRecipeRecord(settingsStorage, retained.recipeId)?.notes === retained.notes, "Migration must preserve edits to existing recipes.", state);
+      assert(readRecipeRecord(settingsStorage, "seed_v60_high_sweet") !== null, "Migration should add new starter recipes.", state);
+      const reopened = ensurePhoneStorage(settingsStorage, { preferredLocale: "pl-PL" });
+      assert(reopened.syncMeta.recipeCatalogRevision === 8, "Opening an already migrated library must not create a new revision.", state);
+      assert(reopened.recipeIndex.length === migrated.recipeIndex.length, "Opening the migrated library must not duplicate entries.", state);
+    });
+
     runFlow(state, "phone-store-and-normalize", () => {
       const settingsStorage = createMockSettingsStorage();
       const seededSnapshot = ensurePhoneStorage(settingsStorage);
@@ -668,6 +702,15 @@ async function runHarness() {
         "Blank history ratings should normalize to undefined.",
         state
       );
+
+      const priorHistoryRevision = readPhoneSyncMeta(settingsStorage).historyRevision;
+      const replay = saveWatchHistoryEntry(settingsStorage, historyEntry);
+      assert(replay.ok, "A repeated watch result should be acknowledged.", state);
+      assert(replay.historyEntry.userNote === "Rounded", "A replay must preserve newer phone feedback.", state);
+      assert(replay.syncMeta.historyRevision === priorHistoryRevision, "A replay must not increment the history revision.", state);
+      const rejected = saveWatchHistoryEntry(settingsStorage, { ...historyEntry, recipeSnapshot: null });
+      assert(!rejected.ok, "A watch result without a snapshot must be rejected.", state);
+      assert(readPhoneSyncMeta(settingsStorage).historyRevision === priorHistoryRevision, "A rejected replay must not change history.", state);
 
       const snapshotAfterHistory = readPhoneSnapshot(settingsStorage);
       const toolSnapshot = buildPhoneToolCatalogSnapshot(snapshotAfterHistory);
@@ -794,6 +837,48 @@ async function runHarness() {
       assert(getStepProgressLabel({ kind: "confirm" }) === "Manual confirm", "Confirm step label should stay stable.", state);
       assert(formatDurationLabel(61_000) === "01:01", "Duration formatting should be stable.", state);
       assert(formatDurationLabel(Number.NaN) === "--:--", "Invalid durations should render as placeholders.", state);
+    });
+
+    runFlow(state, "resume-a-persisted-brew", () => {
+      const starter = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
+      const recipe = {
+        ...starter,
+        steps: normalizeRecipeSteps([
+          { kind: "timed_action", durationMs: 2_000 },
+          { kind: "timed_wait", durationMs: 3_000 },
+          { kind: "timed_action", durationMs: 4_000, requiresConfirm: true },
+          { kind: "finish" }
+        ])
+      };
+      const session = createActiveBrewSession(recipe, { now: 1_000 });
+      const persisted = JSON.parse(JSON.stringify(session));
+      delete persisted.expectedStepEndAt;
+
+      const stillRunning = resumeSession(persisted, { now: 2_999 });
+      assert(stillRunning.status === "running" && stillRunning.expectedStepEndAt === 3_000,
+        "Resume should reconstruct a missing deadline from the persisted start time.", state);
+      assert(tickSession(stillRunning, { now: 2_999 }) === stillRunning,
+        "An early tick must keep the current step running.", state);
+
+      const waiting = resumeSession(persisted, { now: 11_000 });
+      assert(waiting.status === "waiting_for_confirm" && waiting.currentStepIndex === 2,
+        "Resume should reconcile both elapsed steps and pause for confirmation.", state);
+      assert(JSON.stringify(waiting.stepRunResults.map(({ endedAt }) => endedAt)) === "[3000,6000]",
+        "Elapsed steps must retain their deadlines as the recorded end times.", state);
+      assert(waiting.stepRunResults.every(({ confirmedManually }) => !confirmedManually),
+        "Auto-advanced steps must not count as manual confirmations.", state);
+      assert(tickSession(waiting, { now: 11_500 }) === waiting,
+        "A tick must keep a pending confirmation intact.", state);
+
+      const finish = advanceSession(waiting, { now: 12_000 });
+      const completed = advanceSession(finish, { now: 12_500 });
+      assert(completed.status === "completed" && completed.stepRunResults.length === 4,
+        "Confirming the remaining steps should complete the recovered brew.", state);
+      assert(resumeSession(completed, { now: 30_000 }) === completed,
+        "Reopening a completed session must not alter its results.", state);
+      const expired = resumeSession({ ...persisted, currentStepIndex: recipe.steps.length }, { now: 11_000 });
+      assert(expired.status === "expired" && expired.expectedStepEndAt === undefined,
+        "A stale step pointer must expire the session instead of advancing it.", state);
     });
 
     runFlow(state, "sync-codecs-and-transport", () => {

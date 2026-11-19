@@ -7,6 +7,7 @@ const integrationTests = [
   "test/runtime/**/*.test.ts",
   "test/**/*.integration.test.ts",
   "test/app-side-runtime.test.ts",
+  "test/doctor-ubuntu.test.ts",
   "test/page-shell-runtime.test.ts",
   "test/phone-preview-coverage.test.ts",
   "test/phone-store.test.ts",

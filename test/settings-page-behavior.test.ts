@@ -74,11 +74,10 @@ beforeAll(async () => {
   globals.TextInput = (props: Record<string, unknown>) => makeNode("TextInput")(props);
   globals.Select = (props: Record<string, unknown>) => makeNode("Select")(props);
 
-  await import("../zepp-app/setting/app-settings.jsx");
+  await import("../zepp-app/setting/index.js");
 });
 
-function createPage() {
-  const settingsStorage = new MockSettingsStorage();
+function createPage(settingsStorage = new MockSettingsStorage()) {
   ensurePhoneStorage(settingsStorage, { preferredLocale: "en-US" });
   const props = { settingsStorage };
   const instance = {
@@ -310,6 +309,57 @@ describe("phone settings page behavior", () => {
     expect(instance.state.ui.draftRecipe.steps[2].requiresConfirm).toBe("true");
   });
 
+  it("keeps an invalid step reorder as a draft, then saves the corrected order after reopening", () => {
+    const { instance, props } = createPage();
+    const original = readRecipeRecord(props.settingsStorage, "seed_ap_bypass_bright")!;
+    const originalRevision = readPhoneSnapshot(props.settingsStorage).syncMeta.recipeCatalogRevision;
+    click(findRecordRow(instance.build(props), "AeroPress"));
+    click(findRecordRow(instance.build(props), original.name));
+
+    const editor = instance.build(props);
+    const initialPicker = findSelect(editor, "Go to step")!;
+    initialPicker.onChange(initialPicker.options.at(-1)!.value);
+    click(findButton(instance.build(props), "Down"));
+    expect(instance.state.ui.stepPageIndex).toBe(original.steps.length - 1);
+    click(findButton(instance.build(props), "Up"));
+    click(findButton(instance.build(props), "Save recipe"));
+    expect(findText(instance.build(props), "Recipe must end with a finish step.")).toBeDefined();
+    expect(readRecipeRecord(props.settingsStorage, original.recipeId)).toEqual(original);
+    expect(readPhoneSnapshot(props.settingsStorage).syncMeta.recipeCatalogRevision).toBe(originalRevision);
+
+    const reopened = createPage(props.settingsStorage).instance;
+    expect(findText(reopened.build(props), `Step ${original.steps.length - 1} of ${original.steps.length}`)).toBeDefined();
+    click(findButton(reopened.build(props), "Down"));
+    click(findButton(reopened.build(props), "Previous"));
+    click(findButton(reopened.build(props), "Delete"));
+    click(findButton(reopened.build(props), "Save recipe"));
+
+    const saved = readRecipeRecord(props.settingsStorage, original.recipeId)!;
+    expect(saved.steps.map(({ stepId }) => stepId)).toEqual(
+      original.steps.filter((_, index) => index !== original.steps.length - 2).map(({ stepId }) => stepId)
+    );
+    expect(saved.steps.map(({ order }) => order)).toEqual(saved.steps.map((_, index) => index));
+    expect(saved.steps.at(-1)?.kind).toBe("finish");
+    expect(readPhoneSnapshot(props.settingsStorage).syncMeta.recipeCatalogRevision).toBe(originalRevision + 1);
+  });
+
+  it("removes the picker for a single step and resets that step to the defaults", () => {
+    const { instance, props } = createPage();
+    click(findRecordRow(instance.build(props), "AeroPress"));
+    click(findButton(instance.build(props), "New recipe"));
+    click(findButton(instance.build(props), "Delete"));
+
+    const singleStep = instance.build(props);
+    expect(findSelect(singleStep, "Go to step")).toBeUndefined();
+    expect(findText(singleStep, "Step 1 of 1")).toBeDefined();
+    click(findButton(singleStep, "Reset"));
+
+    const reset = instance.build(props);
+    expect(findSelect(reset, "Go to step")?.options).toHaveLength(2);
+    expect(findText(reset, "Step 1 of 2")).toBeDefined();
+    expect(instance.state.ui.draftRecipe.steps.map(({ kind }) => kind)).toEqual(["instruction", "finish"]);
+  });
+
   it("duplicates a recipe and deletes the duplicate while retaining the original", () => {
     const { instance, props } = createPage();
     const original = readPhoneSnapshot(props.settingsStorage).recipeIndex[0];
@@ -341,7 +391,7 @@ describe("phone settings page behavior", () => {
       endedAt: 1711111112222,
       elapsedMs: 1111,
       stepRunResults: [],
-      deviationSummary: { totalDeltaMs: 0, worstStepDeltaMs: 0, completedSteps: 1, totalSteps: 1 },
+      deviationSummary: { totalDeltaMs: -62_000, worstStepDeltaMs: 0, completedSteps: 1, totalSteps: 1 },
       syncedFrom: "watch",
       createdAt: 1711111112222,
       updatedAt: 1711111112222
@@ -351,9 +401,18 @@ describe("phone settings page behavior", () => {
     click(findRecordRow(instance.build(props), recipe.name));
     const detail = instance.build(props);
     expect(findText(detail, "00:01")).toBeDefined();
-    instance.updateHistoryDraftField(props, "userRating", "5");
-    instance.updateHistoryDraftField(props, "userNote", "Honey, cocoa, clean finish.");
+    expect(findNode(detail, (node) => node.type === "Text" && node.children.some(
+      (child) => typeof child === "string" && child.includes("1m 02s under planned")
+    ))).toBeDefined();
+    const rating = findSelect(detail, "Rating")!;
+    rating.onChange(rating.options.find(({ name }) => name === "5")!.value);
+    const note = findNode(instance.build(props), (node) => node.type === "TextInput" && node.props.label === "Note");
+    (note?.props.onChange as (value: string) => void)("Honey, cocoa, clean finish.");
     click(findButton(instance.build(props), "Save notes"));
+    click(findButton(instance.build(props), "Back to history"));
+    expect(findNode(instance.build(props), (node) => node.type === "Text" && node.children.some(
+      (child) => typeof child === "string" && child.includes("Rated 5/5")
+    ))).toBeDefined();
 
     expect(readHistoryEntry(props.settingsStorage, historyEntry.historyId)).toMatchObject({
       userRating: 5,

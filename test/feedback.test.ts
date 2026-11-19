@@ -119,6 +119,47 @@ describe("feedback helpers", () => {
     expect(runtime.__zeusRuntime.buzzerInstances.size).toBe(0);
   });
 
+  it("reports unavailable hardware and failed starts, then retries with the default scene", async () => {
+    let hardwareReady = false;
+    const start = vi.fn()
+      .mockReturnValueOnce(false)
+      .mockImplementationOnce(() => { throw new Error("actuator busy"); })
+      .mockReturnValueOnce(true);
+    vi.doMock("@zos/sensor", async (importOriginal) => ({
+      ...await importOriginal<Record<string, unknown>>(),
+      VIBRATOR_SCENE_SHORT_MIDDLE: undefined,
+      Vibrator: class {
+        constructor() {
+          if (!hardwareReady) throw new Error("actuator unavailable");
+        }
+        start = start;
+      }
+    }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    try {
+      const { playFeedbackCueDetailed } = await loadFeedbackModule();
+      const cue = () => playFeedbackCueDetailed("vibrate_short");
+      expect(cue()).toMatchObject({
+        success: false, attempts: [{ channel: "vibrator", sourceType: "default", reason: "unavailable" }]
+      });
+      expect(start).not.toHaveBeenCalled();
+
+      hardwareReady = true;
+      expect(cue()).toMatchObject({
+        success: false, attempts: [{ channel: "vibrator", sourceType: "default", reason: "start_returned_false" }]
+      });
+      expect(cue()).toMatchObject({
+        success: false, attempts: [{ channel: "vibrator", sourceType: "default", reason: "start_threw" }]
+      });
+      expect(cue()).toMatchObject({ success: true, sourceType: "default", channel: "vibrator", attempts: [] });
+      expect(start.mock.calls).toEqual([[], [], []]);
+    } finally {
+      vi.doUnmock("@zos/sensor");
+      log.mockRestore();
+    }
+  });
+
   it("returns false when the requested cue cannot be played", async () => {
     const runtime = await loadRuntimeModule();
     runtime.resetZeppRuntime();

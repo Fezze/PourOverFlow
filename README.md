@@ -160,7 +160,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm run test:playwright:screens` is the Parallax-compatible alias for the deterministic watch screenshot gate.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
-- `npm run test:playwright:phone` exercises the Settings page in the Chromium preview using real clicks, text entry, and Select changes in English and Polish. It verifies recipe validation and persistence, plus history feedback after deleting the source recipe.
+- `npm run test:playwright:phone` exercises the Settings page in the Chromium preview using real clicks, text entry, and Select changes in English and Polish. It verifies recipe validation, step editing, duplication and cancellation, history feedback after deleting the source recipe, and the displayed sync revisions.
 - `npm run verify:visual` runs the watch preview browser-render gate, including fixture export, structural checks, and deterministic screenshot rendering into the verification output path.
 - `npm run preview:watch` exports deterministic watch-page widget fixtures and renders the locale and target-family screenshot matrix into `output/playwright/watch-preview/screenshots/<locale>/<target>/<resolution>/`.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
@@ -183,7 +183,7 @@ Run `npm run test:coverage` for both Vitest reports or `npm run test:coverage:al
 | Browser module tests in Chromium | `npm run test:playwright:coverage:harness` | `coverage/playwright/harness` |
 | End-to-end phone flows in the Chromium preview | `npm run test:playwright:coverage:phone` | `coverage/playwright/phone` |
 
-Vitest measures the same app JS/JSX sources and Node scripts in both suites, including files with zero hits. Use `npm run test:coverage:combined` for the union of the Vitest suites in `coverage/vitest/combined`. Classify new cross-module scenarios under `test/runtime/` or name them `*.integration.test.ts`. Existing integration files are listed in `test/vitest.config.ts`.
+Vitest measures the same app JS/JSX sources and Node scripts in both suites, including files with zero hits. Execution in child processes is outside Vitest coverage, so a CLI exercised through a subprocess can appear with zero hits here. Use `npm run test:coverage:combined` for the union of the Vitest suites in `coverage/vitest/combined`. Classify new cross-module scenarios under `test/runtime/` or name them `*.integration.test.ts`. Existing integration files are listed in `test/vitest.config.ts`.
 
 The phone report maps Settings code executed in the Node preview VM to its source files. Playwright drives the same UI flows that run without coverage. The watch screenshot gate reports verified preview states and `npm run sim:smoke` checks the live simulator endpoint.
 
