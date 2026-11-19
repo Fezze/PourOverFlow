@@ -142,8 +142,7 @@ function makeUiState(storage, state) {
     historyDraft: null,
     stepPageIndex: 0,
     flashMessage: "",
-    errorMessage: "",
-    stepPickerOpen: false
+    errorMessage: ""
   }));
 }
 
@@ -207,7 +206,7 @@ function renderNode(value, iconDataUris) {
   }
   if (type === "Select") {
     const options = Array.isArray(props.options) ? props.options : [];
-    return `<label class="field"><span>${escapeHtml(props.label)}</span><select>${options.map((option) => `<option ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
+    return `<label class="field"><span>${escapeHtml(props.title || props.label)}</span><select>${options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
   }
   return renderNode(children, iconDataUris);
 }
@@ -292,7 +291,6 @@ function buildScenarios(storage, locale) {
     { name: "recipe-list-long", storage: longRecipeStorage, state: { view: "recipe-list", toolId: selectedRecipe.toolId } },
     { name: "recipe-editor-long-step", storage: longRecipeStorage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 3 } },
     { name: "recipe-editor-33-steps", storage: manyStepsStorage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 16 } },
-    { name: "recipe-step-picker-33", storage: manyStepsStorage, state: { view: "recipe-editor", toolId: selectedRecipe.toolId, recipeId, stepPageIndex: 16, stepPickerOpen: true } },
     { name: "recipe-list-empty", storage: emptyRecipeStorage, state: { view: "recipe-list", toolId: "tool_french_press" } },
     { name: "history-list", storage, state: { view: "history-list" } },
     { name: "history-list-empty", storage: emptyHistoryStorage, state: { view: "history-list" } },
@@ -332,17 +330,14 @@ async function verifyLayout(page, scenario, locale, width) {
     if (await input.inputValue() !== steps[scenario.state.stepPageIndex].body) {
       throw new Error(`${locale}/${scenario.name}: selected step instructions do not match the fixture`);
     }
-    if (scenario.state.stepPickerOpen) {
-      const lastOption = page.getByRole("button", { name: /^33\. / });
-      const optionReached = await lastOption.evaluate((element) => {
-        const list = element.parentElement;
-        if (list.scrollHeight <= list.clientHeight || list.clientHeight > 264) return false;
-        list.scrollTop = list.scrollHeight;
-        const reached = element.getBoundingClientRect().bottom <= list.getBoundingClientRect().bottom + 1;
-        list.scrollTop = 0;
-        return reached;
-      });
-      if (!optionReached) throw new Error(`${locale}/${scenario.name}: the final step cannot be reached in the picker`);
+    const stepSelect = page.getByRole("combobox", { name: i18n.t("settings.editor.jumpToStep"), exact: true });
+    const stepOptions = stepSelect.locator("option");
+    const title = (step) => step.title?.trim() || i18n.t("settings.editor.untitledStep");
+    if (await stepOptions.count() !== steps.length ||
+        await stepOptions.last().textContent() !== `${steps.length}. ${title(steps.at(-1))}` ||
+        await stepSelect.locator("option:checked").textContent() !==
+          `${scenario.state.stepPageIndex + 1}. ${title(steps[scenario.state.stepPageIndex])}`) {
+      throw new Error(`${locale}/${scenario.name}: the step Select does not match the fixture`);
     }
     await heading.evaluate((element) => {
       element.closest("#root").scrollTop += element.getBoundingClientRect().top - 22;
@@ -389,7 +384,6 @@ async function main() {
         if (scenario.state.view === "recipe-editor") {
           instance.openRecipeEditor(props, scenario.state.recipeId);
           if (scenario.state.stepPageIndex) instance.setStepPage(props, scenario.state.stepPageIndex);
-          if (scenario.state.stepPickerOpen) instance.persistUiState(props, { stepPickerOpen: true });
         } else if (scenario.state.view === "history-detail") {
           instance.openHistoryDetail(props, scenario.state.historyId);
         }
@@ -412,7 +406,7 @@ async function main() {
   await browser.close();
   await writeFile(
     resolve(OUT_DIR, "README.txt"),
-    `Phone Settings preview screenshots\n\nThese images render the current AppSettingsPage tree from zepp-app/setting/app-settings.jsx through a small browser adapter for the native Zepp Settings primitives. Layout and colors come from the actual component style props; native input chrome is approximated in HTML. This is a source-backed preview, not a Zepp companion app capture.\n\nLocales: en-US, pl-PL\nWidths: ${VIEWPORTS.join(", ")}px\nScenarios: library, recipe list, recipe editor, later recipe step, long recipe name and instruction, 33-step editor with the picker open and closed, empty recipe shelf, populated and empty history list, history detail, sync.\nScenarios verified: ${screenshotCount}\nImages written: ${screenshotCount * 2}\n`
+    `Phone Settings preview screenshots\n\nThese images render the current AppSettingsPage tree from zepp-app/setting/app-settings.jsx through a small browser adapter for the native Zepp Settings primitives. Layout and colors come from the actual component style props; native input chrome is approximated in HTML. This is a source-backed preview, not a Zepp companion app capture.\n\nLocales: en-US, pl-PL\nWidths: ${VIEWPORTS.join(", ")}px\nScenarios: library, recipe list, recipe editor, later recipe step, long recipe name and instruction, 33-step editor with the selected step and a full title list, empty recipe shelf, populated and empty history list, history detail, sync.\nScenarios verified: ${screenshotCount}\nImages written: ${screenshotCount * 2}\n`
   );
   console.log(`Rendered ${screenshotCount} phone previews to ${OUT_DIR}`);
 }

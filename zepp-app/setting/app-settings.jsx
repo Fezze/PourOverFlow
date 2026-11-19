@@ -163,7 +163,6 @@ function createDefaultUiState(selectedToolId) {
     draftRecipe: null,
     historyDraft: null,
     stepPageIndex: 0,
-    stepPickerOpen: false,
     flashMessage: "",
     errorMessage: ""
   };
@@ -441,7 +440,8 @@ AppSettingsPage({
   state: {
     snapshot: null,
     syncMeta: null,
-    ui: null
+    ui: null,
+    stepSelectValue: ""
   },
   hydrateFromStorage(props) {
     this.i18n = createPhoneTranslator(resolvePhoneLocale());
@@ -477,9 +477,9 @@ AppSettingsPage({
     writeSettingsJson(props.settingsStorage, SETTINGS_UI_STORAGE_KEY, nextUi);
   },
   setView(props, viewName, patch = {}) {
+    this.state.stepSelectValue = "";
     this.persistUiState(props, {
       view: viewName,
-      stepPickerOpen: false,
       errorMessage: "",
       ...patch
     });
@@ -578,7 +578,6 @@ AppSettingsPage({
   },
   setStepPage(props, nextPageIndex) {
     this.persistUiState(props, {
-      stepPickerOpen: false,
       stepPageIndex: clampStepPageIndex(
         nextPageIndex,
         (this.state.ui.draftRecipe && this.state.ui.draftRecipe.steps
@@ -626,6 +625,7 @@ AppSettingsPage({
     }
 
     currentSteps.splice(index, 1);
+    if (currentSteps.length === 1) this.state.stepSelectValue = "";
     this.persistUiState(props, {
       draftRecipe: {
         ...this.state.ui.draftRecipe,
@@ -819,6 +819,56 @@ AppSettingsPage({
       ...this.renderRecipeCards(props)
     ]);
   },
+  renderStepSelect(props, steps, index, i18n) {
+    // The simulator Select keeps the last value it emitted. Associate that value with
+    // the active step so tapping Previous or Next also updates the menu selection.
+    const value = this.state.stepSelectValue;
+    const prefix = value.startsWith("a") ? "b" : "a";
+    const options = steps.map((step, stepIndex) => ({
+      name: `${stepIndex + 1}. ${step.title?.trim() || i18n.t("settings.editor.untitledStep")}`,
+      value: stepIndex === index ? value : `${prefix}${stepIndex}`
+    }));
+
+    return Select({
+      title: i18n.t("settings.editor.jumpToStep"),
+      label: options[index].name,
+      options,
+      value,
+      onChange: (selectedValue) => {
+        const nextIndex = options.findIndex((option) => option.value === selectedValue);
+        if (nextIndex < 0 || nextIndex === index) return;
+        this.state.stepSelectValue = selectedValue;
+        this.setStepPage(props, nextIndex);
+      },
+      style: {
+        position: "relative",
+        maxWidth: "100%",
+        title: FIELD_LABEL,
+        // Unbound simulator Selects can show an empty value at startup.
+        label: {
+          ...FIELD_LABEL,
+          position: "absolute",
+          zIndex: "1",
+          right: "38px",
+          bottom: "11px",
+          left: "14px",
+          color: COLORS.background,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          pointerEvents: "none"
+        },
+        select: {
+          backgroundColor: COLORS.muted,
+          color: "transparent",
+          borderRadius: "10px",
+          minHeight: "44px",
+          marginTop: "6px"
+        },
+        option: { whiteSpace: "normal", overflowWrap: "anywhere" }
+      }
+    });
+  },
   renderStepEditor(props, steps, index) {
     const i18n = resolveSettingsTranslator(this);
     const step = steps[index];
@@ -829,32 +879,6 @@ AppSettingsPage({
       onChange: updateStep(key),
       ...options
     });
-    const stepPickerOpen = this.state.ui.stepPickerOpen;
-    const stepOptions = stepPickerOpen ? View({
-      style: {
-        ...STACK,
-        gap: "4px",
-        maxHeight: "264px",
-        overflowY: "auto",
-        backgroundColor: COLORS.background,
-        borderRadius: "14px",
-        padding: "4px"
-      }
-    }, steps.map((option, stepIndex) => Button({
-      label: `${stepIndex + 1}. ${option.title || i18n.t("settings.editor.untitledStep")}`,
-      style: {
-        ...ACTION,
-        flexShrink: "0",
-        borderRadius: "10px",
-        textAlign: "left",
-        justifyContent: "flex-start",
-        backgroundColor: stepIndex === index ? COLORS.secondary : COLORS.background,
-        color: stepIndex === index ? COLORS.primary : COLORS.text,
-        whiteSpace: "normal",
-        overflowWrap: "anywhere"
-      },
-      onClick: () => this.setStepPage(props, stepIndex)
-    }))) : null;
     const stepTitle = i18n.t("settings.editor.stepOf", { current: index + 1, total: steps.length });
 
     return createPanel(i18n.t("settings.editor.guidedStepsTitle"), [
@@ -871,12 +895,7 @@ AppSettingsPage({
           onClick: () => this.setStepPage(props, index + 1)
         }) : View({ style: { width: "78px" } }, [])
       ], { gap: "6px" }),
-      steps.length > 1 && Button({
-        label: i18n.t(stepPickerOpen ? "settings.editor.closeStepPicker" : "settings.editor.openStepPicker"),
-        style: ACTION,
-        onClick: () => this.persistUiState(props, { stepPickerOpen: !stepPickerOpen })
-      }),
-      stepOptions,
+      steps.length > 1 && this.renderStepSelect(props, steps, index, i18n),
       createSelectField({
         label: i18n.t("settings.labels.kind"),
         options: buildStepKindOptions(i18n),

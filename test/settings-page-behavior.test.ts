@@ -191,7 +191,7 @@ describe("phone settings page behavior", () => {
     expect(instance.state.ui.stepPageIndex).toBe(instance.state.ui.draftRecipe.steps.length - 1);
   });
 
-  it("opens and closes a titled picker for all 33 recipe steps", () => {
+  it("jumps across 33 steps and keeps the Select in sync with Previous and Next", () => {
     const { instance, props } = createPage();
     const recipe = readPhoneSnapshot(props.settingsStorage).recipeIndex[0];
     instance.hydrateFromStorage(props);
@@ -206,24 +206,37 @@ describe("phone settings page behavior", () => {
     instance.updateDraftField(props, "steps", steps);
     instance.setStepPage(props, 16);
 
-    const form = instance.build(props);
-    expect(findText(form, "Step 17 of 33")).toBeDefined();
-    expect(findButton(form, "33. Serve")).toBeUndefined();
-    click(findButton(form, "Go to step"));
+    const getStepSelect = () => findNode(instance.build(props), (node) =>
+      node.type === "Select" && node.props.title === "Go to step"
+    )!.props as {
+      label: string;
+      options: { name: string; value: string }[];
+      value: string;
+      onChange: (value: string) => void;
+    };
 
-    const picker = instance.build(props);
-    expect(findNode(picker, (node) => node.type === "View" && node.children.length === 33 &&
-      Boolean(findButton(node, "1. Prepare")) && Boolean(findButton(node, "33. Serve")))).toBeDefined();
-    click(findButton(picker, "Close step list"));
-    expect(findButton(instance.build(props), "33. Serve")).toBeUndefined();
-    click(findButton(instance.build(props), "Go to step"));
-
-    click(findButton(instance.build(props), "33. Serve"));
+    const initial = getStepSelect();
+    expect(initial.label).toBe("17. Pour and swirl");
+    expect(initial.options).toHaveLength(33);
+    expect(new Set(initial.options.map(({ value }) => value)).size).toBe(33);
+    expect(initial.options[32].name).toBe("33. Serve");
+    initial.onChange(initial.options[32].value);
     const finalStep = instance.build(props);
     expect(findText(finalStep, "Step 33 of 33")).toBeDefined();
     expect(findButton(finalStep, "Next")).toBeUndefined();
-    expect(findButton(finalStep, "33. Serve")).toBeUndefined();
     expect(findNode(finalStep, (node) => node.props.label === "Instructions")?.props.value).toBe("Serve the coffee.");
+
+    click(findButton(finalStep, "Previous"));
+    const previous = getStepSelect();
+    expect(previous.label).toBe("32. Pour and swirl");
+    expect(previous.options[31].value).toBe(previous.value);
+    expect(previous.options[32].value).not.toBe(initial.options[32].value);
+    previous.onChange(previous.options[32].value);
+    expect(findText(instance.build(props), "Step 33 of 33")).toBeDefined();
+
+    click(findButton(instance.build(props), "Previous"));
+    click(findButton(instance.build(props), "Next"));
+    expect(getStepSelect().label).toBe("33. Serve");
   });
 
   it("duplicates a recipe and deletes the duplicate while retaining the original", () => {

@@ -425,7 +425,7 @@ Must contain:
 
 ### Rendering
 
-Show one editable step at a time. Keep adjacent-step navigation and a scrollable picker of step titles together with the selected step's fields.
+Show one editable step at a time. Keep adjacent-step navigation and a native Select with step titles for direct jumps together with the selected step's fields.
 
 ### Step fields
 
