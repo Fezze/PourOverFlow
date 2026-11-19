@@ -153,7 +153,7 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 ## Test commands
 
 - `npm test` runs the full Vitest suite, including the pure logic tests and the mocked Zepp runtime flow tests.
-- `npm run test:coverage` generates Vitest coverage reports in the repo-local `coverage/` directory by default.
+- `npm run test:coverage` generates Vitest reports in `coverage/` by default. The report includes app JS/JSX sources and repo Node scripts, including files that Vitest never loads.
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run sim:doctor` checks the local simulator metadata path, DevTools port file, and latest deployment freshness when those files are available.
 - `npm run sim:smoke` is the Parallax-compatible alias for the simulator smoke command.
@@ -161,15 +161,16 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm run test:playwright:screens` is the Parallax-compatible alias for the deterministic watch screenshot gate.
 - `npm run test:playwright:harness` launches the local browser module harness without collecting coverage, so the same browser-safe module scenarios can be exercised as plain pass/fail checks.
 - `npm run test:playwright:coverage:harness` launches a local Chromium-family browser against a browser harness that imports and executes real browser-safe project modules, then writes Playwright/V8 coverage into `coverage/playwright/harness` by default.
+- `npm run test:playwright:phone` exercises the Settings page in the Chromium preview using real clicks, text entry, and Select changes in English and Polish. It verifies recipe validation and persistence, plus history feedback after deleting the source recipe.
 - `npm run verify:visual` runs the watch preview browser-render gate, including fixture export, structural checks, and deterministic screenshot rendering into the verification output path.
 - `npm run preview:watch` exports deterministic watch-page widget fixtures and renders the locale and target-family screenshot matrix into `output/playwright/watch-preview/screenshots/<locale>/<target>/<resolution>/`.
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - `npm run verify` is the canonical CLI full-stack verification command.
 - `npm run verify:fast` is the short local loop for Vitest plus Zeus build.
 - set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
-- current meaningful local coverage baselines are `90.79% / 82.11% / 85.55% / 90.67%` for Vitest and `93.54% / 79.94% / 60.39% / 93.54%` for the Playwright module harness.
+- Vitest, the browser module harness, and the phone browser flows report separate results because they exercise different surfaces.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](.vscode/tasks.json).
-- the task runs Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
+- the task runs Vitest, Vitest coverage, the browser-backed watch preview gate, Playwright phone flows, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
 - `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run dev -- -t "Amazfit Balance 2"`, `npm run zepp:dev -- -t "Amazfit Balance 2"`, or run `zeus dev` directly from `zepp-app/`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
 - the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.

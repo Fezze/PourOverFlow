@@ -358,6 +358,7 @@ describe("playwright coverage helpers", () => {
     expect(
       normalizePathForExpect(
         resolveReportsRoot({
+          env: {},
           cwd: process.cwd()
         })
       )

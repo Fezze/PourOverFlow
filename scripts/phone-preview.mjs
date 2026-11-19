@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +7,8 @@ import { runInNewContext } from "node:vm";
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 
+import { getMockBrowserExecutableCandidates } from "./playwright-coverage-helpers.mjs";
+import { verifyPhoneFlows } from "../test/fixtures/phone-preview/flows.mjs";
 import { LONG_WATCH_COPY } from "../test/support/watch-long-content.js";
 import { COLORS, FIELD_LABEL } from "../zepp-app/setting/appearance.js";
 import { createTranslator } from "../zepp-app/shared/i18n/index.js";
@@ -181,37 +184,49 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function renderNode(value, iconDataUris) {
+function registerAction(actions, handler) {
+  if (!actions || typeof handler !== "function") return "";
+  const id = actions.size;
+  actions.set(id, handler);
+  return ` data-action="${id}"`;
+}
+
+function renderNode(value, iconDataUris, actions) {
   if (value === null || value === undefined || value === false) return "";
-  if (Array.isArray(value)) return value.map((child) => renderNode(child, iconDataUris)).join("");
+  if (Array.isArray(value)) return value.map((child) => renderNode(child, iconDataUris, actions)).join("");
   if (typeof value === "string" || typeof value === "number") return escapeHtml(value);
 
   const { type, props = {}, children = [] } = value;
   const style = escapeHtml(styleToCss(props.style, iconDataUris));
   if (type === "View") {
     const role = typeof props.onClick === "function" ? ' role="button" tabindex="0"' : "";
-    return `<div${role} style="${style}">${renderNode(children, iconDataUris)}</div>`;
+    const action = registerAction(actions, props.onClick);
+    return `<div${role}${action} style="${style}">${renderNode(children, iconDataUris, actions)}</div>`;
   }
   if (type === "Text") {
-    return `<div data-text style="${style};text-align:${escapeHtml(props.align || "left")}">${renderNode(children, iconDataUris)}</div>`;
+    return `<div data-text style="${style};text-align:${escapeHtml(props.align || "left")}">${renderNode(children, iconDataUris, actions)}</div>`;
   }
   if (type === "Button") {
-    return `<button style="${style}" type="button">${escapeHtml(props.label)}</button>`;
+    const action = registerAction(actions, props.onClick);
+    return `<button${action} style="${style}" type="button">${escapeHtml(props.label)}</button>`;
   }
   if (type === "TextInput") {
+    const action = registerAction(actions, props.onChange);
+    const readonly = action ? "" : " readonly";
     const field = props.multiline
-      ? `<textarea rows="${props.rows || 3}" readonly>${escapeHtml(props.value)}</textarea>`
-      : `<input value="${escapeHtml(props.value)}" readonly>`;
+      ? `<textarea rows="${props.rows || 3}"${action}${readonly}>${escapeHtml(props.value)}</textarea>`
+      : `<input value="${escapeHtml(props.value)}"${action}${readonly}>`;
     return `<label class="field"><span style="${escapeHtml(styleToCss(props.labelStyle))}">${escapeHtml(props.label)}</span>${field}</label>`;
   }
   if (type === "Select") {
+    const action = registerAction(actions, props.onChange);
     const options = Array.isArray(props.options) ? props.options : [];
-    return `<label class="select-field"><span>${escapeHtml(props.label)}</span><select>${options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
+    return `<label class="select-field"><span>${escapeHtml(props.label)}</span><select${action}>${options.map((option) => `<option value="${escapeHtml(option.value)}" ${String(option.value) === String(props.value) ? "selected" : ""}>${escapeHtml(option.name)}</option>`).join("")}</select></label>`;
   }
-  return renderNode(children, iconDataUris);
+  return renderNode(children, iconDataUris, actions);
 }
 
-function renderPageHtml(tree, iconDataUris) {
+function renderPageHtml(tree, iconDataUris, actions) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     *{box-sizing:border-box}
     html,body{margin:0;background:${COLORS.background};color:${COLORS.text};font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark}
@@ -226,7 +241,7 @@ function renderPageHtml(tree, iconDataUris) {
     label.select-field{display:flex;flex-direction:column;max-width:300px;min-width:120px;line-height:20px}
     label.select-field select{width:100%;height:32px;flex-shrink:0}
     textarea{resize:none}
-  </style></head><body><div id="device"><div id="root">${renderNode(tree, iconDataUris)}</div></div></body></html>`;
+  </style></head><body><div id="device"><div id="root">${renderNode(tree, iconDataUris, actions)}</div></div></body></html>`;
 }
 
 async function createHarnessBundle() {
@@ -348,32 +363,78 @@ async function verifyLayout(page, scenario, locale, width) {
   }
 }
 
-async function main() {
-  await mkdir(OUT_DIR, { recursive: true });
-  const bundle = await createHarnessBundle();
-  const icons = await readToolIcons();
-  const browserPath = process.env.PHONE_PREVIEW_BROWSER || process.env.PLAYWRIGHT_COVERAGE_BROWSER;
-  const browserOptions = {
-    headless: true,
-    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-crash-reporter"]
-  };
-  if (browserPath) browserOptions.executablePath = browserPath;
+function loadSettingsPageConfig(bundle, locale) {
+  let pageConfig;
+  const make = (type) => (props = {}, children = []) => node(type, props, children);
+  runInNewContext(bundle, {
+    console,
+    navigator: { language: locale },
+    AppSettingsPage: (config) => { pageConfig = config; },
+    View: make("View"), Text: make("Text"), Button: make("Button"),
+    TextInput: make("TextInput"), Select: make("Select"),
+    Date: class extends Date { static now() { return FIXTURE_TIME; } }
+  });
+  return pageConfig;
+}
 
-  const browser = await chromium.launch(browserOptions);
+async function verifyInteractivePreview(browser, bundle, icons) {
+  for (const locale of LOCALES) {
+    const width = locale === "pl-PL" ? VIEWPORTS[0] : VIEWPORTS[1];
+    const page = await browser.newPage({ viewport: { width, height: DEVICE_HEIGHT } });
+    page.setDefaultTimeout(5_000);
+    const settingsStorage = seedPreviewStorage(locale);
+    const instance = createPageInstance(loadSettingsPageConfig(bundle, locale));
+    const props = { settingsStorage };
+    const actions = new Map();
+
+    try {
+      await page.exposeFunction("applySettingsAction", (id, value, rebuild) => {
+        actions.get(Number(id))(value);
+        // Keep the input in place during typing. Navigation and selection rebuild the tree.
+        if (!rebuild) return null;
+        actions.clear();
+        return renderNode(instance.build(props), icons, actions);
+      });
+      await page.setContent(renderPageHtml(instance.build(props), icons, actions));
+      await page.evaluate(() => {
+        const root = document.getElementById("root");
+        window.settingsActionsSettled = Promise.resolve();
+        const dispatch = (control, value, rebuild) => {
+          if (!control) return;
+          window.settingsActionsSettled = window.settingsActionsSettled.then(async () => {
+            const html = await window.applySettingsAction(control.dataset.action, value, rebuild);
+            if (html !== null) root.innerHTML = html;
+          });
+        };
+        root.addEventListener("click", (event) => {
+          dispatch(event.target.closest("button[data-action], [role=button][data-action]"), undefined, true);
+        });
+        root.addEventListener("input", (event) => {
+          if (event.target.matches("input[data-action], textarea[data-action]")) {
+            dispatch(event.target, event.target.value, false);
+          }
+        });
+        root.addEventListener("change", (event) => {
+          if (event.target.matches("select[data-action]")) {
+            dispatch(event.target, event.target.value, true);
+          }
+        });
+      });
+      await verifyPhoneFlows(page, settingsStorage, locale, () => page.evaluate(() => window.settingsActionsSettled));
+      console.log(`Passed phone recipe and history flows in ${locale} at ${width}px`);
+    } finally {
+      await page.close();
+    }
+  }
+}
+
+async function renderPreviews(browser, bundle, icons) {
+  await mkdir(OUT_DIR, { recursive: true });
   const page = await browser.newPage({ viewport: { width: VIEWPORTS[0], height: DEVICE_HEIGHT }, deviceScaleFactor: 1 });
 
   let screenshotCount = 0;
   for (const locale of LOCALES) {
-    let pageConfig;
-    const make = (type) => (props = {}, children = []) => node(type, props, children);
-    runInNewContext(bundle, {
-      console,
-      navigator: { language: locale },
-      AppSettingsPage: (config) => { pageConfig = config; },
-      View: make("View"), Text: make("Text"), Button: make("Button"),
-      TextInput: make("TextInput"), Select: make("Select"),
-      Date: class extends Date { static now() { return FIXTURE_TIME; } }
-    });
+    const pageConfig = loadSettingsPageConfig(bundle, locale);
     const storage = seedPreviewStorage(locale);
     await mkdir(resolve(OUT_DIR, locale), { recursive: true });
     const scenarios = buildScenarios(storage, locale);
@@ -406,12 +467,32 @@ async function main() {
     }
   }
 
-  await browser.close();
   await writeFile(
     resolve(OUT_DIR, "README.txt"),
     `Phone Settings preview screenshots\n\nThese images render the current AppSettingsPage tree from zepp-app/setting/app-settings.jsx through a small browser adapter for the native Zepp Settings primitives. Layout and colors come from the actual component style props; native input chrome is approximated in HTML. This is a source-backed preview, not a Zepp companion app capture.\n\nLocales: en-US, pl-PL\nWidths: ${VIEWPORTS.join(", ")}px\nScenarios: library, recipe list, recipe editor, later recipe step, long recipe name and instruction, 33-step editor with the selected step and a full title list, empty recipe shelf, populated and empty history list, history detail, sync.\nScenarios verified: ${screenshotCount}\nImages written: ${screenshotCount * 2}\n`
   );
   console.log(`Rendered ${screenshotCount} phone previews to ${OUT_DIR}`);
+}
+
+async function main() {
+  const bundle = await createHarnessBundle();
+  const icons = await readToolIcons();
+  const executablePath = process.env.PHONE_PREVIEW_BROWSER
+    || getMockBrowserExecutableCandidates().find((candidate) => existsSync(candidate));
+  const browser = await chromium.launch({
+    executablePath,
+    headless: true,
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-crash-reporter"]
+  });
+  try {
+    if (process.argv.includes("--verify-flow")) {
+      await verifyInteractivePreview(browser, bundle, icons);
+    } else {
+      await renderPreviews(browser, bundle, icons);
+    }
+  } finally {
+    await browser.close();
+  }
 }
 
 main().catch((error) => {

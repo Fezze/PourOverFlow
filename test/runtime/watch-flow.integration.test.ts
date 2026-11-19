@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __zeusRuntime, deliverBleMessage, resetZeppRuntime, setBleConnected, setLocalStorageState } from "../zeus-runtime/runtime.ts";
+import { createMockPeerSocket, createMockSettingsStorage } from "../support/phone-runtime.ts";
 import { getSupportedTools } from "../../zepp-app/shared/constants/tool-catalog.js";
 import {
   CURRENT_SCHEMA_VERSION,
@@ -22,12 +23,19 @@ import {
 import { createSyncEnvelope } from "../../zepp-app/shared/sync/contracts.js";
 import { decodeEnvelopeFromBlePayload, encodeEnvelopeForBle } from "../../zepp-app/shared/sync/device-codec.js";
 import { SYNC_MESSAGE_TYPES } from "../../zepp-app/shared/sync/message-types.js";
-import { WATCH_STORAGE_KEYS } from "../../zepp-app/shared/storage/keys.js";
+import { PHONE_STORAGE_KEYS, WATCH_STORAGE_KEYS } from "../../zepp-app/shared/storage/keys.js";
+import {
+  readHistoryEntry,
+  readPhoneSnapshot,
+  saveRecipeRecord,
+  updateHistoryEntryFeedback
+} from "../../zepp-app/shared/storage/phone-store.js";
 import { createActiveBrewSession } from "../../zepp-app/shared/engine/recipe-engine.js";
 import * as sessionReducer from "../../zepp-app/shared/engine/session-reducer.js";
 import {
   getPendingHistoryQueue,
   getRecipesForTool,
+  getRecipeSnapshotById,
   isCatalogReady,
   readActiveSession,
   readLastResult,
@@ -726,5 +734,134 @@ describe("mocked Zepp runtime watch flow", () => {
     expect(__zeusRuntime.router.push).toHaveBeenCalledWith({
       url: PAGE_URLS.resultSummary
     });
+  });
+});
+
+describe("phone and watch sync through the Zepp runtime adapters", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("syncs a live recipe edit, preserves the running snapshot, and replays a result after a lost ACK", async () => {
+    vi.useFakeTimers({ now: new Date("2026-11-19T10:00:00Z") });
+    const settingsStorage = createMockSettingsStorage();
+    const peerSocket = createMockPeerSocket();
+    const phoneFrames: ArrayBuffer[] = [];
+    peerSocket.send.mockImplementation((frame) => { phoneFrames.push(frame); });
+    vi.stubGlobal("settings", { settingsStorage });
+    vi.stubGlobal("messaging", { peerSocket });
+    const appSideFactory = vi.fn((definition) => definition);
+    vi.stubGlobal("AppSideService", appSideFactory);
+
+    await import("../../zepp-app/app-side/index.js");
+    await import("../../zepp-app/app.js");
+    const service = appSideFactory.mock.calls[0][0];
+    const app = vi.mocked(globalThis.App).mock.calls[0][0];
+
+    // The operating system strips and adds the outer BLE frames.
+    function sendWatchFramesToPhone() {
+      const receive = peerSocket.getMessageListener()!;
+      for (const { data, size } of __zeusRuntime.bleState.sentPayloads.splice(0)) {
+        const frame = parseAppBridgeFrame(data, size);
+        if (frame?.type === APP_BRIDGE_MESSAGE_TYPES.DATA) receive(frame.payload);
+      }
+    }
+
+    function sendPhoneFramesToWatch() {
+      for (const payload of phoneFrames.splice(0)) {
+        const frame = buildAppBridgeDataFrame(payload, { port2: 321 });
+        deliverBleMessage(frame.buffer, frame.size);
+      }
+    }
+
+    function reconnect({ deliverReplies = true } = {}) {
+      setBleConnected(true);
+      const shake = buildAppBridgeShakeFrame({ port2: 321 });
+      deliverBleMessage(shake.buffer, shake.size);
+      sendWatchFramesToPhone();
+      if (deliverReplies) sendPhoneFramesToWatch();
+    }
+
+    service.onInit();
+    app.onCreate();
+    try {
+      const { recipeRecord } = buildFlowFixture();
+      expect(saveRecipeRecord(settingsStorage, recipeRecord).ok).toBe(true);
+      expect(getRecipeSnapshotById(recipeRecord.recipeId)).toBeFalsy();
+
+      reconnect();
+      expect(isCatalogReady()).toBe(true);
+      expect(getRecipeSnapshotById(recipeRecord.recipeId)?.name).toBe(recipeRecord.name);
+      selectTool(recipeRecord.toolId);
+      expect(selectRecipe(recipeRecord.recipeId)).toBe(true);
+      expect(startSelectedRecipe()).toBe(true);
+
+      const editedName = "Edited during a brew";
+      const edited = saveRecipeRecord(settingsStorage, {
+        ...recipeRecord,
+        name: editedName,
+        steps: recipeRecord.steps.map((step, index) =>
+          index === 1 ? { ...step, durationMs: 8_000 } : step
+        )
+      });
+      expect(edited.ok).toBe(true);
+      settingsStorage.emitChange(PHONE_STORAGE_KEYS.recipeIndex);
+      vi.runOnlyPendingTimers();
+      sendPhoneFramesToWatch();
+      expect(readWatchSyncMeta().recipeCatalogRevision).toBe(edited.syncMeta.recipeCatalogRevision);
+      expect(getRecipeSnapshotById(recipeRecord.recipeId)?.steps[1].durationMs).toBe(8_000);
+      expect(readActiveSession()?.recipeName).toBe(recipeRecord.name);
+
+      setBleConnected(false);
+      advanceOrCompleteActiveSession();
+      const timedStep = readActiveSession()!;
+      expect(timedStep.expectedStepEndAt - timedStep.currentStepStartedAt).toBe(4_000);
+      vi.advanceTimersByTime(4_000);
+      tickActiveSession(Date.now());
+      expect(advanceOrCompleteActiveSession()).toMatchObject({ completed: true });
+      const [pendingEntry] = getPendingHistoryQueue();
+      expect(pendingEntry.recipeSnapshot.name).toBe(recipeRecord.name);
+      expect(readPhoneSnapshot(settingsStorage).historyIndex).toEqual([]);
+
+      reconnect({ deliverReplies: false });
+      expect(readHistoryEntry(settingsStorage, pendingEntry.historyId)).toEqual(pendingEntry);
+      expect(phoneFrames.length).toBeGreaterThan(0);
+      phoneFrames.length = 0; // The phone committed the entry before its reply was lost.
+      expect(getPendingHistoryQueue()).toEqual([pendingEntry]);
+
+      const feedback = { userRating: 4, userNote: "Sweeter with the original timing." };
+      expect(updateHistoryEntryFeedback(settingsStorage, pendingEntry.historyId, feedback).ok).toBe(true);
+      const revision = readPhoneSnapshot(settingsStorage).syncMeta.historyRevision;
+
+      app.onDestroy();
+      __zeusRuntime.appState.globalData = {};
+      app.onCreate();
+      expect(getPendingHistoryQueue()).toEqual([pendingEntry]);
+      reconnect();
+
+      const phone = readPhoneSnapshot(settingsStorage);
+      expect(phone.historyIndex.map(({ historyId }) => historyId)).toEqual([pendingEntry.historyId]);
+      expect(phone.syncMeta.historyRevision).toBe(revision);
+      expect(readHistoryEntry(settingsStorage, pendingEntry.historyId)).toMatchObject({
+        ...feedback,
+        status: "completed",
+        recipeSnapshot: pendingEntry.recipeSnapshot
+      });
+      expect(getPendingHistoryQueue()).toEqual([]);
+      expect(readWatchSyncMeta()).toMatchObject({
+        lastAckedHistoryId: pendingEntry.historyId,
+        historyRevision: revision
+      });
+      expect(readLastResult()).toMatchObject({
+        historyId: pendingEntry.historyId,
+        recipeName: recipeRecord.name,
+        status: "completed"
+      });
+      expect(getRecipeSnapshotById(recipeRecord.recipeId)?.name).toBe(editedName);
+    } finally {
+      app.onDestroy();
+      service.onDestroy();
+    }
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "pouroverflow",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "PourOverFlow Zepp OS scaffold",
@@ -33,12 +33,14 @@
     "validation:logs": "node scripts/validation-log-report.mjs",
     "sim:doctor": "node scripts/simulator-doctor.mjs",
     "sim:smoke": "node scripts/playwright-simulator-coverage.mjs",
-    "verify": "npm test && npm run test:coverage && npm run verify:visual && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build:raw",
-    "verify:fast": "npm test && npm run build:raw"
+    "verify": "npm test && npm run test:coverage && npm run verify:visual && npm run test:playwright:phone && npm run test:playwright:harness && npm run test:playwright:coverage:harness && npm run build:raw",
+    "verify:fast": "npm test && npm run build:raw",
+    "test:playwright:phone": "node scripts/phone-preview.mjs --verify-flow"
   },
   "devDependencies": {
-    "@zeppos/zeus-cli": "^1.9.0",
     "@vitest/coverage-v8": "^4.1.1",
+    "@zeppos/zeus-cli": "^1.9.0",
+    "esbuild": "^0.27.7",
     "istanbul-lib-coverage": "^3.2.2",
     "istanbul-lib-report": "^3.0.1",
     "istanbul-reports": "^3.2.0",

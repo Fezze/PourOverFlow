@@ -1,60 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-function createMockSettingsStorage() {
-  const values = new Map();
-  let changeListener = null;
-
-  return {
-    getItem(key) {
-      return values.has(key) ? values.get(key) : null;
-    },
-    setItem(key, value) {
-      values.set(key, value);
-    },
-    removeItem(key) {
-      values.delete(key);
-    },
-    clear() {
-      values.clear();
-    },
-    addListener: vi.fn((eventName, listener) => {
-      if (eventName === "change") {
-        changeListener = listener;
-      }
-    }),
-    removeListener: vi.fn((eventName, listener) => {
-      if (eventName === "change" && changeListener === listener) {
-        changeListener = null;
-      }
-    }),
-    emitChange(key) {
-      if (typeof changeListener === "function") {
-        changeListener({ key });
-      }
-    }
-  };
-}
-
-function createMockPeerSocket() {
-  let messageListener = null;
-
-  return {
-    addListener: vi.fn((eventName, listener) => {
-      if (eventName === "message") {
-        messageListener = listener;
-      }
-    }),
-    removeListener: vi.fn((eventName, listener) => {
-      if (eventName === "message" && messageListener === listener) {
-        messageListener = null;
-      }
-    }),
-    send: vi.fn(),
-    getMessageListener() {
-      return messageListener;
-    }
-  };
-}
+import { getSeedRecipeRecordById } from "../zepp-app/shared/domain/seed-library.js";
+import { PHONE_STORAGE_KEYS, SETTINGS_UI_STORAGE_KEY } from "../zepp-app/shared/storage/keys.js";
+import { saveRecipeRecord } from "../zepp-app/shared/storage/phone-store.js";
+import { SYNC_MESSAGE_TYPES } from "../zepp-app/shared/sync/message-types.js";
+import { createMockPeerSocket, createMockSettingsStorage } from "./support/phone-runtime.ts";
 
 let capturedAppSideDefinition;
 
@@ -204,6 +154,47 @@ describe("app-side sync regressions", () => {
       expect(runtime.messages().some((message) => message.messageType === "PUSH_CATALOG_SNAPSHOT"
         && message.payload.recipeSnapshotsById[recipe.recipeId].name === "Edited before history arrived")).toBe(true);
     } finally { runtime.destroy(); vi.useRealTimers(); }
+  });
+
+  it("ignores draft changes and coalesces rapid recipe saves into one catalog update", async () => {
+    vi.useFakeTimers();
+    const runtime = await startSyncRuntime();
+    try {
+      runtime.settingsStorage.emitChange(SETTINGS_UI_STORAGE_KEY);
+      vi.runOnlyPendingTimers();
+      expect(runtime.messages()).toEqual([]);
+
+      const recipe = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
+      for (const name of ["First edit", "Second edit"]) {
+        expect(saveRecipeRecord(runtime.settingsStorage, { ...recipe, name }).ok).toBe(true);
+        runtime.settingsStorage.emitChange(PHONE_STORAGE_KEYS.recipeIndex);
+      }
+      expect(runtime.messages()).toEqual([]);
+      vi.runOnlyPendingTimers();
+
+      const messages = runtime.messages();
+      expect(messages.map(({ messageType }) => messageType)).toEqual([SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT]);
+      expect(messages[0].payload.recipeSnapshotsById[recipe.recipeId].name).toBe("Second edit");
+    } finally {
+      runtime.destroy();
+      vi.useRealTimers();
+    }
+  });
+
+  it("cancels a pending storage push when the side service is destroyed", async () => {
+    vi.useFakeTimers();
+    const runtime = await startSyncRuntime();
+    try {
+      runtime.settingsStorage.emitChange(PHONE_STORAGE_KEYS.recipeIndex);
+      expect(vi.getTimerCount()).toBe(1);
+      runtime.destroy();
+      vi.runOnlyPendingTimers();
+
+      expect(vi.getTimerCount()).toBe(0);
+      expect(runtime.messages()).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("rejects a history envelope with a null payload without throwing", async () => {

@@ -11,7 +11,8 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "lcov"],
       reportsDirectory: resolveVitestCoverageDir(),
-      exclude: ["test/**", "dist/**", "output/**", "assets/**", "zepp-app/assets/**"]
+      include: ["zepp-app/**/*.{js,jsx}", "scripts/*.mjs"],
+      exclude: ["zepp-app/assets/**", "zepp-app/dist/**"]
     }
   },
   resolve: {

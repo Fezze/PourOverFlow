@@ -361,7 +361,7 @@ export function resetZeppRuntime() {
   settings.getLanguage.mockClear();
   ble.createConnect.mockClear();
   ble.disConnect.mockClear();
-  ble.send.mockClear();
+  ble.send.mockReset();
   ble.connectStatus.mockClear();
   ble.addListener.mockClear();
   ble.removeListener.mockClear();

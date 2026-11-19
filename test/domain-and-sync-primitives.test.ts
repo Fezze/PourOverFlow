@@ -660,6 +660,30 @@ describe("sync primitives", () => {
     expect(staleState.assemblies.has(77)).toBe(false);
   });
 
+  it("reassembles interleaved, out-of-order chunks without counting a retransmission twice", () => {
+    const payloadA = new TextEncoder().encode("Zażółć gęślą").buffer;
+    const payloadB = new TextEncoder().encode("Brew").buffer;
+    const [firstA, secondA, thirdA] = buildChunkedBridgeTransportPayloads(payloadA, {
+      maxChunkPayloadSize: 7, transferId: 20
+    });
+    const [firstB, secondB] = buildChunkedBridgeTransportPayloads(payloadB, {
+      maxChunkPayloadSize: 2, transferId: 21
+    });
+    const state = createBridgeTransportState();
+
+    for (const frame of [thirdA, firstB, thirdA, firstA]) {
+      expect(readBridgeTransportPayload(state, frame).status).toBe(BRIDGE_TRANSPORT_STATUS.PENDING);
+    }
+
+    expect(readBridgeTransportPayload(state, secondB)).toMatchObject({
+      status: BRIDGE_TRANSPORT_STATUS.COMPLETE, transferId: 21, payload: payloadB
+    });
+    expect(readBridgeTransportPayload(state, secondA)).toMatchObject({
+      status: BRIDGE_TRANSPORT_STATUS.COMPLETE, transferId: 20, payload: payloadA
+    });
+    expect(state.assemblies.size).toBe(0);
+  });
+
   it("covers phone sync slice planning and storage key routing", () => {
     expect(getOrderedPhoneSyncSlices(new Set([PHONE_SYNC_SLICES.HISTORY, PHONE_SYNC_SLICES.TOOLS]))).toEqual([
       PHONE_SYNC_SLICES.TOOLS,

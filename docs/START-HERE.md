@@ -117,12 +117,13 @@ Current verified platform note:
 ## Test loop
 
 - Run `npm test` to execute the full Vitest suite across pure logic and mocked Zepp runtime flow tests.
-- Run `npm run test:coverage` when you want local JS coverage output.
+- Run `npm run test:coverage` for JS/JSX coverage, including app modules and Node scripts that Vitest never loads.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run sim:doctor` to inspect local simulator metadata, DevTools status, and deployment freshness when simulator files are present.
 - Run `npm run sim:smoke` as the Parallax-compatible alias for the simulator smoke check.
 - Run `npm run test:playwright:harness` when you want the browser module harness to execute real browser-safe project modules as a plain pass/fail run without generating coverage.
 - Run `npm run test:playwright:coverage:harness` when you want Playwright coverage against real browser-safe project modules without a simulator.
+- Run `npm run test:playwright:phone` to drive the real Settings page through its Chromium preview in English and Polish. The flow covers saving a recipe and keeping history notes and rating after the recipe is deleted.
 - Run `npm run verify:visual` when you want the browser-backed preview gate, including fixture export, structural checks, and deterministic render validation.
 - Run `npm run test:playwright:screens` as the Parallax-compatible alias for the screenshot gate.
 - Run `npm run preview:watch` when you want fresh review PNG artifacts for the main watch flows without relying on the simulator. The target-matrix screenshots land under `output/playwright/watch-preview/screenshots/<locale>/<target>/<resolution>/`.
@@ -130,7 +131,7 @@ Current verified platform note:
 - Run `npm run verify` for the canonical CLI full-stack verify pass, including the visual preview gate.
 - Run `npm run verify:fast` for the short local loop.
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
-- Current meaningful coverage baselines after the latest test expansion are `90.79% / 82.11% / 85.55% / 90.67%` for `npm run test:coverage` and `93.54% / 79.94% / 60.39% / 93.54%` for `npm run test:playwright:coverage:harness`.
+- Vitest now exercises bootstrap, edits during a brew, and result replay after a lost ACK through both the watch and Side Service entry points with simulated Zepp transport.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
 - The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
