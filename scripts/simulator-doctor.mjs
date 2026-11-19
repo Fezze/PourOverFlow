@@ -1,3 +1,4 @@
+import { isCliEntry } from "./cli-entry.mjs";
 import os from "node:os";
 import path from "node:path";
 import { access, readFile, readdir, stat } from "node:fs/promises";
@@ -9,11 +10,7 @@ import {
   resolveSimulatorRoot
 } from "./playwright-coverage-helpers.mjs";
 
-const PROJECT_ROOT = process.cwd();
-
-await main();
-
-async function main() {
+export async function runSimulatorDoctor(projectRoot = process.cwd()) {
   try {
     const simulatorRoot = resolveSimulatorRoot({
       env: process.env,
@@ -37,17 +34,17 @@ async function main() {
     const lastAppInfo = await readOptionalJson(lastAppInfoPath);
     if (!lastAppInfo) {
       console.log("Last deployment: not found");
-      return;
+      return 0;
     }
 
-    const belongsToProject = isSimulatorDeploymentForCurrentProject(lastAppInfo, PROJECT_ROOT);
+    const belongsToProject = isSimulatorDeploymentForCurrentProject(lastAppInfo, projectRoot);
     console.log(`Last deployment belongs to this repo: ${belongsToProject ? "yes" : "no"}`);
 
     if (lastAppInfo.user_app_path) {
       console.log(`Last user app path: ${lastAppInfo.user_app_path}`);
     }
 
-    const freshness = await resolveDeploymentFreshness(lastAppInfo);
+    const freshness = await resolveDeploymentFreshness(lastAppInfo, projectRoot);
     if (freshness) {
       console.log(
         `Deployment freshness: ${freshness.isFresh ? "fresh" : "stale"} ` +
@@ -57,9 +54,10 @@ async function main() {
     } else {
       console.log("Deployment freshness: unavailable");
     }
+    return 0;
   } catch (error) {
     console.error(`Simulator doctor failed: ${error instanceof Error ? error.message : String(error)}`);
-    process.exitCode = 1;
+    return 1;
   }
 }
 
@@ -92,12 +90,12 @@ async function readOptionalJson(filePath) {
   }
 }
 
-async function resolveDeploymentFreshness(lastAppInfo) {
+async function resolveDeploymentFreshness(lastAppInfo, projectRoot) {
   if (!lastAppInfo?.sim_app_path) {
     return null;
   }
 
-  const sourceCandidates = getSimulatorAppSourceCandidates(PROJECT_ROOT);
+  const sourceCandidates = getSimulatorAppSourceCandidates(projectRoot);
   const sourceTimes = await Promise.all(sourceCandidates.map(readMtimeMs));
   const latestSourceMtimeMs = Math.max(...sourceTimes.filter(Number.isFinite));
   const deployedMtimeMs = await readMtimeMs(lastAppInfo.sim_app_path);
@@ -131,4 +129,8 @@ async function readNewestChildMtimeMs(directoryPath) {
   const mtimes = await Promise.all(entries.map((entry) => readMtimeMs(path.join(directoryPath, entry.name))));
   const finiteMtimes = mtimes.filter(Number.isFinite);
   return finiteMtimes.length ? Math.max(...finiteMtimes) : Number.NaN;
+}
+
+if (isCliEntry(import.meta.url)) {
+  process.exitCode = await runSimulatorDoctor();
 }

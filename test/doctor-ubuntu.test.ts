@@ -31,17 +31,11 @@ afterEach(() => {
 
 async function runDoctor() {
   const log = vi.spyOn(console, "log").mockImplementation(() => {});
-  const originalExitCode = process.exitCode;
-  try {
-    process.exitCode = 0;
-    await import("../scripts/doctor-ubuntu.mjs");
-    return {
-      code: process.exitCode,
-      output: log.mock.calls.map((args) => args.join(" ")).join("\n")
-    };
-  } finally {
-    process.exitCode = originalExitCode;
-  }
+  const { runUbuntuDoctor } = await import("../scripts/doctor-ubuntu.mjs");
+  return {
+    code: runUbuntuDoctor(),
+    output: log.mock.calls.map((args) => args.join(" ")).join("\n")
+  };
 }
 
 it("validates the local toolchain and preserves the caller's NODE_PATH for Zeus", async () => {

@@ -2,7 +2,9 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { copyFileSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, expect, test } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { runGitPush } from "../scripts/git-push-proxy.mjs";
+import { runVersionProxy } from "../scripts/version-proxy.mjs";
 
 const source = path.resolve(__dirname, "..");
 const versionFiles = ["package.json", "package-lock.json", "zepp-app/app.json"];
@@ -14,7 +16,23 @@ function git(...args: string[]) {
 }
 
 function run(script: string, ...args: string[]) {
-  return spawnSync(process.execPath, [path.join("scripts", `${script}.mjs`), ...args], { cwd: root, encoding: "utf8" });
+  if (script === "run-zeus-command") {
+    return spawnSync(process.execPath, [path.join("scripts", `${script}.mjs`), ...args], { cwd: root, encoding: "utf8" });
+  }
+  const output = vi.spyOn(console, "log").mockImplementation(() => {});
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const command = script === "version-proxy" ? runVersionProxy : runGitPush;
+    const status = command(args, root);
+    return {
+      status,
+      stdout: output.mock.calls.map((args) => args.join(" ")).join("\n"),
+      stderr: errors.mock.calls.map((args) => args.join(" ")).join("\n")
+    };
+  } finally {
+    output.mockRestore();
+    errors.mockRestore();
+  }
 }
 
 function write(file: string, value: string, mode?: number) {
@@ -45,7 +63,7 @@ beforeEach(() => {
   for (const dir of ["scripts", "zepp-app", ".githooks"]) mkdirSync(path.join(root, dir), { recursive: true });
   for (const file of [
     "scripts/project-version.mjs", "scripts/version-proxy.mjs", "scripts/git-push-proxy.mjs",
-    "scripts/run-zeus-command.mjs", "scripts/zepp-app-root.mjs", ".githooks/pre-commit"
+    "scripts/run-zeus-command.mjs", "scripts/zepp-app-root.mjs", "scripts/cli-entry.mjs", ".githooks/pre-commit"
   ]) {
     copyFileSync(path.join(source, file), path.join(root, file));
   }
@@ -202,4 +220,21 @@ test "$new" = "${initialHead}"
   expectVersion("1.3.0", 43, "HEAD");
   expect(git("status", "--porcelain")).toBe("");
   expect(git("ls-remote", "origin", "refs/heads/main").split("\t")[0]).toBe(initialHead);
+});
+
+
+test("in-process versioning and push agree with the local repository and staged hook", () => {
+  addRemote();
+  expect(runVersionProxy(["patch", "--dry-run"], root)).toBe(0);
+  expectVersion("1.2.3", 42);
+  expect(runVersionProxy(["patch", "--stage"], root)).toBe(0);
+  expectVersion("1.2.4", 43);
+  expect(runVersionProxy(["commit"], root)).toBe(0);
+  git("commit", "-m", "Release patch");
+  expect(runGitPush(["--dry-run", "origin", "main"], root)).toBe(0);
+  expect(runGitPush(["origin", "main"], root)).toBe(0);
+  expectVersion("1.3.0", 44, "HEAD");
+  expect(git("ls-remote", "origin", "refs/heads/main").split("\t")[0]).toBe(git("rev-parse", "HEAD"));
+  expect(runGitPush(["absent-remote", "main"], root)).toBe(1);
+  expectVersion("1.3.0", 44, "HEAD");
 });

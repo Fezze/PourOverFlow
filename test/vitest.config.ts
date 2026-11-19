@@ -7,13 +7,11 @@ const integrationTests = [
   "test/runtime/**/*.test.ts",
   "test/**/*.integration.test.ts",
   "test/app-side-runtime.test.ts",
-  "test/doctor-ubuntu.test.ts",
   "test/page-shell-runtime.test.ts",
   "test/phone-preview-coverage.test.ts",
   "test/phone-store.test.ts",
   "test/settings-page-behavior.test.ts",
   "test/simulator-doctor.test.ts",
-  "test/validation-log-report.test.ts",
   "test/version-workflow.test.ts",
   "test/watch-layouts-and-shortcut.test.ts",
   "test/watch-redesign.test.ts",
@@ -30,6 +28,7 @@ export default defineConfig(({ mode }) => ({
     exclude: mode === "unit" ? [...configDefaults.exclude, ...integrationTests] : configDefaults.exclude,
     coverage: {
       provider: "v8",
+      thresholds: { lines: 80 },
       reporter: ["text", "html", "lcov"],
       reportsDirectory: resolveVitestCoverageDir({
         suite: mode === "unit" || mode === "integration" ? mode : "combined"

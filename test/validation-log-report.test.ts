@@ -1,15 +1,14 @@
-import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   buildValidationSummary,
-  createValidationReport,
   formatValidationSummary,
   parseValidationDetails,
   parseValidationLogArgs,
   parseValidationLogContents,
   parseValidationLogLine,
-  resolveValidationLogPath
-  ,
+  resolveValidationLogPath,
   runValidationLogReport
 } from "../scripts/validation-log-report.mjs";
 
@@ -146,52 +145,25 @@ noise
     expect(parseValidationDetails("")).toBeNull();
   });
 
-  it("creates a validation report from a fixture log", () => {
-    const report = createValidationReport({
-      filePath: "test/fixtures/validation-log/sample-renderer.log"
-    });
-
-    expect(report.logPath).toMatch(/sample-renderer\.log$/);
-    expect(report.summary.totalEvents).toBe(3);
-    expect(report.summary.lastEvent?.eventName).toBe("history_flush_result");
-  });
-
-  it("runs the report command in text mode", () => {
-    const writes: string[] = [];
-    const result = runValidationLogReport([
-      "--file",
-      "test/fixtures/validation-log/sample-renderer.log"
-    ], {
-      write: (value: string) => {
-        writes.push(value);
-      }
-    });
-
-    expect(result.summary.totalEvents).toBe(3);
-    expect(writes).toHaveLength(1);
-    expect(writes[0]).toContain("Total events: 3");
-  });
-
-  it("runs the report command in json mode", () => {
-    const writes: string[] = [];
-    runValidationLogReport([
-      "--json",
-      "--file",
-      "test/fixtures/validation-log/sample-renderer.log"
-    ], {
-      write: (value: string) => {
-        writes.push(value);
-      }
-    });
-
-    expect(writes).toHaveLength(1);
-    expect(JSON.parse(writes[0])).toMatchObject({
-      totalEvents: 3,
-      countsByEvent: {
-        display_guard_enable: 1,
-        resume_attempt: 1,
-        history_flush_result: 1
-      }
-    });
+  it("generates text and JSON reports from the same isolated end-to-end log input", () => {
+    const read = vi.spyOn(fs, "readFileSync").mockReturnValue([
+      "noise",
+      "2026-05-02 09:00:00 [pof-validation] resume_success",
+      "[pof-validation] resume_success",
+      "[pof-validation] history_flush_result {\"sent\":1}"
+    ].join("\n"));
+    const write = vi.fn();
+    try {
+      runValidationLogReport(["--file", "fixture.log"], { write });
+      expect(write).toHaveBeenLastCalledWith(expect.stringContaining("- resume_success: 2"));
+      runValidationLogReport(["--file", "fixture.log", "--json"], { write });
+      expect(JSON.parse(write.mock.calls.at(-1)![0])).toMatchObject({
+        totalEvents: 3,
+        countsByEvent: { resume_success: 2, history_flush_result: 1 },
+        lastEvent: { eventName: "history_flush_result", details: { sent: 1 } }
+      });
+    } finally {
+      read.mockRestore();
+    }
   });
 });

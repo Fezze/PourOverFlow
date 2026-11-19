@@ -117,7 +117,7 @@ Current verified platform note:
 ## Test loop
 
 - Run `npm test` to execute the full Vitest suite across pure logic and mocked Zepp runtime flow tests.
-- Run `npm run test:coverage` for separate unit and integration reports, or use `npm run test:coverage:all` to include the browser module and phone end-to-end reports. See [Coverage by test type](../README.md#coverage-by-test-type) for the individual commands and paths.
+- Run `npm run test:coverage` for separate unit and integration reports, or use `npm run test:coverage:all` to include the browser module and phone end-to-end reports. See [Coverage by test type](../README.md#coverage-by-test-type) for the individual commands and paths. Both Vitest coverage suites enforce an 80% line floor.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run sim:doctor` to inspect local simulator metadata, DevTools status, and deployment freshness when simulator files are present.
 - Run `npm run sim:smoke` as the Parallax-compatible alias for the simulator smoke check.

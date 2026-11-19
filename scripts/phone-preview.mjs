@@ -7,6 +7,7 @@ import { runInNewContext } from "node:vm";
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 
+import { isCliEntry } from "./cli-entry.mjs";
 import { writeIstanbulReports } from "./istanbul-coverage-report.mjs";
 import { collectPhonePreviewCoverage } from "./phone-preview-coverage.mjs";
 import { resolvePlaywrightCoverageDir } from "./report-output-paths.mjs";
@@ -434,15 +435,15 @@ async function verifyInteractivePreview(browser, bundle, icons) {
   }
 }
 
-async function renderPreviews(browser, bundle, icons) {
-  await mkdir(OUT_DIR, { recursive: true });
+async function renderPreviews(browser, bundle, icons, outputDir) {
+  await mkdir(outputDir, { recursive: true });
   const page = await browser.newPage({ viewport: { width: VIEWPORTS[0], height: DEVICE_HEIGHT }, deviceScaleFactor: 1 });
 
   let screenshotCount = 0;
   for (const locale of LOCALES) {
     const pageConfig = loadSettingsPageConfig(bundle, locale);
     const storage = seedPreviewStorage(locale);
-    await mkdir(resolve(OUT_DIR, locale), { recursive: true });
+    await mkdir(resolve(outputDir, locale), { recursive: true });
     const scenarios = buildScenarios(storage, locale);
     for (const scenario of scenarios) {
       for (const width of VIEWPORTS) {
@@ -461,27 +462,30 @@ async function renderPreviews(browser, bundle, icons) {
         await page.setViewportSize({ width, height: DEVICE_HEIGHT });
         await page.setContent(renderPageHtml(tree, icons));
         await verifyLayout(page, scenario, locale, width);
-        await page.locator("#device").screenshot({ path: resolve(OUT_DIR, locale, `${scenario.name}-${width}.png`) });
+        await page.locator("#device").screenshot({ path: resolve(outputDir, locale, `${scenario.name}-${width}.png`) });
         await page.locator("#root").evaluate(root => {
           root.style.height = "auto";
           root.style.overflow = "visible";
           root.parentElement.style.height = "auto";
         });
-        await page.locator("#device").screenshot({ path: resolve(OUT_DIR, locale, `${scenario.name}-${width}-full.png`) });
+        await page.locator("#device").screenshot({ path: resolve(outputDir, locale, `${scenario.name}-${width}-full.png`) });
         screenshotCount += 1;
       }
     }
   }
 
   await writeFile(
-    resolve(OUT_DIR, "README.txt"),
+    resolve(outputDir, "README.txt"),
     `Phone Settings preview screenshots\n\nThese images render the current AppSettingsPage tree from zepp-app/setting/app-settings.jsx through a small browser adapter for the native Zepp Settings primitives. Layout and colors come from the actual component style props; native input chrome is approximated in HTML. This is a source-backed preview, not a Zepp companion app capture.\n\nLocales: en-US, pl-PL\nWidths: ${VIEWPORTS.join(", ")}px\nScenarios: library, recipe list, recipe editor, later recipe step, long recipe name and instruction, 33-step editor with the selected step and a full title list, empty recipe shelf, populated and empty history list, history detail, sync.\nScenarios verified: ${screenshotCount}\nImages written: ${screenshotCount * 2}\n`
   );
-  console.log(`Rendered ${screenshotCount} phone previews to ${OUT_DIR}`);
+  console.log(`Rendered ${screenshotCount} phone previews to ${outputDir}`);
 }
 
-async function main() {
-  const collectCoverage = process.argv.includes("--coverage");
+export async function runPhonePreview(argv = process.argv.slice(2), {
+  outputDir = OUT_DIR,
+  coverageDir = resolvePlaywrightCoverageDir("phone")
+} = {}) {
+  const collectCoverage = argv.includes("--coverage");
   const bundle = await createHarnessBundle(collectCoverage);
   const icons = await readToolIcons();
   const executablePath = process.env.PHONE_PREVIEW_BROWSER
@@ -496,20 +500,21 @@ async function main() {
       const coverageMap = await collectPhonePreviewCoverage(
         BUNDLE_PATH, bundle, () => verifyInteractivePreview(browser, bundle, icons)
       );
-      const outputDir = resolvePlaywrightCoverageDir("phone");
-      await writeIstanbulReports(coverageMap, outputDir);
-      console.log(`Phone end-to-end coverage written to ${outputDir}`);
-    } else if (process.argv.includes("--verify-flow")) {
+      await writeIstanbulReports(coverageMap, coverageDir);
+      console.log(`Phone end-to-end coverage written to ${coverageDir}`);
+    } else if (argv.includes("--verify-flow")) {
       await verifyInteractivePreview(browser, bundle, icons);
     } else {
-      await renderPreviews(browser, bundle, icons);
+      await renderPreviews(browser, bundle, icons, outputDir);
     }
   } finally {
     await browser.close();
   }
 }
 
-main().catch((error) => {
-  console.error(error.stack || error);
-  process.exitCode = 1;
-});
+if (isCliEntry(import.meta.url)) {
+  await runPhonePreview().catch((error) => {
+    console.error(error.stack || error);
+    process.exitCode = 1;
+  });
+}

@@ -1,3 +1,4 @@
+import { isCliEntry } from "./cli-entry.mjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -187,7 +188,8 @@ function checkDisplayServer() {
   logWarn("display server", "missing DISPLAY/WAYLAND_DISPLAY; headless browser harness may still work, simulator UI automation may not");
 }
 
-function main() {
+export function runUbuntuDoctor() {
+  hasFailures = false;
   console.log("PourOverFlow Ubuntu doctor");
   checkNode();
   checkNpm();
@@ -197,11 +199,13 @@ function main() {
   checkDisplayServer();
 
   if (hasFailures) {
-    process.exitCode = 1;
-    return;
+    return 1;
   }
 
   console.log("doctor: completed without blocking failures");
+  return 0;
 }
 
-main();
+if (isCliEntry(import.meta.url)) {
+  process.exitCode = runUbuntuDoctor();
+}

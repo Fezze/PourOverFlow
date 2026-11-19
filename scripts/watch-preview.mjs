@@ -4,41 +4,32 @@ import { access, mkdir, readFile, rm, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { chromium } from "playwright-core";
 
+import { isCliEntry } from "./cli-entry.mjs";
 import { getMockBrowserExecutableCandidates } from "./playwright-coverage-helpers.mjs";
 
 const PROJECT_ROOT = process.cwd();
-const PREVIEW_ROOT = path.resolve(process.env.WATCH_PREVIEW_OUTPUT || "output/playwright/watch-preview");
-const FIXTURE_ROOT = path.join(PREVIEW_ROOT, "fixtures");
-const SCREENSHOT_ROOT = path.join(PREVIEW_ROOT, "screenshots");
-const VERIFY_SCREENSHOT_ROOT = path.join(PREVIEW_ROOT, "verify");
-const VERIFY_MODE = process.argv.includes("--verify");
-const INCLUDE_FRAMES = process.argv.includes("--framed");
-const captureOptions = [
-  {
-    root: VERIFY_MODE ? VERIFY_SCREENSHOT_ROOT : SCREENSHOT_ROOT,
-    selector: "#watch-face"
-  }
-];
-if (INCLUDE_FRAMES) {
-  captureOptions.push({
-    root: path.join(PREVIEW_ROOT, VERIFY_MODE ? "verify-framed" : "framed"),
-    selector: "#watch-shell"
-  });
-}
 const MIN_SCREENSHOT_BYTES = 4_096;
 
-await main();
+export async function runWatchPreview({
+  previewRoot = path.resolve(process.env.WATCH_PREVIEW_OUTPUT || "output/playwright/watch-preview"),
+  verify = process.argv.includes("--verify"),
+  framed = process.argv.includes("--framed")
+} = {}) {
+  const fixtureRoot = path.join(previewRoot, "fixtures");
+  const captureOptions = [{ root: path.join(previewRoot, verify ? "verify" : "screenshots"), selector: "#watch-face" }];
+  if (framed) {
+    captureOptions.push({ root: path.join(previewRoot, verify ? "verify-framed" : "framed"), selector: "#watch-shell" });
+  }
 
-async function main() {
-  await exportPreviewFixtures();
+  await exportPreviewFixtures(previewRoot);
   await Promise.all(captureOptions.map(({ root }) => rm(root, { recursive: true, force: true })));
 
   const executablePath = await resolveBrowserExecutable();
-  const server = await startStaticServer();
+  const server = await startStaticServer(fixtureRoot);
   let browser;
 
   try {
-    const scenarios = JSON.parse(await readFile(path.join(FIXTURE_ROOT, "manifest.json"), "utf8"));
+    const scenarios = JSON.parse(await readFile(path.join(fixtureRoot, "manifest.json"), "utf8"));
     if (!Array.isArray(scenarios) || scenarios.length === 0) {
       throw new Error("Watch preview manifest is empty. Preview export did not produce any scenarios.");
     }
@@ -67,12 +58,12 @@ async function main() {
       }
 
       if (scenario.page === "tool-list" && scenario.state === "populated") {
-        const fixture = JSON.parse(await readFile(path.join(FIXTURE_ROOT, scenario.fixtureFile), "utf8"));
+        const fixture = JSON.parse(await readFile(path.join(fixtureRoot, scenario.fixtureFile), "utf8"));
         await verifyBrewerRow(page, fixture);
       }
 
       if (["recipe-detail", "brew-active", "recipe-list"].includes(scenario.page)) {
-        await verifyWrappedText(page, scenario);
+        await verifyWrappedText(page, scenario, previewRoot);
       }
       for (const { root, selector } of captureOptions) {
         await page.locator("body").evaluate((body, framed) => {
@@ -162,7 +153,7 @@ async function main() {
   }
 }
 
-async function verifyWrappedText(page, scenario) {
+async function verifyWrappedText(page, scenario, previewRoot) {
   const clipped = await page.locator(".text > span").evaluateAll(spans => spans.flatMap(span => {
     if (getComputedStyle(span).whiteSpace !== "pre-wrap") return [];
     const range = document.createRange();
@@ -182,7 +173,7 @@ async function verifyWrappedText(page, scenario) {
       ? [{ text: span.textContent.slice(0, 90), textHeight, frameHeight: frame.height, outside }] : [];
   }));
   if (clipped.length) {
-    await page.locator("#watch-face").screenshot({ path: path.join(PREVIEW_ROOT, `${scenario.name}-failure.png`) });
+    await page.locator("#watch-face").screenshot({ path: path.join(previewRoot, `${scenario.name}-failure.png`) });
     throw new Error(`Wrapped text is clipped in ${scenario.name}: ${JSON.stringify(clipped)}`);
   }
 }
@@ -266,14 +257,14 @@ function sanitizePathSegment(value) {
     .replace(/^-+|-+$/g, "") || "unknown";
 }
 
-async function exportPreviewFixtures() {
+async function exportPreviewFixtures(previewRoot) {
   await runNodeCommand([
     "node_modules/vitest/vitest.mjs",
     "run",
     "--config",
     "test/vitest.preview.config.ts",
     "test/watch-preview-fixtures.preview.ts"
-  ]);
+  ], previewRoot);
 }
 
 async function resolveBrowserExecutable() {
@@ -293,12 +284,12 @@ async function resolveBrowserExecutable() {
   );
 }
 
-async function runNodeCommand(args) {
+async function runNodeCommand(args, previewRoot) {
   await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, {
       cwd: PROJECT_ROOT,
       stdio: "inherit",
-      env: process.env
+      env: { ...process.env, WATCH_PREVIEW_OUTPUT: previewRoot }
     });
 
     child.on("exit", (code) => {
@@ -313,9 +304,9 @@ async function runNodeCommand(args) {
   });
 }
 
-async function startStaticServer() {
+async function startStaticServer(fixtureRoot) {
   const mounts = new Map([
-    ["/watch-preview-fixtures/", FIXTURE_ROOT],
+    ["/watch-preview-fixtures/", fixtureRoot],
     ["/test/fixtures/watch-preview/", path.join(PROJECT_ROOT, "test", "fixtures", "watch-preview")],
     ["/zepp-app/assets/", path.join(PROJECT_ROOT, "zepp-app", "assets")]
   ]);
@@ -405,4 +396,8 @@ function getContentType(filePath) {
   }
 
   return "application/octet-stream";
+}
+
+if (isCliEntry(import.meta.url)) {
+  await runWatchPreview();
 }

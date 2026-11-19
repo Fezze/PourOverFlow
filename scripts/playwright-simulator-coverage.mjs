@@ -21,6 +21,7 @@ import {
   parsePlaywrightCoverageArgs,
   toCoverageDisplayPath
 } from "./playwright-coverage-helpers.mjs";
+import { isCliEntry } from "./cli-entry.mjs";
 import { writeIstanbulReports } from "./istanbul-coverage-report.mjs";
 import { resolveZeppAppRoot } from "./zepp-app-root.mjs";
 
@@ -28,15 +29,13 @@ const PROJECT_ROOT = process.cwd();
 const ZEPP_APP_ROOT = resolveZeppAppRoot({ cwd: PROJECT_ROOT });
 const { createCoverageMap } = istanbulCoverage;
 
-await main();
-
-async function main() {
+export async function runPlaywrightValidation(argv = process.argv.slice(2)) {
   let options = null;
   try {
-    options = parsePlaywrightCoverageArgs(process.argv.slice(2));
+    options = parsePlaywrightCoverageArgs(argv);
     if (options.mode === "module-harness") {
       await runModuleHarnessCoverage(options);
-      return;
+      return 0;
     }
 
     if (options.collectCoverage) {
@@ -46,6 +45,7 @@ async function main() {
     }
 
     await runSimulatorCoverage(options);
+    return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Playwright validation failed: ${message}`);
@@ -54,11 +54,11 @@ async function main() {
         "The Zepp simulator DevTools endpoint was not reachable. Start the simulator, deploy with `zeus dev`, and then rerun `npm run test:playwright`."
       );
     }
-    process.exitCode = 1;
+    return 1;
   }
 }
 
-async function runSimulatorCoverage(options) {
+export async function runSimulatorCoverage(options) {
   const simulatorRoot = resolveSimulatorRoot({
     env: process.env,
     platform: process.platform,
@@ -181,12 +181,9 @@ async function runModuleHarnessCoverage(options) {
     coverageRoots
   };
 
-  const browser = await chromium.launch({
-    executablePath,
-    headless: true
-  });
-
+  let browser;
   try {
+    browser = await chromium.launch({ executablePath, headless: true });
     const page = await browser.newPage();
     if (options.collectCoverage) {
       await page.coverage.startJSCoverage({
@@ -223,7 +220,7 @@ async function runModuleHarnessCoverage(options) {
         "Playwright module harness coverage found no relevant scripts. Check that the harness page loaded and executed the project scenarios."
     });
   } finally {
-    await browser.close();
+    await browser?.close();
     await stopStaticFileServer(harnessServer.server);
   }
 }
@@ -706,4 +703,8 @@ function isShellOnlySimulatorObservation(observedPages = []) {
       String(page?.url ?? "").startsWith("file:///C:/Program%20Files/simulator/resources/app.asar/")
     )
   );
+}
+
+if (isCliEntry(import.meta.url)) {
+  process.exitCode = await runPlaywrightValidation();
 }

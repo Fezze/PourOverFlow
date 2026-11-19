@@ -1,10 +1,11 @@
+import { isCliEntry } from "./cli-entry.mjs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { VERSION_FILES, bumpVersion } from "./project-version.mjs";
 
-const root = fileURLToPath(new URL("../", import.meta.url));
+const defaultRoot = fileURLToPath(new URL("../", import.meta.url));
 
-function git(args, { capture = true, allowMissing = false } = {}) {
+function runGit(root, args, { capture = true, allowMissing = false } = {}) {
   const result = spawnSync("git", args, {
     cwd: root,
     encoding: "utf8",
@@ -16,13 +17,14 @@ function git(args, { capture = true, allowMissing = false } = {}) {
   return result.stdout?.trim();
 }
 
-function assertCleanVersionFiles() {
+function assertCleanVersionFiles(git) {
   if (git(["status", "--porcelain", "--", ...VERSION_FILES])) {
     throw new Error("Commit pending changes to the version files before running npm run push.");
   }
 }
 
-function push(args) {
+function push(args, root) {
+  const git = (gitArgs, options) => runGit(root, gitArgs, options);
   const flags = args.filter((arg) => arg.startsWith("-"));
   const positionals = args.filter((arg) => !arg.startsWith("-"));
   const pushFlags = ["-u", "--set-upstream", "--force-with-lease"];
@@ -49,13 +51,13 @@ function push(args) {
     return;
   }
 
-  assertCleanVersionFiles();
+  assertCleanVersionFiles(git);
   const originalHead = git(["rev-parse", "HEAD"]);
   git(pushArgs, { capture: false });
   if (git(["rev-parse", "HEAD"]) !== originalHead || git(["symbolic-ref", "--short", "HEAD"]) !== branch) {
     throw new Error("The checked-out branch changed during the push. No version commit was created.");
   }
-  assertCleanVersionFiles();
+  assertCleanVersionFiles(git);
 
   bumpVersion(root, "minor", {
     afterWrite: ({ name }) => git(["commit", "--only", "-m", `Bump version to ${name}`, "--", ...VERSION_FILES], { capture: false })
@@ -67,9 +69,16 @@ function push(args) {
   }
 }
 
-try {
-  push(process.argv.slice(2));
-} catch (error) {
-  console.error(error.message);
-  process.exitCode = 1;
+export function runGitPush(args = process.argv.slice(2), root = defaultRoot) {
+  try {
+    push(args, root);
+    return 0;
+  } catch (error) {
+    console.error(error.message);
+    return 1;
+  }
+}
+
+if (isCliEntry(import.meta.url)) {
+  process.exitCode = runGitPush();
 }
