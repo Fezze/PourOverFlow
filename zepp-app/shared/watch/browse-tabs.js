@@ -1,10 +1,14 @@
 import * as hmUI from "@zos/ui";
 import { onGesture, offGesture, GESTURE_LEFT, GESTURE_RIGHT } from "@zos/interaction";
-import { replace } from "@zos/router";
+import { replaceWatchPage } from "./navigation";
 import { SHARED_COLORS } from "./layouts";
 
 // These are two views of existing data, not a new watch-side history browser.
 const TAB_PAGES = ["page/tool-list/index", "page/result-summary/index"];
+
+export function switchBrowseTab(index) {
+  replaceWatchPage({ url: TAB_PAGES[index] });
+}
 
 export function registerBrowseTabs(activeIndex) {
   onGesture({
@@ -15,7 +19,7 @@ export function registerBrowseTabs(activeIndex) {
         // Keep native vertical scrolling and system back at the outer edge.
         return false;
       }
-      replace({ url: TAB_PAGES[nextIndex] });
+      switchBrowseTab(nextIndex);
       return true;
     }
   });

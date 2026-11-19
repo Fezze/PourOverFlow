@@ -2,6 +2,7 @@ import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { getReadingFrame, createReader, createInstrumentText } from "../../shared/watch/reading-page";
 import { replace } from "@zos/router";
+import { enterWatchPage } from "../../shared/watch/navigation";
 import { readActiveSession } from "../../shared/storage/watch-store";
 import { getColorNumber } from "../../shared/constants/color-palette";
 import {
@@ -58,6 +59,7 @@ Page({
     }
   },
   build() {
+    if (!enterWatchPage(PAGE_URLS.recipeDetail)) return;
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const selectedRecipe = getSelectedRecipe();

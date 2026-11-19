@@ -869,7 +869,7 @@ describe("page shell runtime coverage", () => {
     expect(textWidgets.some((widget) => String(widget.text).includes("Full history stays on the phone."))).toBe(false);
 
     buttons[0].click_func();
-    expect(runtime.router.push).toHaveBeenCalledWith({
+    expect(runtime.router.replace).toHaveBeenCalledWith({
       url: "page/tool-list/index"
     });
 

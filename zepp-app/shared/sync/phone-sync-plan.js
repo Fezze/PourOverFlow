@@ -25,9 +25,29 @@ export function getOrderedPhoneSyncSlices(slicesLike) {
   return PHONE_SYNC_SLICE_ORDER.filter((slice) => requestedSlices.has(slice));
 }
 
-export function getStorageChangeSlices(key) {
-  if (!key || key === PHONE_STORAGE_KEYS.syncMeta) {
+export function getStorageChangeSlices(key, oldValue, newValue) {
+  if (!key) {
     return [];
+  }
+
+  if (key === PHONE_STORAGE_KEYS.syncMeta) {
+    if (typeof newValue !== "string") {
+      return [];
+    }
+    try {
+      const before = oldValue ? JSON.parse(oldValue) : null;
+      const after = JSON.parse(newValue);
+      if (!after || typeof after !== "object" || Array.isArray(after)) {
+        return [];
+      }
+      return getBootstrapResponseSlices({
+        knownToolCatalogRevision: before?.toolCatalogRevision,
+        knownRecipeCatalogRevision: before?.recipeCatalogRevision,
+        knownHistoryRevision: before?.historyRevision
+      }, after);
+    } catch {
+      return [];
+    }
   }
 
   if (key === PHONE_STORAGE_KEYS.tools) {

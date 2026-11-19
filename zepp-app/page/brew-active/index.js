@@ -1,6 +1,7 @@
 import { createModal, MODAL_CONFIRM, offKey } from "@zos/interaction";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
+import { enterWatchPage } from "../../shared/watch/navigation";
 import {
   formatDurationLabel,
   getCurrentSessionStep,
@@ -168,6 +169,7 @@ Page({
     this.refreshWidgets(session);
   },
   build() {
+    if (!enterWatchPage(PAGE_URLS.brewActive)) return;
     hmUI.setStatusBarVisible(false);
     this.i18n = createWatchTranslator();
     const reconcileResult = reconcileActiveSessionOnEntry();

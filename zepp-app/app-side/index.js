@@ -151,8 +151,8 @@ function createSnapshotPushScheduler() {
         slices
       });
     },
-    schedule(settingsStorage, changedKey) {
-      const slices = getStorageChangeSlices(changedKey);
+    schedule(settingsStorage, { key, oldValue, newValue }) {
+      const slices = getStorageChangeSlices(key, oldValue, newValue);
 
       if (!slices.length) {
         return false;
@@ -254,11 +254,11 @@ function ensureAppSideRuntime(service) {
       }
     };
 
-    const settingsStorageChangeListener = ({ key }) => {
-      if (key === SETTINGS_UI_STORAGE_KEY) {
+    const settingsStorageChangeListener = (change) => {
+      if (change.key === SETTINGS_UI_STORAGE_KEY) {
         return;
       }
-      snapshotPushScheduler.schedule(settingsStorage, key);
+      snapshotPushScheduler.schedule(settingsStorage, change);
     };
 
     service.snapshotPushScheduler = snapshotPushScheduler;

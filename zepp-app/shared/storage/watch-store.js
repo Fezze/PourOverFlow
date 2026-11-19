@@ -98,13 +98,27 @@ function normalizeLastResult(lastResult) {
   return { ...lastResult };
 }
 
+function isObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isRevision(value) {
+  return Number.isInteger(value) && value >= 0;
+}
+
+function isToolCatalog(tools) {
+  return Array.isArray(tools) && tools.length > 0 &&
+    tools.every((tool) => typeof tool?.toolId === "string" && typeof tool.label === "string");
+}
+
 function normalizeCatalogCache(catalogCache = {}) {
   if (!catalogCache || typeof catalogCache !== "object" || Array.isArray(catalogCache)) {
     return createDefaultCatalogCache();
   }
 
-  const tools =
-    Array.isArray(catalogCache.tools) && catalogCache.tools.length ? catalogCache.tools : [...TOOL_CATALOG];
+  const validTools = isToolCatalog(catalogCache.tools);
+  const validRecipes = isObject(catalogCache.recipesByTool) && isObject(catalogCache.recipeSnapshotsById);
+  const tools = validTools ? catalogCache.tools : [...TOOL_CATALOG];
   const normalizedRecipesByTool = tools.reduce((accumulator, tool) => {
     accumulator[tool.toolId] = Array.isArray(catalogCache.recipesByTool && catalogCache.recipesByTool[tool.toolId])
       ? [...catalogCache.recipesByTool[tool.toolId]]
@@ -116,11 +130,10 @@ function normalizeCatalogCache(catalogCache = {}) {
     ...createDefaultCatalogCache(),
     ...catalogCache,
     tools,
+    toolCatalogRevision: validTools && isRevision(catalogCache.toolCatalogRevision) ? catalogCache.toolCatalogRevision : 0,
+    recipeCatalogRevision: validRecipes && isRevision(catalogCache.recipeCatalogRevision) ? catalogCache.recipeCatalogRevision : 0,
     recipesByTool: normalizedRecipesByTool,
-    recipeSnapshotsById:
-      catalogCache.recipeSnapshotsById && typeof catalogCache.recipeSnapshotsById === "object"
-        ? { ...catalogCache.recipeSnapshotsById }
-        : {}
+    recipeSnapshotsById: validRecipes ? { ...catalogCache.recipeSnapshotsById } : {}
   };
 }
 
@@ -175,7 +188,11 @@ function createDefaultRuntimeState() {
     activeSession,
     lastResult,
     catalogCache,
-    syncMeta,
+    syncMeta: {
+      ...syncMeta,
+      toolCatalogRevision: catalogCache.toolCatalogRevision,
+      recipeCatalogRevision: catalogCache.recipeCatalogRevision
+    },
     catalogReady: Number.isFinite(catalogCache.cachedAt) && catalogCache.cachedAt > 0,
     connected: false
   };
@@ -234,7 +251,7 @@ export function readLastResult() {
   return getRuntimeState().lastResult;
 }
 
-export function writeLastResult(lastResult) {
+export function writeLastResult(lastResult, { notify = true } = {}) {
   const nextLastResult = normalizeLastResult(lastResult);
   if (nextLastResult) {
     writeWatchJson(WATCH_STORAGE_KEYS.lastResult, nextLastResult);
@@ -243,10 +260,12 @@ export function writeLastResult(lastResult) {
   }
 
   getRuntimeState().lastResult = nextLastResult;
-  emitRuntimeEvent({
-    type: "last_result",
-    value: nextLastResult
-  });
+  if (notify) {
+    emitRuntimeEvent({
+      type: "last_result",
+      value: nextLastResult
+    });
+  }
 
   return nextLastResult;
 }
@@ -316,6 +335,9 @@ export function getRecipeSnapshotById(recipeId) {
 }
 
 export function applyToolCatalogSnapshot(payload) {
+  if (!isRevision(payload?.toolCatalogRevision) || !isToolCatalog(payload.tools)) {
+    return null;
+  }
   const currentCatalogCache = readCatalogCache();
   const nextCatalogCache = {
     ...currentCatalogCache,
@@ -335,6 +357,10 @@ export function applyToolCatalogSnapshot(payload) {
 }
 
 export function applyCatalogSnapshot(payload) {
+  if (!isRevision(payload?.recipeCatalogRevision) ||
+      !isObject(payload.recipesByTool) || !isObject(payload.recipeSnapshotsById)) {
+    return null;
+  }
   const currentCatalogCache = readCatalogCache();
   const nextCatalogCache = {
     ...currentCatalogCache,
@@ -355,6 +381,10 @@ export function applyCatalogSnapshot(payload) {
 }
 
 export function applyHistorySnapshot(payload) {
+  if (!isRevision(payload?.historyRevision) ||
+      (payload.latestResult !== null && !normalizeLastResult(payload.latestResult))) {
+    return null;
+  }
   const syncMeta = readWatchSyncMeta();
   let latestResult = payload.latestResult || null;
 

@@ -3,6 +3,7 @@ import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { getScrollListOptions } from "../../shared/watch/scroll-list-options";
 import { replace } from "@zos/router";
+import { enterWatchPage } from "../../shared/watch/navigation";
 import {
   getRecipeListForSelectedTool,
   getSelectedTool,
@@ -88,6 +89,7 @@ Page({
     }
   },
   build() {
+    if (!enterWatchPage(PAGE_URLS.recipeList)) return;
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const selectedTool = getSelectedTool();

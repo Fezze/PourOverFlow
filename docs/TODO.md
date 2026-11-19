@@ -11,6 +11,8 @@
 
 ### Real-device validation
 
+- Confirm that Home returns from results and stopped brews to the original screen without leaving old pages in the watch back stack.
+
 - Confirm that one shortcut click advances one step and that an open Stop confirmation survives a countdown boundary.
 
 - Validate watch navigation and sync recovery on hardware: resume from recipe details after system Back, and reconnect after an offline brew. Confirm that the latest result survives a delayed phone snapshot and that manual sync recovers after a dropped handshake.

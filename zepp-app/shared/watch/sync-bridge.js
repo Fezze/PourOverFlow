@@ -250,9 +250,8 @@ function handleIncomingMessage(index, data, size) {
       applyCatalogSnapshot(syncEnvelope.payload);
       break;
     case SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT:
-      if (Number.isFinite(syncEnvelope.payload.historyRevision) &&
-          syncEnvelope.payload.historyRevision >= minimumHistoryRevision) {
-        applyHistorySnapshot(syncEnvelope.payload);
+      if (syncEnvelope.payload.historyRevision >= minimumHistoryRevision &&
+          applyHistorySnapshot(syncEnvelope.payload)) {
         minimumHistoryRevision = syncEnvelope.payload.historyRevision;
       }
       break;

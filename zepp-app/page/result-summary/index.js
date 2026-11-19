@@ -1,11 +1,12 @@
 import { formatDurationLabel } from "../../shared/engine/recipe-engine";
 import { SHARED_COLORS, fitCenteredTextToRoundScreen } from "../../shared/watch/layouts";
-import { drawBrowseTabs, registerBrowseTabs } from "../../shared/watch/browse-tabs";
+import { drawBrowseTabs, registerBrowseTabs, switchBrowseTab } from "../../shared/watch/browse-tabs";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
+import { enterWatchPage } from "../../shared/watch/navigation";
 import { getToolById, getLocalizedToolLabel } from "../../shared/constants/tool-catalog";
 import { readLastResult } from "../../shared/storage/watch-store";
-import { goHome, goToToolList, PAGE_URLS } from "../../shared/watch/router";
+import { goHome, PAGE_URLS } from "../../shared/watch/router";
 import { getScrollListOptions } from "../../shared/watch/scroll-list-options";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
@@ -186,6 +187,7 @@ Page({
     }
   },
   build() {
+    if (!enterWatchPage(PAGE_URLS.resultSummary)) return;
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const lastResult = readLastResult();
@@ -272,7 +274,7 @@ Page({
         ...BUTTONS[0],
         text: i18n.t("watch.resultSummary.actions.browse"),
         click_func: () => {
-          goToToolList();
+          switchBrowseTab(0);
         }
       });
       hmUI.createWidget(hmUI.widget.BUTTON, {

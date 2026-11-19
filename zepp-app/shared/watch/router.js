@@ -1,4 +1,4 @@
-import { push, replace } from "@zos/router";
+import { pushWatchPage as push, replaceWatchPage as replace, returnToWatchPage } from "./navigation";
 import { getSupportedTools } from "../constants/tool-catalog";
 import {
   buildHistoryEntryFromSession,
@@ -49,7 +49,7 @@ function persistTerminalSession(session) {
   if (!pendingEntry) {
     enqueuePendingHistoryEntry(historyEntry);
   }
-  writeLastResult(createLastResultSummary(historyEntry));
+  writeLastResult(createLastResultSummary(historyEntry), { notify: false });
   clearActiveSession();
   logValidation("history_entry_queued", {
     historyId: historyEntry.historyId,
@@ -137,7 +137,7 @@ export function retryPendingHistorySync() {
 }
 
 export function goHome() {
-  replace({ url: PAGE_URLS.home });
+  returnToWatchPage(PAGE_URLS.home);
 }
 
 export function goToToolList() {
@@ -149,7 +149,7 @@ export function goToResultSummary() {
 }
 
 export function goToRecipeList() {
-  replace({ url: PAGE_URLS.recipeList });
+  returnToWatchPage(PAGE_URLS.recipeList);
 }
 
 export function selectTool(toolId) {
@@ -304,7 +304,7 @@ export function abortActiveBrew() {
   }
 
   disableActiveSessionDisplayGuard();
-  replace({ url: PAGE_URLS.home });
+  goHome();
 }
 
 export function reconcileActiveSessionOnEntry(now = Date.now()) {

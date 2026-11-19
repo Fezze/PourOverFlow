@@ -547,8 +547,8 @@ describe("mocked Zepp runtime watch flow", () => {
     });
   });
 
-  it("requests bootstrap over the bridge once the watch is connected", () => {
-    seedCachedCatalog();
+  it("advertises persisted catalog revisions over the bridge once the watch is connected", () => {
+    const { catalogCache } = seedCachedCatalog();
 
     connectWatchBridge();
     clearSentBridgeFrames();
@@ -559,8 +559,8 @@ describe("mocked Zepp runtime watch flow", () => {
         expect.objectContaining({
           messageType: SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP,
           payload: expect.objectContaining({
-            knownToolCatalogRevision: 0,
-            knownRecipeCatalogRevision: 0,
+            knownToolCatalogRevision: catalogCache.toolCatalogRevision,
+            knownRecipeCatalogRevision: catalogCache.recipeCatalogRevision,
             knownHistoryRevision: -1
           })
         })

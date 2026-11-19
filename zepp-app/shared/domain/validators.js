@@ -188,6 +188,12 @@ export function validateRecipeRecord(recipeRecord) {
     }
   });
 
+  ["coffeeDoseG", "totalWaterMl"].forEach((fieldName) => {
+    if (recipeRecord[fieldName] < 0) {
+      issues.push(`Recipe ${fieldName} must be non-negative.`);
+    }
+  });
+
   if (!Array.isArray(recipeRecord.steps) || recipeRecord.steps.length < 1) {
     issues.push("Recipe must contain at least one step.");
   } else {

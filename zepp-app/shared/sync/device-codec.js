@@ -52,5 +52,10 @@ export function decodeEnvelopeFromBlePayload(data, size) {
     return null;
   }
 
-  return fromSyncEnvelopeJson(decodeUtf8FromArrayBuffer(buffer));
+  try {
+    return fromSyncEnvelopeJson(decodeUtf8FromArrayBuffer(buffer));
+  } catch (error) {
+    console.log("Failed to decode watch sync UTF-8", error);
+    return null;
+  }
 }

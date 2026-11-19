@@ -197,3 +197,13 @@ test.each([7, 9])("rejects a reassembled transfer when its declared total is %i 
   expect(transport.assemblies.size).toBe(0);
   expect(buildChunkedBridgeTransportPayloads(input, { maxChunkPayloadSize: 0.5 })).toHaveLength(8);
 });
+
+test("ignores malformed UTF-8 if the watch has to use the URI decoder", () => {
+  const decoder = globalThis.TextDecoder;
+  try {
+    globalThis.TextDecoder = undefined;
+    expect(decodeEnvelopeFromBlePayload(new Uint8Array([0xc0]).buffer)).toBeNull();
+  } finally {
+    globalThis.TextDecoder = decoder;
+  }
+});

@@ -110,3 +110,19 @@ it("limits the durable queue, updates duplicate entries and leaves the snapshot 
   expect(store.isWatchConnected()).toBe(true);
   expect(emit).toHaveBeenLastCalledWith({ type: "connection", value: true });
 });
+
+it("keeps the last good catalog after malformed snapshots and resyncs lost cache slices on startup", () => {
+  setLocalStorageState({
+    [keys.catalogCache]: JSON.stringify({ ...catalogCache, tools: [null], recipeSnapshotsById: [] }),
+    [keys.syncMeta]: JSON.stringify({ toolCatalogRevision: 100, recipeCatalogRevision: 101 })
+  });
+  expect(store.getToolCatalog()).toHaveLength(6);
+  expect(store.readWatchSyncMeta()).toMatchObject({ toolCatalogRevision: 0, recipeCatalogRevision: 0 });
+
+  store.writeCatalogCache(catalogCache);
+  expect(store.applyToolCatalogSnapshot({ toolCatalogRevision: 100, tools: [null] })).toBeNull();
+  expect(store.applyCatalogSnapshot({ recipeCatalogRevision: 101, recipesByTool: [] })).toBeNull();
+  expect(store.applyHistorySnapshot({ historyRevision: 102 })).toBeNull();
+  expect(store.getRecipeSnapshotById(primarySnapshot.recipeId)).toEqual(primarySnapshot);
+  expect(store.readWatchSyncMeta().historyRevision).toBe(0);
+});

@@ -76,6 +76,7 @@ interface PhoneSyncMeta {
   schemaVersion: 1
   toolCatalogRevision: number
   recipeCatalogRevision: number
+  pendingRecipeChange?: { operationId: string; recipeId: string; record: RecipeRecord | null }
   historyRevision: number
   seedCatalogVersion: number
   seedLocale: string
@@ -293,7 +294,8 @@ This remains separate from `seedCatalogVersion`:
 
 ### `recipeCatalogRevision`
 
-- incremented for every recipe create, edit, archive, or delete operation.
+- incremented for every recipe create, edit, archive, or delete operation and for each seed migration,
+- recipe changes are journaled in sync metadata and replayed before publishing a snapshot. The revision increments when the journal clears, after the record and index writes. Revision-only changes trigger a push.
 
 ### `historyRevision`
 
@@ -310,7 +312,7 @@ This remains separate from `seedCatalogVersion`:
 
 ### On the watch side
 
-- if `PUSH_TOOL_CATALOG` is corrupted, keep the previous cache,
+- keep the previous cache when a snapshot has invalid fields. Read the catalog versions from the persisted cache when the watch starts, so a lost cache can be requested again,
 - hide recipes without a usable snapshot,
 - discard incomplete transfers at disconnect and reject transfers whose chunk sizes do not match the declared total,
 - use the newest available result from the received phone snapshot and the unsent local queue. An empty snapshot clears the display when no local result is pending.

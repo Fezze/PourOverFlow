@@ -160,7 +160,7 @@ it.each([true, false])("renders the latest result or offers browsing (has result
   expect(rendered.text()).toContain(available ? lastResult.recipeName : "No result yet");
   if (!available) {
     rendered.button("Browse").click_func();
-    expect(controller.goToToolList).toHaveBeenCalledOnce();
+    expect(runtime.router.replace).toHaveBeenCalledWith({ url: controller.PAGE_URLS.toolList });
   } else {
     expect(rendered.text()).toContain("Timing delta");
   }

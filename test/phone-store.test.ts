@@ -11,6 +11,7 @@ import {
   ensurePhoneStorage,
   readHistoryEntry,
   readHistoryIndex,
+  readPhoneSnapshot,
   readPhoneSyncMeta,
   readRecipeRecord,
   safeParseJson,
@@ -495,4 +496,56 @@ test("repairs a legacy unindexed history record while preserving phone feedback"
   expect(saveWatchHistoryEntry(storage, entry)).toMatchObject({ ok: true, historyEntry: editedEntry });
   expect(readHistoryIndex(storage)).toHaveLength(1);
   expect(readHistoryEntry(storage, entry.historyId)).toEqual(editedEntry);
+});
+
+test.each(["save", "delete"])("recovers an interrupted recipe %s without leaving the watch revision stale", (operation) => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const id = "seed_ap_daily_clean";
+  const originalRevision = readPhoneSyncMeta(storage).recipeCatalogRevision;
+  const setItem = storage.setItem.bind(storage);
+  let metaWrites = 0;
+  const writer = vi.spyOn(storage, "setItem").mockImplementation((key, value) => {
+    if (key === PHONE_STORAGE_KEYS.syncMeta && ++metaWrites === 2) throw new Error("Interrupted revision write");
+    setItem(key, value);
+  });
+  const update = () => operation === "save"
+    ? saveRecipeRecord(storage, { ...createValidDraft("tool_aeropress"), recipeId: id, name: "Edited" })
+    : deleteRecipeRecord(storage, id);
+  expect(update).toThrow("Interrupted revision write");
+  writer.mockRestore();
+
+  const snapshot = readPhoneSnapshot(storage);
+  expect(snapshot.syncMeta.recipeCatalogRevision).toBe(originalRevision + 1);
+  expect(snapshot.syncMeta.pendingRecipeChange).toBeUndefined();
+  const summary = snapshot.recipeIndex.find(({ recipeId }) => recipeId === id);
+  if (operation === "save") {
+    expect(summary?.name).toBe("Edited");
+    expect(readRecipeRecord(storage, id)?.name).toBe("Edited");
+  } else {
+    expect(summary).toBeUndefined();
+    expect(readRecipeRecord(storage, id)).toBeNull();
+  }
+  expect(readPhoneSnapshot(storage).syncMeta.recipeCatalogRevision).toBe(originalRevision + 1);
+});
+
+test("advances the seed revision after recovering an interrupted version update", () => {
+  const storage = createMockSettingsStorage();
+  ensurePhoneStorage(storage);
+  const meta = readPhoneSyncMeta(storage);
+  storage.setItem(PHONE_STORAGE_KEYS.syncMeta, JSON.stringify({ ...meta, seedCatalogVersion: 1 }));
+  const recovered = ensurePhoneStorage(storage);
+  expect(recovered.syncMeta.recipeCatalogRevision).toBe(meta.recipeCatalogRevision + 1);
+  expect(recovered.syncMeta.seedCatalogVersion).toBe(SEED_LIBRARY_VERSION);
+});
+
+test("accepts decimal commas for recipe measurements and rejects invalid or negative input", () => {
+  const storage = createMockSettingsStorage();
+  const draft = createValidDraft();
+  const result = saveRecipeRecord(storage, { ...draft, coffeeDoseG: "18,5" });
+  expect(result).toMatchObject({ ok: true, recipeRecord: { coffeeDoseG: 18.5 } });
+  const invalid = saveRecipeRecord(storage, { ...draft, coffeeDoseG: "eighteen", totalWaterMl: "-20" });
+  expect(invalid).toMatchObject({ ok: false });
+  expect(invalid.issues).toContain("Recipe coffeeDoseG must be a number.");
+  expect(invalid.issues).toContain("Recipe totalWaterMl must be non-negative.");
 });

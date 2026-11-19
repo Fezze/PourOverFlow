@@ -13,7 +13,6 @@ import {
   normalizeRecipeSteps,
   normalizeText,
   sumRecipeStepDurations,
-  toNumberOrFallback,
   toOptionalNumber
 } from "../domain/schema.js";
 import {
@@ -106,6 +105,45 @@ function updatePhoneSyncMeta(settingsStorage, updater) {
   return nextSyncMeta;
 }
 
+function recoverRecipeChange(settingsStorage) {
+  const meta = readPhoneSyncMeta(settingsStorage);
+  const change = meta.pendingRecipeChange;
+  if (!change) {
+    return meta;
+  }
+
+  const { recipeId, record } = change;
+  const index = readRecipeIndex(settingsStorage).filter((entry) => entry.recipeId !== recipeId);
+  if (record) {
+    writeSettingsJson(settingsStorage, getPhoneRecipeRecordKey(recipeId), record);
+    index.push(createRecipeSummary(record));
+  } else {
+    removeSettingsItem(settingsStorage, getPhoneRecipeRecordKey(recipeId));
+  }
+  writeRecipeIndex(settingsStorage, index);
+
+  return updatePhoneSyncMeta(settingsStorage, (current) => {
+    const { pendingRecipeChange, ...syncMeta } = current;
+    if (pendingRecipeChange?.operationId !== change.operationId) {
+      return current;
+    }
+    return { ...syncMeta, recipeCatalogRevision: syncMeta.recipeCatalogRevision + 1 };
+  });
+}
+
+function commitRecipeChange(settingsStorage, recipeId, record) {
+  updatePhoneSyncMeta(settingsStorage, (current) => ({
+    ...current,
+    pendingRecipeChange: { operationId: createGeneratedId("recipe_change"), recipeId, record }
+  }));
+  return recoverRecipeChange(settingsStorage);
+}
+
+function readSettingsIndex(settingsStorage, key) {
+  const entries = readSettingsJson(settingsStorage, key, []);
+  return Array.isArray(entries) ? entries.filter((entry) => entry && typeof entry === "object") : [];
+}
+
 function writeRecipeRecords(settingsStorage, recipeRecords) {
   recipeRecords.forEach((recipeRecord) => {
     writeSettingsJson(settingsStorage, getPhoneRecipeRecordKey(recipeRecord.recipeId), recipeRecord);
@@ -162,6 +200,7 @@ export function ensurePhoneStorage(settingsStorage, options = {}) {
     });
   }
 
+  recoverRecipeChange(settingsStorage);
   migrateSeedRecipeLibrary(settingsStorage, seedTimestamp, nextSeedLocale);
 
   return readPhoneSnapshot(settingsStorage);
@@ -172,11 +211,13 @@ export function readToolCatalog(settingsStorage) {
 }
 
 export function readRecipeIndex(settingsStorage) {
-  return sortRecipeIndex(readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.recipeIndex, []));
+  return sortRecipeIndex(readSettingsIndex(settingsStorage, PHONE_STORAGE_KEYS.recipeIndex)
+    .filter((entry) => typeof entry.recipeId === "string" && typeof entry.name === "string"));
 }
 
 export function readHistoryIndex(settingsStorage) {
-  return sortHistoryIndex(readSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.historyIndex, []));
+  return sortHistoryIndex(readSettingsIndex(settingsStorage, PHONE_STORAGE_KEYS.historyIndex)
+    .filter((entry) => typeof entry.historyId === "string"));
 }
 
 export function readPhoneSyncMeta(settingsStorage) {
@@ -228,9 +269,7 @@ function migrateSeedRecipeLibrary(settingsStorage, seedTimestamp, preferredLocal
     ...currentSyncMeta,
     seedCatalogVersion: SEED_LIBRARY_VERSION,
     seedLocale,
-    recipeCatalogRevision: missingSeedRecipes.length
-      ? currentSyncMeta.recipeCatalogRevision + 1
-      : currentSyncMeta.recipeCatalogRevision
+    recipeCatalogRevision: currentSyncMeta.recipeCatalogRevision + 1
   };
 
   writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, nextSyncMeta);
@@ -266,10 +305,10 @@ export function listHistoryEntries(settingsStorage) {
 }
 
 export function readPhoneSnapshot(settingsStorage) {
+  const syncMeta = recoverRecipeChange(settingsStorage);
   const tools = readToolCatalog(settingsStorage);
   const recipeIndex = readRecipeIndex(settingsStorage);
   const historyIndex = readHistoryIndex(settingsStorage);
-  const syncMeta = readPhoneSyncMeta(settingsStorage);
   const recipesByTool = buildRecipesByTool(tools, recipeIndex);
   const latestHistoryEntry = historyIndex.length
     ? readHistoryEntry(settingsStorage, historyIndex[0].historyId)
@@ -299,6 +338,19 @@ function createRecipeId() {
   return createGeneratedId("recipe");
 }
 
+function readRecipeNumber(input, fallback) {
+  if (typeof input === "string") {
+    const value = input.trim();
+    if (!value) {
+      return fallback;
+    }
+    return /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:[eE][+-]?\d+)?$/.test(value)
+      ? Number(value.replace(",", "."))
+      : NaN;
+  }
+  return input ?? fallback;
+}
+
 function normalizeRecipeRecordInput(recipeDraft, existingRecipeRecord = null) {
   const now = Date.now();
   const normalizedSteps = normalizeRecipeSteps(
@@ -322,21 +374,21 @@ function normalizeRecipeRecordInput(recipeDraft, existingRecipeRecord = null) {
       existingRecipeRecord ? existingRecipeRecord.colorToken : DEFAULT_RECIPE_COLOR_TOKEN
     ),
     description: normalizeText(recipeDraft.description),
-    coffeeDoseG: toNumberOrFallback(
+    coffeeDoseG: readRecipeNumber(
       recipeDraft.coffeeDoseG,
       existingRecipeRecord ? existingRecipeRecord.coffeeDoseG : 0
     ),
-    totalWaterMl: toNumberOrFallback(
+    totalWaterMl: readRecipeNumber(
       recipeDraft.totalWaterMl,
       existingRecipeRecord ? existingRecipeRecord.totalWaterMl : 0
     ),
-    waterTempC: toNumberOrFallback(
+    waterTempC: readRecipeNumber(
       recipeDraft.waterTempC,
       existingRecipeRecord ? existingRecipeRecord.waterTempC : 0
     ),
     filterLabel: normalizeText(recipeDraft.filterLabel),
     grindLabel: normalizeText(recipeDraft.grindLabel),
-    estimatedTotalDurationMs: toNumberOrFallback(
+    estimatedTotalDurationMs: readRecipeNumber(
       recipeDraft.estimatedTotalDurationMs,
       existingRecipeRecord ? existingRecipeRecord.estimatedTotalDurationMs : minimumDurationMs
     ),
@@ -350,6 +402,7 @@ function normalizeRecipeRecordInput(recipeDraft, existingRecipeRecord = null) {
 }
 
 export function saveRecipeRecord(settingsStorage, recipeDraft) {
+  recoverRecipeChange(settingsStorage);
   const existingRecipeRecord = recipeDraft.recipeId
     ? readRecipeRecord(settingsStorage, recipeDraft.recipeId)
     : null;
@@ -364,17 +417,7 @@ export function saveRecipeRecord(settingsStorage, recipeDraft) {
     };
   }
 
-  const nextRecipeIndex = readRecipeIndex(settingsStorage).filter(
-    (recipeSummary) => recipeSummary.recipeId !== recipeRecord.recipeId
-  );
-  nextRecipeIndex.push(createRecipeSummary(recipeRecord));
-
-  writeSettingsJson(settingsStorage, getPhoneRecipeRecordKey(recipeRecord.recipeId), recipeRecord);
-  writeRecipeIndex(settingsStorage, nextRecipeIndex);
-  const syncMeta = updatePhoneSyncMeta(settingsStorage, (currentSyncMeta) => ({
-    ...currentSyncMeta,
-    recipeCatalogRevision: currentSyncMeta.recipeCatalogRevision + 1
-  }));
+  const syncMeta = commitRecipeChange(settingsStorage, recipeRecord.recipeId, recipeRecord);
 
   return {
     ok: true,
@@ -409,21 +452,14 @@ export function duplicateRecipeRecord(settingsStorage, recipeId) {
 }
 
 export function deleteRecipeRecord(settingsStorage, recipeId) {
+  recoverRecipeChange(settingsStorage);
   const existingRecipeRecord = readRecipeRecord(settingsStorage, recipeId);
 
   if (!existingRecipeRecord) {
     return false;
   }
 
-  removeSettingsItem(settingsStorage, getPhoneRecipeRecordKey(recipeId));
-  writeRecipeIndex(
-    settingsStorage,
-    readRecipeIndex(settingsStorage).filter((recipeSummary) => recipeSummary.recipeId !== recipeId)
-  );
-  updatePhoneSyncMeta(settingsStorage, (currentSyncMeta) => ({
-    ...currentSyncMeta,
-    recipeCatalogRevision: currentSyncMeta.recipeCatalogRevision + 1
-  }));
+  commitRecipeChange(settingsStorage, recipeId, null);
 
   return true;
 }

@@ -67,3 +67,14 @@ test("ordered sync slices stay deduplicated and follow the transport order", () 
     PHONE_SYNC_SLICES.HISTORY
   ]);
 });
+
+test("publishes changes to committed revisions and ignores journal-only writes", () => {
+  const meta = { toolCatalogRevision: 1, recipeCatalogRevision: 2, historyRevision: 3 };
+  const prior = JSON.stringify(meta);
+  const key = PHONE_STORAGE_KEYS.syncMeta;
+  expect(getStorageChangeSlices(key, prior, JSON.stringify({ ...meta, pendingRecipeChange: {} }))).toEqual([]);
+  expect(getStorageChangeSlices(key, prior, JSON.stringify({ ...meta, recipeCatalogRevision: 3 })))
+    .toEqual([PHONE_SYNC_SLICES.CATALOG]);
+  expect(getStorageChangeSlices(key, prior, "not JSON")).toEqual([]);
+  expect(getStorageChangeSlices(key, prior, "null")).toEqual([]);
+});

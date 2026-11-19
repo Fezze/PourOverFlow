@@ -1,6 +1,7 @@
 import { SHARED_COLORS } from "../../shared/watch/layouts";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
+import { enterWatchPage } from "../../shared/watch/navigation";
 import {
   discardActiveSessionFromHome,
   getHomeScaffoldState,
@@ -80,6 +81,7 @@ Page({
     }
   },
   build() {
+    if (!enterWatchPage(PAGE_URLS.home)) return;
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const reconcileResult = reconcileActiveSessionOnEntry();

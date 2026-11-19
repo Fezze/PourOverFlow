@@ -4,6 +4,8 @@
 
 The Brewers and Latest Result pages now form two horizontal tabs, indicated by two position marks. Swipe left from Brewers to Latest Result and right to return. Native vertical lists and all existing actions remain. See [UI-REDESIGN.md](UI-REDESIGN.md).
 
+Explicit Home actions unwind the existing native route stack. A direct wake into the brew screen falls back to opening Home when the runtime has no earlier Home entry.
+
 ## Flow map
 
 The product has two primary runtimes:

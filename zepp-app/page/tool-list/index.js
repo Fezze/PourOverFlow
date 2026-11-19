@@ -3,6 +3,7 @@ import { drawBrowseTabs, registerBrowseTabs } from "../../shared/watch/browse-ta
 import * as hmUI from "@zos/ui";
 import { getScrollListOptions } from "../../shared/watch/scroll-list-options";
 import { replace } from "@zos/router";
+import { enterWatchPage } from "../../shared/watch/navigation";
 import { PAGE_URLS, refreshPhoneSnapshot, selectTool, getToolList } from "../../shared/watch/router";
 import { subscribeRuntimeEvent } from "../../shared/watch/runtime-events";
 import { createWatchTranslator } from "../../shared/i18n/watch-locale.js";
@@ -94,6 +95,7 @@ Page({
     }
   },
   build() {
+    if (!enterWatchPage(PAGE_URLS.toolList)) return;
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
     const tools = getToolList();

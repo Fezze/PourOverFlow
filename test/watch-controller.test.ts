@@ -1,8 +1,9 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { push, replace } from "@zos/router";
+import { back, push, replace } from "@zos/router";
 import { createActiveBrewSession } from "../zepp-app/shared/engine/recipe-engine.js";
 import * as controller from "../zepp-app/shared/watch/router.js";
 import { createCatalogFixture } from "./support/watch-page-harness.ts";
+import { resetZeppRuntime } from "./zeus-runtime/runtime.ts";
 
 const { store, reducer, cues, transport, disableDisplay, log } = vi.hoisted(() => ({
   store: {
@@ -30,6 +31,7 @@ const next = { ...session, currentStepIndex: 1, status: "running", expectedStepE
 const complete = { ...next, status: "completed" };
 
 beforeEach(() => {
+  resetZeppRuntime();
   vi.resetAllMocks();
   store.getToolCatalog.mockReturnValue([tool]);
   store.getRecipesForTool.mockImplementation((toolId) => toolId === tool.toolId ? [primarySummary] : []);
@@ -79,7 +81,7 @@ it("selects only cached runnable recipes and reports independent home readiness"
   controller.goToResultSummary();
   expect(push).toHaveBeenLastCalledWith({ url: PAGE_URLS.resultSummary });
   controller.goToRecipeList();
-  expect(replace).toHaveBeenLastCalledWith({ url: PAGE_URLS.recipeList });
+  expect(back).toHaveBeenCalledOnce();
   controller.goHome();
   expect(replace).toHaveBeenLastCalledWith({ url: PAGE_URLS.home });
 });
@@ -101,7 +103,7 @@ it("persists only changed ticks, emits cues only on new steps and finalizes a co
   const result = controller.tickActiveSession(15_000);
   expect(result).toMatchObject({ completed: true, historyEntry: { status: "completed" } });
   expect(store.enqueuePendingHistoryEntry).toHaveBeenCalledWith(result.historyEntry);
-  expect(store.writeLastResult).toHaveBeenCalledWith(expect.objectContaining({ historyId: result.historyEntry.historyId }));
+  expect(store.writeLastResult).toHaveBeenCalledWith(expect.objectContaining({ historyId: result.historyEntry.historyId }), { notify: false });
   expect(store.clearActiveSession).toHaveBeenCalledOnce();
   expect(disableDisplay).toHaveBeenCalledOnce();
   expect(replace).toHaveBeenCalledWith({ url: controller.PAGE_URLS.resultSummary });
