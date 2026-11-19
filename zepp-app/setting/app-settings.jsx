@@ -574,10 +574,9 @@ AppSettingsPage({
 
     this.updateDraftField(props, "steps", nextSteps);
   },
-  addDraftStep(props) {
+  addDraftStep(props, insertIndex) {
     const i18n = resolveSettingsTranslator(this);
-    const nextSteps = [...(this.state.ui.draftRecipe.steps || [])];
-    const insertIndex = Math.max(0, nextSteps.length - 1);
+    const nextSteps = [...this.state.ui.draftRecipe.steps];
 
     nextSteps.splice(insertIndex, 0, {
       stepId: "",
@@ -893,6 +892,7 @@ AppSettingsPage({
       ...options
     });
     const stepTitle = i18n.t("settings.editor.stepOf", { current: index + 1, total: steps.length });
+    const isFinalFinish = index === steps.length - 1 && step.kind === "finish";
 
     return createPanel(i18n.t("settings.editor.guidedStepsTitle"), [
       createButtonRow([
@@ -956,9 +956,9 @@ AppSettingsPage({
       ]),
       createButtonRow([
         Button({
-          label: i18n.t("settings.editor.addStep"),
+          label: i18n.t(isFinalFinish ? "settings.editor.addBeforeFinish" : "settings.editor.addStep"),
           style: ACTION,
-          onClick: () => this.addDraftStep(props)
+          onClick: () => this.addDraftStep(props, isFinalFinish ? index : index + 1)
         })
       ], DIVIDED_ROW)
     ]);

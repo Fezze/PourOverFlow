@@ -196,6 +196,49 @@ describe("phone settings page behavior", () => {
     expect(instance.state.ui.stepPageIndex).toBe(instance.state.ui.draftRecipe.steps.length - 1);
   });
 
+  it("inserts directly after the selected step and saves the resulting order", () => {
+    const { instance, props } = createPage();
+    const recipe = readRecipeRecord(props.settingsStorage, "seed_ap_bypass_bright")!;
+    instance.hydrateFromStorage(props);
+    instance.openRecipeEditor(props, recipe.recipeId);
+
+    click(findButton(instance.build(props), "Next"));
+    click(findButton(instance.build(props), "Add step"));
+    const editor = instance.build(props);
+    const steps = instance.state.ui.draftRecipe.steps;
+    expect(instance.state.ui.stepPageIndex).toBe(2);
+    expect(findText(editor, `Step 3 of ${recipe.steps.length + 1}`)).toBeDefined();
+    expect(steps[1].stepId).toBe(recipe.steps[1].stepId);
+    expect(steps[2]).toMatchObject({ kind: "instruction", stepId: "" });
+    expect(steps[3].stepId).toBe(recipe.steps[2].stepId);
+
+    click(findButton(editor, "Save recipe"));
+    const savedSteps = readRecipeRecord(props.settingsStorage, recipe.recipeId)!.steps;
+    expect(savedSteps).toHaveLength(recipe.steps.length + 1);
+    expect(savedSteps.map((step) => step.order)).toEqual(savedSteps.map((_, index) => index));
+    expect(savedSteps.filter((_, index) => index !== 2).map((step) => step.stepId))
+      .toEqual(recipe.steps.map((step) => step.stepId));
+    expect(savedSteps[2].stepId).toBeTruthy();
+    expect(savedSteps.at(-1)?.kind).toBe("finish");
+  });
+
+  it("offers insertion before the final Finish and opens the new step", () => {
+    const { instance, props } = createPage();
+    const recipe = readRecipeRecord(props.settingsStorage, "seed_ap_bypass_bright")!;
+    instance.hydrateFromStorage(props);
+    instance.openRecipeEditor(props, recipe.recipeId);
+    instance.setStepPage(props, recipe.steps.length - 1);
+
+    const editor = instance.build(props);
+    expect(findButton(editor, "Add step")).toBeUndefined();
+    click(findButton(editor, "Add step before finish"));
+    instance.build(props);
+    const steps = instance.state.ui.draftRecipe.steps;
+    expect(instance.state.ui.stepPageIndex).toBe(recipe.steps.length - 1);
+    expect(steps.at(-2)?.kind).toBe("instruction");
+    expect(steps.at(-1)).toMatchObject({ stepId: recipe.steps.at(-1)?.stepId, kind: "finish" });
+  });
+
   it("jumps across 33 steps and keeps the Select in sync with Previous and Next", () => {
     const { instance, props } = createPage();
     const recipe = readPhoneSnapshot(props.settingsStorage).recipeIndex[0];

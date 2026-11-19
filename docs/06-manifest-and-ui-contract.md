@@ -442,7 +442,7 @@ Each step must expose editing for:
 
 ### Step actions
 
-- `Add step`
+- `Add step` inserts immediately after the selected step and opens the new step. At the final Finish step, `Add step before finish` inserts immediately before it.
 - `Move up`
 - `Move down`
 - `Delete step`
