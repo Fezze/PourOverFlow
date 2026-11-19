@@ -7,6 +7,9 @@ import { runInNewContext } from "node:vm";
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 
+import { writeIstanbulReports } from "./istanbul-coverage-report.mjs";
+import { collectPhonePreviewCoverage } from "./phone-preview-coverage.mjs";
+import { resolvePlaywrightCoverageDir } from "./report-output-paths.mjs";
 import { getMockBrowserExecutableCandidates } from "./playwright-coverage-helpers.mjs";
 import { verifyPhoneFlows } from "../test/fixtures/phone-preview/flows.mjs";
 import { LONG_WATCH_COPY } from "../test/support/watch-long-content.js";
@@ -26,6 +29,7 @@ const OUT_DIR = resolve(
   readOption("--output") || process.env.PHONE_PREVIEW_OUTPUT || "output/playwright/phone-preview/screenshots"
 );
 const APP_ROOT = resolve(readOption("--app-root") || resolve(ROOT, "zepp-app"));
+const BUNDLE_PATH = resolve(APP_ROOT, "phone-preview.bundle.js");
 const FIXTURE_TIME = 1794690000000;
 const VIEWPORTS = [360, 390, 430];
 const DEVICE_HEIGHT = 844;
@@ -244,12 +248,14 @@ function renderPageHtml(tree, iconDataUris, actions) {
   </style></head><body><div id="device"><div id="root">${renderNode(tree, iconDataUris, actions)}</div></div></body></html>`;
 }
 
-async function createHarnessBundle() {
+async function createHarnessBundle(collectCoverage) {
   const result = await build({
     entryPoints: [resolve(APP_ROOT, "setting/index.js")],
     bundle: true,
     format: "iife",
     platform: "browser",
+    outfile: BUNDLE_PATH,
+    sourcemap: collectCoverage ? "inline" : false,
     write: false
   });
   return result.outputFiles[0].text;
@@ -373,7 +379,7 @@ function loadSettingsPageConfig(bundle, locale) {
     View: make("View"), Text: make("Text"), Button: make("Button"),
     TextInput: make("TextInput"), Select: make("Select"),
     Date: class extends Date { static now() { return FIXTURE_TIME; } }
-  });
+  }, { filename: BUNDLE_PATH });
   return pageConfig;
 }
 
@@ -475,7 +481,8 @@ async function renderPreviews(browser, bundle, icons) {
 }
 
 async function main() {
-  const bundle = await createHarnessBundle();
+  const collectCoverage = process.argv.includes("--coverage");
+  const bundle = await createHarnessBundle(collectCoverage);
   const icons = await readToolIcons();
   const executablePath = process.env.PHONE_PREVIEW_BROWSER
     || getMockBrowserExecutableCandidates().find((candidate) => existsSync(candidate));
@@ -485,7 +492,14 @@ async function main() {
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-crash-reporter"]
   });
   try {
-    if (process.argv.includes("--verify-flow")) {
+    if (collectCoverage) {
+      const coverageMap = await collectPhonePreviewCoverage(
+        BUNDLE_PATH, bundle, () => verifyInteractivePreview(browser, bundle, icons)
+      );
+      const outputDir = resolvePlaywrightCoverageDir("phone");
+      await writeIstanbulReports(coverageMap, outputDir);
+      console.log(`Phone end-to-end coverage written to ${outputDir}`);
+    } else if (process.argv.includes("--verify-flow")) {
       await verifyInteractivePreview(browser, bundle, icons);
     } else {
       await renderPreviews(browser, bundle, icons);

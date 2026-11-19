@@ -3,6 +3,11 @@ import path from "node:path";
 export const DEFAULT_REPORTS_ROOT_ENV = "POF_REPORTS_ROOT";
 export const DEFAULT_INTERNAL_REPORTS_DIRNAME = "coverage";
 
+const PLAYWRIGHT_COVERAGE_DIRECTORIES = new Map([
+  ["module-harness", "harness"],
+  ["phone", "phone"]
+]);
+
 function isWindowsAbsolutePath(value) {
   return typeof value === "string" && /^[A-Za-z]:[\\/]/.test(value);
 }
@@ -29,11 +34,11 @@ export function resolveReportsRoot({
   return resolvePortablePath(cwd, DEFAULT_INTERNAL_REPORTS_DIRNAME);
 }
 
-export function resolveVitestCoverageDir(options) {
-  return resolveReportsRoot(options);
+export function resolveVitestCoverageDir({ suite = "combined", ...options } = {}) {
+  return resolvePortablePath(resolveReportsRoot(options), "vitest", suite);
 }
 
 export function resolvePlaywrightCoverageDir(mode, options) {
-  const normalizedMode = mode === "module-harness" ? "harness" : "simulator";
+  const normalizedMode = PLAYWRIGHT_COVERAGE_DIRECTORIES.get(mode) ?? "simulator";
   return resolvePortablePath(resolveReportsRoot(options), "playwright", normalizedMode);
 }

@@ -42,7 +42,7 @@
 - Revisit the simulator-side `@zos/ble` send behavior and replace the current simulator heuristic with a more authoritative transport check if possible.
 - Keep browser-safe module coverage separate from the existing watch preview with `@zos/*` stubs; use the mocked runtime suite and hardware checks for transport and lifecycle behavior.
 - Confirm that the new `zepp-app/` subtree plus root-level `coverage/` split stays comfortable on both Windows and Linux after a few normal `zeus dev` cycles.
-- Keep coverage focused on observable outcomes. Use the Vitest report to locate untested recovery paths in watch storage and the display lifecycle, and the separate browser harness report to locate browser-specific gaps.
+- Use the integration report to locate untested recovery paths in watch storage and the display lifecycle, and the phone end-to-end report to find untested Settings flows.
 
 ### Phone UX follow-up
 
@@ -55,12 +55,8 @@
 
 ## Verify checklist
 
-- `npm test`
-- `npm run test:coverage`
+- `npm run test:coverage:all`
 - `npm run verify:visual`
-- `npm run test:playwright:phone`
-- `npm run test:playwright:harness`
-- `npm run test:playwright:coverage:harness`
 - `npm run build:raw`
 
 ## Simulator checks

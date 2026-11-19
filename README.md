@@ -153,7 +153,6 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 ## Test commands
 
 - `npm test` runs the full Vitest suite, including the pure logic tests and the mocked Zepp runtime flow tests.
-- `npm run test:coverage` generates Vitest reports in `coverage/` by default. The report includes app JS/JSX sources and repo Node scripts, including files that Vitest never loads.
 - `npm run test:playwright` uses the running Zepp simulator's DevTools endpoint as a lightweight no-coverage smoke check for a live simulator session.
 - `npm run sim:doctor` checks the local simulator metadata path, DevTools port file, and latest deployment freshness when those files are available.
 - `npm run sim:smoke` is the Parallax-compatible alias for the simulator smoke command.
@@ -167,17 +166,26 @@ The next practical step lives in [TODO](docs/TODO.md): confirm haptic comfort ov
 - `npm run validation:logs` summarizes `[pof-validation]` entries from the current simulator `renderer.log`, or accepts `--file <path>` when you want to inspect a copied real-device or exported log directly.
 - `npm run verify` is the canonical CLI full-stack verification command.
 - `npm run verify:fast` is the short local loop for Vitest plus Zeus build.
-- set `POF_REPORTS_ROOT` if you want to override the report root explicitly.
-- Vitest, the browser module harness, and the phone browser flows report separate results because they exercise different surfaces.
 - the repo-standard local all-in-one job is the VS Code compound task `Verify: all tests and coverage` from [.vscode/tasks.json](.vscode/tasks.json).
-- the task runs Vitest, Vitest coverage, the browser-backed watch preview gate, Playwright phone flows, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper in sequence without relying on a wrapper script or CI.
+- the task runs the four coverage suites below, the watch screenshot gate, and the Zeus build wrapper in sequence.
 - `npm run build` remains the required compile gate after larger changes. It runs Zeus inside [zepp-app](c:\Users\krzys\Projects\PourOverFlow\zepp-app). For preview you can use `npm run dev -- -t "Amazfit Balance 2"`, `npm run zepp:dev -- -t "Amazfit Balance 2"`, or run `zeus dev` directly from `zepp-app/`.
 - on Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` knows which local Chromium-family browser to launch.
 - the simulator smoke path now resolves Zepp simulator metadata from either `%APPDATA%/simulator`, `${XDG_CONFIG_HOME:-~/.config}/simulator`, or an explicit `ZEPP_SIMULATOR_ROOT`.
 
-Playwright in this repo is intentionally split in two:
-- simulator smoke only, through `npm run test:playwright`
-- browser module-harness coverage, through `npm run test:playwright:coverage:harness`
+### Coverage by test type
+
+Run `npm run test:coverage` for both Vitest reports or `npm run test:coverage:all` for all four separate reports. Each report has HTML and LCOV output under `coverage/`. Set `POF_REPORTS_ROOT` to change the root.
+
+| Test type | Command | Report directory |
+| --- | --- | --- |
+| Unit tests for logic and isolated adapters | `npm run test:coverage:unit` | `coverage/vitest/unit` |
+| Integration tests for storage, Zepp pages, sync, and tooling | `npm run test:coverage:integration` | `coverage/vitest/integration` |
+| Browser module tests in Chromium | `npm run test:playwright:coverage:harness` | `coverage/playwright/harness` |
+| End-to-end phone flows in the Chromium preview | `npm run test:playwright:coverage:phone` | `coverage/playwright/phone` |
+
+Vitest measures the same app JS/JSX sources and Node scripts in both suites, including files with zero hits. Use `npm run test:coverage:combined` for the union of the Vitest suites in `coverage/vitest/combined`. Classify new cross-module scenarios under `test/runtime/` or name them `*.integration.test.ts`. Existing integration files are listed in `test/vitest.config.ts`.
+
+The phone report maps Settings code executed in the Node preview VM to its source files. Playwright drives the same UI flows that run without coverage. The watch screenshot gate reports verified preview states and `npm run sim:smoke` checks the live simulator endpoint.
 
 There is also a small visual baseline path for watch review work:
 - `npm run verify:visual` is the deterministic visual gate: it exports the preview fixtures, validates their metadata and widget structure, renders every preview in a real browser, and fails on runtime errors, console errors, missing screenshots, or suspiciously small outputs.

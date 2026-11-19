@@ -28,7 +28,12 @@ describe("tooling path helpers", () => {
 
   it("keeps coverage repo-local by default", () => {
     expect(resolveReportsRoot({ cwd: repoRoot, env: {} })).toBe(path.join(repoRoot, DEFAULT_INTERNAL_REPORTS_DIRNAME));
-    expect(resolveVitestCoverageDir({ cwd: repoRoot, env: {} })).toBe(path.join(repoRoot, DEFAULT_INTERNAL_REPORTS_DIRNAME));
+    const options = { cwd: repoRoot, env: {} };
+    const root = path.join(repoRoot, DEFAULT_INTERNAL_REPORTS_DIRNAME);
+    expect(resolveVitestCoverageDir(options)).toBe(path.join(root, "vitest", "combined"));
+    expect(resolveVitestCoverageDir({ ...options, suite: "unit" })).toBe(path.join(root, "vitest", "unit"));
+    expect(resolveVitestCoverageDir({ ...options, suite: "integration" })).toBe(path.join(root, "vitest", "integration"));
+    expect(resolvePlaywrightCoverageDir("phone", options)).toBe(path.join(root, "playwright", "phone"));
     expect(resolvePlaywrightCoverageDir("module-harness", { cwd: repoRoot, env: {} })).toBe(
       path.join(repoRoot, DEFAULT_INTERNAL_REPORTS_DIRNAME, "playwright", "harness")
     );
@@ -41,7 +46,9 @@ describe("tooling path helpers", () => {
     };
 
     expect(resolveReportsRoot({ cwd: repoRoot, env })).toBe(customRoot);
-    expect(resolveVitestCoverageDir({ cwd: repoRoot, env })).toBe(customRoot);
+    const options = { cwd: repoRoot, env };
+    expect(resolveVitestCoverageDir({ ...options, suite: "unit" })).toBe(path.join(customRoot, "vitest", "unit"));
+    expect(resolvePlaywrightCoverageDir("phone", options)).toBe(path.join(customRoot, "playwright", "phone"));
     expect(resolvePlaywrightCoverageDir("simulator", { cwd: repoRoot, env })).toBe(
       path.join(customRoot, "playwright", "simulator")
     );

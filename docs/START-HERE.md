@@ -117,7 +117,7 @@ Current verified platform note:
 ## Test loop
 
 - Run `npm test` to execute the full Vitest suite across pure logic and mocked Zepp runtime flow tests.
-- Run `npm run test:coverage` for JS/JSX coverage, including app modules and Node scripts that Vitest never loads.
+- Run `npm run test:coverage` for separate unit and integration reports, or use `npm run test:coverage:all` to include the browser module and phone end-to-end reports. See [Coverage by test type](../README.md#coverage-by-test-type) for the individual commands and paths.
 - Run `npm run test:playwright` when the Zepp simulator is already running and you want a no-coverage smoke check against the simulator DevTools endpoint.
 - Run `npm run sim:doctor` to inspect local simulator metadata, DevTools status, and deployment freshness when simulator files are present.
 - Run `npm run sim:smoke` as the Parallax-compatible alias for the simulator smoke check.
@@ -133,7 +133,7 @@ Current verified platform note:
 - On Linux, set `PLAYWRIGHT_COVERAGE_BROWSER` before the Playwright harness commands so `playwright-core` can launch a local browser.
 - Vitest now exercises bootstrap, edits during a brew, and result replay after a lost ACK through both the watch and Side Service entry points with simulated Zepp transport.
 - Run the VS Code task `Verify: all tests and coverage` from [.vscode/tasks.json](c:\Users\krzys\Projects\PourOverFlow\.vscode\tasks.json) when you want the repo-standard full verification path without simulator-only steps.
-- The compound task runs the meaningful local stack in sequence: Vitest, Vitest coverage, the browser-backed visual preview gate, Playwright harness smoke, Playwright harness coverage, and the Zeus build wrapper.
+- The compound task runs both Vitest coverage suites and both Playwright coverage suites, followed by the watch screenshot gate and Zeus build.
 - If plain PowerShell blocks `npm run ...` through `npm.ps1` execution policy, use the VS Code task or run the npm command through `cmd /c npm ...` instead.
 - Run `npm run build` after larger changes to keep the device package healthy from the repo root. It executes Zeus inside `zepp-app/`.
 - For Parallax-style simulator validation, use `npm run sim:doctor`, `npm run dev`, `npm run sim:smoke`, then `npm run build:raw` to package the tested version. See [Versioning and commits](../README.md#versioning-and-commits) for hook setup and push behavior.
@@ -147,7 +147,7 @@ Do not kick off the simulator smoke test in parallel with `zepp:dev` or `zeus de
 Coverage output now stays repo-local by default in the normal root `coverage/` directory, while Zeus only watches the app subtree:
 - default root: `coverage`
 - optional override: `POF_REPORTS_ROOT`
-Playwright coverage here is intentionally limited to the browser module harness under that repo-local reports root. The repo no longer treats simulator-side V8 coverage as a meaningful standard test because the current simulator DevTools endpoint may expose only the Electron shell page or framework/preload scripts instead of PourOverFlow app code.
+The browser module report samples Chromium. The phone end-to-end report samples the Settings VM behind the Playwright preview. The Zepp simulator check is smoke-only because its DevTools endpoint can expose only the shell or framework scripts.
 `Verify: all tests and coverage` is the repo-standard local job. If CI is introduced later, it should mirror the same command list rather than reassemble the test stack in a second place.
 The current simulator smoke implementation now has a Linux baseline through `${XDG_CONFIG_HOME:-~/.config}/simulator`. Use `ZEPP_SIMULATOR_ROOT` if your simulator metadata lives elsewhere.
 

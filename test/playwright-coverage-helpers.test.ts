@@ -371,7 +371,7 @@ describe("playwright coverage helpers", () => {
     } as NodeJS.ProcessEnv;
 
     expect(normalizePathForExpect(resolveVitestCoverageDir({ env }))).toBe(
-      normalizePathForExpect("D:/tmp/pof-reports")
+      normalizePathForExpect("D:/tmp/pof-reports/vitest/combined")
     );
     expect(
       normalizePathForExpect(resolvePlaywrightCoverageDir("module-harness", { env }))

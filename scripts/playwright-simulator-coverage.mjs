@@ -4,8 +4,6 @@ import os from "node:os";
 import { chromium } from "playwright-core";
 import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import istanbulCoverage from "istanbul-lib-coverage";
-import istanbulReport from "istanbul-lib-report";
-import istanbulReports from "istanbul-reports";
 import v8ToIstanbul from "v8-to-istanbul";
 import {
   buildCoverageRoots,
@@ -23,13 +21,12 @@ import {
   parsePlaywrightCoverageArgs,
   toCoverageDisplayPath
 } from "./playwright-coverage-helpers.mjs";
+import { writeIstanbulReports } from "./istanbul-coverage-report.mjs";
 import { resolveZeppAppRoot } from "./zepp-app-root.mjs";
 
 const PROJECT_ROOT = process.cwd();
 const ZEPP_APP_ROOT = resolveZeppAppRoot({ cwd: PROJECT_ROOT });
 const { createCoverageMap } = istanbulCoverage;
-const { createContext } = istanbulReport;
-const { create: createReport } = istanbulReports;
 
 await main();
 
@@ -473,18 +470,7 @@ async function writeCoverageArtifacts({
     return;
   }
 
-  const reportContext = createContext({
-    dir: outputDir,
-    coverageMap
-  });
-
-  createReport("html").execute(reportContext);
-  createReport("json").execute(reportContext);
-  createReport("lcovonly").execute(reportContext);
-  createReport("text-summary").execute(reportContext);
-
-  const summary = coverageMap.getCoverageSummary().toJSON();
-  await writeFile(path.join(outputDir, "summary.json"), JSON.stringify(summary, null, 2));
+  const summary = await writeIstanbulReports(coverageMap, outputDir);
   console.log(`Playwright coverage written to ${outputDir}`);
   console.log(
     `Statements ${summary.statements.pct}% | Branches ${summary.branches.pct}% | Functions ${summary.functions.pct}% | Lines ${summary.lines.pct}%`
