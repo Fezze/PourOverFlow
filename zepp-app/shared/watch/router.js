@@ -41,21 +41,27 @@ export const PAGE_URLS = {
   resultSummary: "page/result-summary/index"
 };
 
-function persistCompletedHistoryEntry(historyEntry) {
+function persistTerminalSession(session) {
+  const pendingEntry = getPendingHistoryQueue().find((entry) => entry.sessionId === session.sessionId);
+  const historyEntry = pendingEntry || buildHistoryEntryFromSession(session);
+
+  writeActiveSession(session);
+  if (!pendingEntry) {
+    enqueuePendingHistoryEntry(historyEntry);
+  }
   writeLastResult(createLastResultSummary(historyEntry));
-  enqueuePendingHistoryEntry(historyEntry);
+  clearActiveSession();
   logValidation("history_entry_queued", {
     historyId: historyEntry.historyId,
     status: historyEntry.status,
     pendingHistoryCount: getPendingHistoryQueue().length
   });
   flushPendingHistoryQueue();
+  return historyEntry;
 }
 
 function finalizeFinishedSession(nextSession) {
-  const historyEntry = buildHistoryEntryFromSession(nextSession);
-  persistCompletedHistoryEntry(historyEntry);
-  clearActiveSession();
+  const historyEntry = persistTerminalSession(nextSession);
   disableActiveSessionDisplayGuard();
   logValidation("session_finalize", {
     recipeId: nextSession.recipeId,
@@ -224,9 +230,7 @@ export function discardActiveSessionFromHome() {
   }
 
   const abortedSession = abortSession(activeSession);
-  const historyEntry = buildHistoryEntryFromSession(abortedSession);
-  persistCompletedHistoryEntry(historyEntry);
-  clearActiveSession();
+  const historyEntry = persistTerminalSession(abortedSession);
   disableActiveSessionDisplayGuard();
   logValidation("session_discard_from_home", {
     recipeId: abortedSession.recipeId,
@@ -291,9 +295,7 @@ export function abortActiveBrew() {
   const activeSession = readActiveSession();
   if (activeSession) {
     const abortedSession = abortSession(activeSession);
-    const historyEntry = buildHistoryEntryFromSession(abortedSession);
-    persistCompletedHistoryEntry(historyEntry);
-    clearActiveSession();
+    const historyEntry = persistTerminalSession(abortedSession);
     logValidation("session_abort", {
       recipeId: abortedSession.recipeId,
       currentStepIndex: abortedSession.currentStepIndex,
@@ -354,7 +356,11 @@ export function reconcileActiveSessionOnEntry(now = Date.now()) {
   }
 
   if (resumedSession.status === "aborted" || resumedSession.status === "expired") {
-    clearActiveSession();
+    if (resumedSession.status === "aborted" && Number.isFinite(resumedSession.sessionEndedAt)) {
+      persistTerminalSession(resumedSession);
+    } else {
+      clearActiveSession();
+    }
     disableActiveSessionDisplayGuard();
     logValidation("resume_clear", {
       recipeId: resumedSession.recipeId,

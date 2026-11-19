@@ -186,3 +186,14 @@ test("phone catalog transport preserves a long description from the saved recipe
   expect(watch.payload.recipeSnapshotsById[record.recipeId].description).toBe(record.description);
   expect(createRecipeSnapshot({ ...record, description: undefined }).description).toBe("");
 });
+
+test.each([7, 9])("rejects a reassembled transfer when its declared total is %i bytes", (declaredBytes) => {
+  const input = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]).buffer;
+  const frames = buildChunkedBridgeTransportPayloads(input, { maxChunkPayloadSize: 4 });
+  const transport = createBridgeTransportState();
+  for (const frame of frames) new DataView(frame).setUint32(16, declaredBytes, true);
+  expect(readBridgeTransportPayload(transport, frames[0]).status).toBe("pending");
+  expect(readBridgeTransportPayload(transport, frames[1]).status).toBe("invalid");
+  expect(transport.assemblies.size).toBe(0);
+  expect(buildChunkedBridgeTransportPayloads(input, { maxChunkPayloadSize: 0.5 })).toHaveLength(8);
+});

@@ -311,7 +311,8 @@ This remains separate from `seedCatalogVersion`:
 ### On the watch side
 
 - if `PUSH_TOOL_CATALOG` is corrupted, keep the previous cache,
-- if a `RecipeSummary` has no matching `recipeSnapshotById`, hide that recipe,
+- hide recipes without a usable snapshot,
+- discard incomplete transfers at disconnect and reject transfers whose chunk sizes do not match the declared total,
 - use the newest available result from the received phone snapshot and the unsent local queue. An empty snapshot clears the display when no local result is pending.
 
 ## Writing history from the watch

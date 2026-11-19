@@ -215,20 +215,19 @@ export function readActiveSession() {
 
 export function writeActiveSession(activeSession) {
   const nextActiveSession = normalizeActiveSession(activeSession);
-  getRuntimeState().activeSession = nextActiveSession;
-
   if (nextActiveSession) {
     writeWatchJson(WATCH_STORAGE_KEYS.activeSession, nextActiveSession);
   } else {
     removeWatchKey(WATCH_STORAGE_KEYS.activeSession);
   }
 
+  getRuntimeState().activeSession = nextActiveSession;
   return nextActiveSession;
 }
 
 export function clearActiveSession() {
-  getRuntimeState().activeSession = null;
   removeWatchKey(WATCH_STORAGE_KEYS.activeSession);
+  getRuntimeState().activeSession = null;
 }
 
 export function readLastResult() {
@@ -237,14 +236,13 @@ export function readLastResult() {
 
 export function writeLastResult(lastResult) {
   const nextLastResult = normalizeLastResult(lastResult);
-  getRuntimeState().lastResult = nextLastResult;
-
   if (nextLastResult) {
     writeWatchJson(WATCH_STORAGE_KEYS.lastResult, nextLastResult);
   } else {
     removeWatchKey(WATCH_STORAGE_KEYS.lastResult);
   }
 
+  getRuntimeState().lastResult = nextLastResult;
   emitRuntimeEvent({
     type: "last_result",
     value: nextLastResult
@@ -290,8 +288,8 @@ export function readWatchSyncMeta() {
 
 export function writeWatchSyncMeta(syncMeta) {
   const nextSyncMeta = normalizeWatchSyncMeta(syncMeta);
-  getRuntimeState().syncMeta = nextSyncMeta;
   writeWatchJson(WATCH_STORAGE_KEYS.syncMeta, nextSyncMeta);
+  getRuntimeState().syncMeta = nextSyncMeta;
   emitRuntimeEvent({
     type: "sync_meta",
     value: nextSyncMeta
@@ -306,7 +304,9 @@ export function getToolCatalog() {
 export function getRecipesForTool(toolId) {
   const catalogCache = readCatalogCache();
   return catalogCache.recipesByTool && Array.isArray(catalogCache.recipesByTool[toolId])
-    ? [...catalogCache.recipesByTool[toolId]]
+    ? catalogCache.recipesByTool[toolId].filter((recipe) =>
+      recipe && catalogCache.recipeSnapshotsById[recipe.recipeId]?.steps?.length
+    )
     : [];
 }
 

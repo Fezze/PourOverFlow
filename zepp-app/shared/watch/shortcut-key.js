@@ -1,4 +1,4 @@
-import { onKey, KEY_SHORTCUT } from "@zos/interaction";
+import { onKey, KEY_SHORTCUT, KEY_EVENT_CLICK } from "@zos/interaction";
 
 const SHORTCUT_DEBOUNCE_MS = 250;
 
@@ -7,9 +7,13 @@ export function registerShortcutKey(handler) {
 
   try {
     onKey({
-      callback: (key) => {
+      callback: (key, event) => {
         if (key !== KEY_SHORTCUT) {
           return false;
+        }
+
+        if (event !== KEY_EVENT_CLICK) {
+          return true;
         }
 
         const now = Date.now();

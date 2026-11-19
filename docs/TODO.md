@@ -11,6 +11,8 @@
 
 ### Real-device validation
 
+- Confirm that one shortcut click advances one step and that an open Stop confirmation survives a countdown boundary.
+
 - Validate watch navigation and sync recovery on hardware: resume from recipe details after system Back, and reconnect after an offline brew. Confirm that the latest result survives a delayed phone snapshot and that manual sync recovers after a dropped handshake.
 - Replay a result after editing its phone note/rating, and edit a recipe immediately before a history result arrives. Confirm feedback survives and the watch receives the recipe update.
 - Confirm that the current haptics-only feedback tuning is comfortable during a full real brew, not just technically working.

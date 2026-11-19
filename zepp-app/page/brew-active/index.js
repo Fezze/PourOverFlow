@@ -1,4 +1,4 @@
-import { createModal, MODAL_CONFIRM } from "@zos/interaction";
+import { createModal, MODAL_CONFIRM, offKey } from "@zos/interaction";
 import * as hmUI from "@zos/ui";
 import { replace } from "@zos/router";
 import {
@@ -103,6 +103,9 @@ function buildPrimaryActionLabel(session, i18n) {
 
 Page({
   onDestroy() {
+    if (this.shortcutRegistered) {
+      offKey();
+    }
     if (this.activeTimer) {
       clearInterval(this.activeTimer);
       this.activeTimer = null;
@@ -121,16 +124,48 @@ Page({
         onClick: ({ type }) => {
           if (!this.stopConfirmation) return;
           this.stopConfirmation.show(false);
-          if (type === MODAL_CONFIRM) abortActiveBrew();
+          this.stopConfirmationOpen = false;
+          if (type === MODAL_CONFIRM) {
+            abortActiveBrew();
+          } else {
+            this.updateSessionView();
+          }
         }
       });
     }
+    this.stopConfirmationOpen = true;
     this.stopConfirmation.show(true);
   },
   refreshWidgets(activeSession) {
     if (!activeSession || !this.metaWidget) return;
     setWidgetText(this.metaWidget, buildStepMetaText(activeSession, this.i18n));
     setWidgetText(this.timerWidget, buildTimerText(activeSession));
+  },
+  updateSessionView() {
+    tickActiveSession();
+    const session = readActiveSession();
+    if (!session) {
+      clearInterval(this.activeTimer);
+      this.activeTimer = null;
+      return;
+    }
+
+    if (this.stopConfirmationOpen) {
+      this.refreshWidgets(session);
+      return;
+    }
+
+    if (this.renderedStepIndex !== session.currentStepIndex) {
+      replace({ url: PAGE_URLS.brewActive });
+      return;
+    }
+
+    const actionLabel = buildPrimaryActionLabel(session, this.i18n);
+    if (this.actionLabel !== actionLabel) {
+      this.actionLabel = actionLabel;
+      setWidgetText(this.primaryButton, actionLabel);
+    }
+    this.refreshWidgets(session);
   },
   build() {
     hmUI.setStatusBarVisible(false);
@@ -175,8 +210,10 @@ Page({
     }
 
     enableActiveSessionDisplayGuard(activeSession);
-    registerShortcutKey(() => {
-      advanceOrCompleteActiveSession();
+    this.shortcutRegistered = registerShortcutKey(() => {
+      if (!this.stopConfirmationOpen) {
+        advanceOrCompleteActiveSession();
+      }
     });
 
     const colors = SHARED_COLORS;
@@ -199,12 +236,16 @@ Page({
     addText(title, 27, colors.text, 4);
     addText(instruction, 20, colors.text, 10);
     addText(activeSession.recipeName, 16, colors.muted, 14);
+    this.renderedStepIndex = activeSession.currentStepIndex;
+    this.actionLabel = buildPrimaryActionLabel(activeSession, this.i18n);
     this.primaryButton = hmUI.createWidget(hmUI.widget.BUTTON, {
       ...BUTTONS[0],
-      text: buildPrimaryActionLabel(activeSession, this.i18n),
+      text: this.actionLabel,
       text_size: BUTTONS[0].text_size,
       click_func: () => {
-        advanceOrCompleteActiveSession();
+        if (!this.stopConfirmationOpen) {
+          advanceOrCompleteActiveSession();
+        }
       }
     });
     hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -215,35 +256,6 @@ Page({
         this.confirmStop();
       }
     });
-    this.activeTimer = setInterval(() => {
-      const beforeSession = readActiveSession();
-      const beforeStep = getCurrentSessionStep(beforeSession);
-      const beforeStatus = beforeSession ? beforeSession.status : null;
-      tickActiveSession(Date.now());
-      const afterSession = readActiveSession();
-      const afterStep = getCurrentSessionStep(afterSession);
-
-      if (!afterSession) {
-        if (this.activeTimer) {
-          clearInterval(this.activeTimer);
-          this.activeTimer = null;
-        }
-        return;
-      }
-
-      if (
-        !beforeStep ||
-        !afterStep ||
-        beforeStep.stepId !== afterStep.stepId
-      ) {
-        replace({ url: PAGE_URLS.brewActive });
-        return;
-      }
-
-      if (beforeStatus !== afterSession.status) {
-        setWidgetText(this.primaryButton, buildPrimaryActionLabel(afterSession, this.i18n));
-      }
-      this.refreshWidgets(afterSession);
-    }, 1000);
+    this.activeTimer = setInterval(() => this.updateSessionView(), 1000);
   }
 });

@@ -240,11 +240,12 @@ describe("watch layouts and shortcut helpers", () => {
   });
 
   it("registers the shortcut key handler and debounces repeated presses", async () => {
-    let capturedHandler: ((key: string) => boolean) | null = null;
+    let capturedHandler: ((key: string, event: number) => boolean) | null = null;
 
     vi.doMock("@zos/interaction", () => ({
       KEY_SHORTCUT: "KEY_SHORTCUT",
-      onKey: ({ callback }: { callback?: (key: string) => boolean }) => {
+      KEY_EVENT_CLICK: 1,
+      onKey: ({ callback }: { callback?: (key: string, event: number) => boolean }) => {
         capturedHandler = callback ?? null;
         return true;
       }
@@ -259,17 +260,20 @@ describe("watch layouts and shortcut helpers", () => {
     try {
       expect(registerShortcutKey(handler)).toBe(true);
       expect(capturedHandler).toBeTruthy();
-      expect(capturedHandler?.("KEY_SHORTCUT")).toBe(true);
+      expect(capturedHandler?.("KEY_SHORTCUT", 4)).toBe(true);
+      expect(capturedHandler?.("KEY_SHORTCUT", 5)).toBe(true);
+      expect(handler).not.toHaveBeenCalled();
+      expect(capturedHandler?.("KEY_SHORTCUT", 1)).toBe(true);
       expect(handler).toHaveBeenCalledTimes(1);
 
       vi.setSystemTime(1_100);
-      expect(capturedHandler?.("KEY_SHORTCUT")).toBe(true);
+      expect(capturedHandler?.("KEY_SHORTCUT", 1)).toBe(true);
       expect(handler).toHaveBeenCalledTimes(1);
 
       vi.setSystemTime(1_300);
-      expect(capturedHandler?.("KEY_SHORTCUT")).toBe(true);
+      expect(capturedHandler?.("KEY_SHORTCUT", 1)).toBe(true);
       expect(handler).toHaveBeenCalledTimes(2);
-      expect(capturedHandler?.("OTHER_KEY")).toBe(false);
+      expect(capturedHandler?.("OTHER_KEY", 1)).toBe(false);
     } finally {
       vi.useRealTimers();
     }

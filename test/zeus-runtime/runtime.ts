@@ -157,6 +157,8 @@ const interaction = {
   }),
   offGesture: vi.fn(() => { interactionState.gestureHandler = null; }),
   KEY_SHORTCUT: "KEY_SHORTCUT",
+  KEY_EVENT_CLICK: 1,
+  offKey: vi.fn(() => { interactionState.keyHandler = null; }),
   onKey: vi.fn(({ callback }: { callback?: (key: string, action?: number) => boolean }) => {
     interactionState.keyHandler = typeof callback === "function" ? callback : null;
     return true;
@@ -359,6 +361,7 @@ export function resetZeppRuntime() {
   device.getDeviceInfo.mockClear();
   interaction.createModal.mockClear();
   interaction.onKey.mockClear();
+  interaction.offKey.mockClear();
   interaction.onGesture.mockClear();
   interaction.offGesture.mockClear();
   settings.getLanguage.mockClear();

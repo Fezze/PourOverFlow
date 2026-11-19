@@ -499,6 +499,36 @@ describe("page shell runtime coverage", () => {
     }
   });
 
+  it("keeps the stop confirmation visible through timed transitions and disables the shortcut until dismissal", async () => {
+    const fixture = createCatalogFixture();
+    const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());
+    const watchStore = await import("../zepp-app/shared/storage/watch-store.js");
+    const now = 500_000;
+    vi.useFakeTimers({ now });
+    const session = createActiveBrewSession(fixture.primarySnapshot, { now });
+    runtime.setLocalStorageState({
+      [WATCH_STORAGE_KEYS.activeSession]: JSON.stringify({
+        ...session, currentStepIndex: 1, status: "running", expectedStepEndAt: now + 1_000
+      })
+    });
+    const page = buildPage(pageDefinition);
+    try {
+      runtime.findCreatedWidgetsByType("BUTTON").find((button) => button.text === "Stop").click_func();
+      const [modalOptions] = runtime.interaction.createModal.mock.calls[0];
+      vi.advanceTimersByTime(1_000);
+      expect(watchStore.readActiveSession()?.currentStepIndex).toBe(2);
+      expect(runtime.router.replace).not.toHaveBeenCalled();
+      runtime.triggerShortcutKey();
+      expect(watchStore.readActiveSession()?.currentStepIndex).toBe(2);
+      modalOptions.onClick({ type: runtime.interaction.MODAL_CANCEL });
+      expect(runtime.router.replace).toHaveBeenLastCalledWith({ url: "page/brew-active/index" });
+    } finally {
+      pageDefinition.onDestroy.call(page);
+      vi.useRealTimers();
+    }
+    expect(runtime.triggerShortcutKey()).toBe(false);
+  });
+
   it("refreshes the active-brew widgets in place while a timed step is still running", async () => {
     const fixture = createCatalogFixture();
     const { runtime, pageDefinition } = await loadPageHarness("../zepp-app/page/brew-active/index.js", createLayoutMock());

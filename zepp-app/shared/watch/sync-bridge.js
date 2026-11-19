@@ -277,6 +277,7 @@ function handleConnectionStatus(status) {
 
   if (!connected) {
     clearShakeRetry();
+    inboundBridgeTransportState.assemblies.clear();
     appSidePort = 0;
     minimumHistoryRevision = 0;
     bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.DISCONNECTED;
@@ -313,6 +314,7 @@ export function destroyWatchSyncBridge() {
   }
 
   clearShakeRetry();
+  inboundBridgeTransportState.assemblies.clear();
   minimumHistoryRevision = 0;
   removeListener(handleConnectionStatus);
   disConnect();

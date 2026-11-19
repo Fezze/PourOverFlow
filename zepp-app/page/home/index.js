@@ -82,8 +82,8 @@ Page({
   build() {
     hmUI.setStatusBarVisible(false);
     const i18n = createWatchTranslator();
-    primeWatchSyncBridge();
     const reconcileResult = reconcileActiveSessionOnEntry();
+    primeWatchSyncBridge();
 
     if (reconcileResult.finalized) {
       return;

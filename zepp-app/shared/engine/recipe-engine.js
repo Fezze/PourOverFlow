@@ -117,11 +117,15 @@ export function formatDurationLabel(durationMs) {
 }
 
 export function buildHistoryEntryFromSession(activeSession, options = {}) {
-  const endedAt = Number.isFinite(options.now) ? options.now : Date.now();
+  const endedAt = Number.isFinite(options.now) ? options.now :
+    (Number.isFinite(activeSession.sessionEndedAt) ? activeSession.sessionEndedAt : Date.now());
+  const historyId = activeSession.sessionId
+    ? `hist_${activeSession.sessionId.replace(/^sess_/, "")}`
+    : createGeneratedId("hist", endedAt);
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    historyId: createGeneratedId("hist", endedAt),
+    historyId,
     sessionId: activeSession.sessionId,
     recipeId: activeSession.recipeId,
     toolId: activeSession.toolId,

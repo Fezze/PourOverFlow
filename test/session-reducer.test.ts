@@ -190,3 +190,16 @@ test.each(["completed", "aborted", "expired"])("terminal %s sessions cannot be r
     expect(transition(session, { now: 100000 })).toEqual(session);
   }
 });
+
+test("a late tick catches up from the scheduled boundaries without extending subsequent timers", () => {
+  const recipe = getSeedRecipeRecordById("seed_ap_daily_clean", 1_000);
+  const started = createActiveBrewSession(recipe, { now: 1_000 });
+  const timed = advanceSession(started, { now: 2_000 });
+  const afterPause = tickSession(timed, { now: 52_000 });
+  expect(afterPause).toMatchObject({
+    currentStepIndex: 3,
+    currentStepStartedAt: 47_000,
+    expectedStepEndAt: 67_000
+  });
+  expect(afterPause.stepRunResults.slice(-2).map(({ endedAt }) => endedAt)).toEqual([17_000, 47_000]);
+});

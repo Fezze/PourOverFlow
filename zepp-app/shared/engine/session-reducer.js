@@ -150,10 +150,7 @@ export function tickSession(activeSession, options = {}) {
     };
   }
 
-  return advanceSession(activeSession, {
-    now,
-    confirmedManually: false
-  });
+  return resumeSession(activeSession, { now });
 }
 
 export function abortSession(activeSession, options = {}) {

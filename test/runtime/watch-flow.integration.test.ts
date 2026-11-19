@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { __zeusRuntime, deliverBleMessage, resetZeppRuntime, setBleConnected, setLocalStorageState } from "../zeus-runtime/runtime.ts";
+import { __zeusRuntime, deliverBleMessage, getLocalStorageSnapshot, resetZeppRuntime, setBleConnected, setLocalStorageState } from "../zeus-runtime/runtime.ts";
 import { createMockPeerSocket, createMockSettingsStorage } from "../support/phone-runtime.ts";
 import { getSupportedTools } from "../../zepp-app/shared/constants/tool-catalog.js";
 import {
@@ -59,6 +59,7 @@ import {
   getRecipeListForSelectedTool,
   getToolList,
   refreshPhoneSnapshot,
+  reconcileActiveSessionOnEntry,
   resumeActiveSession,
   retryPendingHistorySync,
   selectRecipe,
@@ -381,6 +382,37 @@ describe("mocked Zepp runtime watch flow", () => {
     expect(getPendingHistoryQueue()).toEqual([]);
     expect(__zeusRuntime.router.push).not.toHaveBeenCalled();
     expect(__zeusRuntime.router.replace).toHaveBeenLastCalledWith({ url: PAGE_URLS.brewActive });
+  });
+
+  it.each(["complete", "abort"])("recovers one terminal result after interrupted %s", (outcome) => {
+    seedCachedCatalog();
+    const [recipe] = getRecipeListForSelectedTool();
+    startRecipe(recipe);
+    const session = readActiveSession()!;
+    if (outcome === "complete") {
+      writeActiveSession({ ...session, currentStepIndex: session.recipeSnapshot.steps.length - 1 });
+    }
+    const writer = __zeusRuntime.localStorageApi.setItem;
+    const originalWrite = writer.getMockImplementation()!;
+    writer.mockImplementation((key, value) => {
+      if (key === WATCH_STORAGE_KEYS.lastResult) throw new Error("Interrupted result write");
+      return originalWrite(key, value);
+    });
+    try {
+      expect(() => outcome === "complete" ? advanceOrCompleteActiveSession() : abortActiveBrew())
+        .toThrow("Interrupted result write");
+    } finally {
+      writer.mockImplementation(originalWrite);
+    }
+    const [queued] = getPendingHistoryQueue();
+    const persisted = getLocalStorageSnapshot();
+    __zeusRuntime.appState.globalData = {};
+    setLocalStorageState(persisted);
+    reconcileActiveSessionOnEntry(queued.endedAt + 10_000);
+    expect(readActiveSession()).toBeNull();
+    expect(getPendingHistoryQueue()).toEqual([queued]);
+    expect(readLastResult()).toMatchObject({ historyId: queued.historyId, endedAt: queued.endedAt });
+    expect(getLocalStorageSnapshot()[WATCH_STORAGE_KEYS.activeSession]).toBeUndefined();
   });
 
   it("discards an active session from home and stores an aborted summary", () => {

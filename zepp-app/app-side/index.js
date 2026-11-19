@@ -4,7 +4,7 @@ import {
   saveWatchHistoryEntry
 } from "../shared/storage/phone-store";
 import { SETTINGS_UI_STORAGE_KEY } from "../shared/storage/keys";
-import { createSyncEnvelope } from "../shared/sync/contracts.js";
+import { createSyncEnvelope, validateSyncEnvelope } from "../shared/sync/contracts.js";
 import { decodeEnvelopeFromPeerSocket, encodeEnvelopeForPeerSocket } from "../shared/sync/side-codec.js";
 import { SYNC_MESSAGE_TYPES } from "../shared/sync/message-types";
 import {
@@ -25,7 +25,6 @@ import {
 } from "../shared/sync/bridge-transport.js";
 
 const STORAGE_PUSH_DEBOUNCE_MS = 150;
-const inboundBridgeTransportState = createBridgeTransportState();
 
 function removePeerSocketListener(peerSocket, listener) {
   if (!listener || !peerSocket || typeof peerSocket.removeListener !== "function") {
@@ -194,6 +193,7 @@ function ensureAppSideRuntime(service) {
       return false;
     }
 
+    const inboundBridgeTransportState = createBridgeTransportState();
     const peerSocketMessageListener = (payload) => {
       const transportResult = readBridgeTransportPayload(inboundBridgeTransportState, payload);
 
@@ -208,7 +208,7 @@ function ensureAppSideRuntime(service) {
 
       const syncEnvelope = decodeEnvelopeFromPeerSocket(transportResult.payload);
 
-      if (!syncEnvelope) {
+      if (validateSyncEnvelope(syncEnvelope).length) {
         console.log("App-side failed to decode peerSocket payload");
         return;
       }

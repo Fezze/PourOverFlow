@@ -71,6 +71,15 @@ it("writes each synchronized slice and invalidates stale selections independentl
     recipeSnapshotsById: { [primarySummary.recipeId]: primarySnapshot }
   });
   expect(store.getRecipesForTool(second.toolId)).toEqual([primarySummary]);
+  store.applyCatalogSnapshot({
+    recipeCatalogRevision: 31, recipesByTool: { [second.toolId]: [primarySummary] },
+    recipeSnapshotsById: {}
+  });
+  expect(store.getRecipesForTool(second.toolId)).toEqual([]);
+  store.applyCatalogSnapshot({
+    recipeCatalogRevision: 31, recipesByTool: { [second.toolId]: [primarySummary] },
+    recipeSnapshotsById: { [primarySnapshot.recipeId]: primarySnapshot }
+  });
   expect(store.getRecipeSnapshotById(primarySummary.recipeId)).toEqual(primarySnapshot);
   expect(store.readSelectedRecipeId()).toBeNull();
   store.applyHistorySnapshot({ historyRevision: 33, latestResult: lastResult });

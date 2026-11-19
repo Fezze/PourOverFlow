@@ -27,7 +27,7 @@ function clampChunkPayloadSize(chunkPayloadSize) {
     return BRIDGE_TRANSPORT_CONFIG.maxChunkPayloadSize;
   }
 
-  return Math.floor(chunkPayloadSize);
+  return Math.max(1, Math.min(0xffff, Math.floor(chunkPayloadSize)));
 }
 
 function copyArrayBuffer(buffer) {
@@ -78,7 +78,7 @@ function parseChunkHeader(buffer) {
     };
   }
 
-  if (!transferId || chunkCount < 1 || chunkIndex >= chunkCount || totalBytes < 0 || chunkBytes < 0) {
+  if (!transferId || chunkCount < 1 || chunkIndex >= chunkCount || chunkBytes > totalBytes) {
     return {
       invalid: true,
       reason: "Bridge transport header carried invalid chunk metadata."
@@ -127,6 +127,10 @@ export function buildChunkedBridgeTransportPayloads(payload, options = {}) {
   const transferId = Number.isFinite(options.transferId) ? options.transferId : allocateTransferId();
   const payloadView = new Uint8Array(normalizedPayload);
   const chunkCount = Math.max(1, Math.ceil(payloadView.byteLength / maxChunkPayloadSize));
+  if (chunkCount > 0xffff) {
+    throw new RangeError("Bridge payload requires too many chunks.");
+  }
+
   const frames = [];
 
   for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
@@ -219,8 +223,16 @@ export function readBridgeTransportPayload(state, data, size) {
     };
   }
 
-  const payload = concatArrayBuffers(assembly.chunks, assembly.totalBytes);
   state.assemblies.delete(header.transferId);
+  const assembledBytes = assembly.chunks.reduce((size, chunk) => size + chunk.byteLength, 0);
+  if (assembledBytes !== assembly.totalBytes) {
+    return {
+      status: BRIDGE_TRANSPORT_STATUS.INVALID,
+      reason: "Bridge transport size did not match the assembled chunks."
+    };
+  }
+
+  const payload = concatArrayBuffers(assembly.chunks, assembledBytes);
 
   return {
     status: BRIDGE_TRANSPORT_STATUS.COMPLETE,

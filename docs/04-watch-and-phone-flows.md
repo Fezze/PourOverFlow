@@ -244,12 +244,13 @@ Restore a sensible state without pretending a full background engine exists.
 
 ### Completed
 
-1. build `HistoryEntry`,
-2. save `LastResultSummary`,
-3. save or update `sync_meta_v1.pendingHistoryQueue`,
-4. send `UPSERT_HISTORY_ENTRY`,
-5. clear `active_session_v1`,
-6. navigate to `result-summary`.
+1. persist the terminal session and its end timestamp,
+2. queue its history entry using the session ID to make retries idempotent,
+3. save the last-result summary,
+4. clear `active_session_v1`,
+5. send pending history and navigate to `result-summary`.
+
+If a write is interrupted, the next startup finishes saving the terminal session. The same recovery applies to an aborted brew. A delayed timer tick catches up from the recorded deadlines, stopping at the next manual checkpoint. The Stop confirmation stays visible while timed steps advance.
 
 Runtime note:
 
