@@ -239,6 +239,7 @@ function ensureAppSideRuntime(service) {
           createSyncEnvelope(
             SYNC_MESSAGE_TYPES.ACK_HISTORY_ENTRY,
             {
+              phoneStorageId: result.syncMeta.phoneStorageId,
               historyId: result.historyEntry.historyId,
               historyRevision: result.syncMeta.historyRevision
             },

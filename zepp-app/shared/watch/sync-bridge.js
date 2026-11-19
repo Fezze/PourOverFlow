@@ -38,6 +38,7 @@ const MAX_SHAKE_ATTEMPTS = 3;
 let shakeRetryTimer = null;
 let shakeAttempts = 0;
 let minimumHistoryRevision = 0;
+let linkedPhoneStorageId = null;
 
 let isInitialized = false;
 let hasPrimedRuntimeSync = false;
@@ -242,6 +243,12 @@ function handleIncomingMessage(index, data, size) {
     markBridgeHandshakeResolved();
   }
 
+  const phoneStorageId = syncEnvelope.payload.phoneStorageId;
+  if (typeof phoneStorageId === "string" && phoneStorageId && linkedPhoneStorageId !== phoneStorageId) {
+    linkedPhoneStorageId = phoneStorageId;
+    minimumHistoryRevision = 0;
+  }
+
   switch (syncEnvelope.messageType) {
     case SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG:
       applyToolCatalogSnapshot(syncEnvelope.payload);
@@ -279,6 +286,7 @@ function handleConnectionStatus(status) {
     inboundBridgeTransportState.assemblies.clear();
     appSidePort = 0;
     minimumHistoryRevision = 0;
+    linkedPhoneStorageId = null;
     bridgeHandshakeState = BRIDGE_HANDSHAKE_STATE.DISCONNECTED;
     return;
   }
@@ -315,6 +323,7 @@ export function destroyWatchSyncBridge() {
   clearShakeRetry();
   inboundBridgeTransportState.assemblies.clear();
   minimumHistoryRevision = 0;
+  linkedPhoneStorageId = null;
   removeListener(handleConnectionStatus);
   disConnect();
   setConnectionStatus(false);
@@ -369,6 +378,7 @@ export function requestBootstrap() {
 
   return safeSendEnvelope(
     createSyncEnvelope(SYNC_MESSAGE_TYPES.REQUEST_BOOTSTRAP, {
+      knownPhoneStorageId: syncMeta.phoneStorageId,
       knownToolCatalogRevision: syncMeta.toolCatalogRevision,
       knownRecipeCatalogRevision: syncMeta.recipeCatalogRevision,
       knownHistoryRevision,

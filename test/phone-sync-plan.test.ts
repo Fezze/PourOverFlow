@@ -78,3 +78,13 @@ test("publishes changes to committed revisions and ignores journal-only writes",
   expect(getStorageChangeSlices(key, prior, "not JSON")).toEqual([]);
   expect(getStorageChangeSlices(key, prior, "null")).toEqual([]);
 });
+
+test("replays equal revisions when a different phone store owns the data", () => {
+  const revisions = { toolCatalogRevision: 1, recipeCatalogRevision: 2, historyRevision: 0 };
+  const matching = { knownToolCatalogRevision: 1, knownRecipeCatalogRevision: 2, knownHistoryRevision: 0 };
+  const phoneMeta = { ...revisions, phoneStorageId: "new-store" };
+  expect(getBootstrapResponseSlices({ ...matching, knownPhoneStorageId: "old-store" }, phoneMeta)).toEqual([
+    PHONE_SYNC_SLICES.TOOLS, PHONE_SYNC_SLICES.CATALOG, PHONE_SYNC_SLICES.HISTORY
+  ]);
+  expect(getBootstrapResponseSlices({ ...matching, knownPhoneStorageId: "new-store" }, phoneMeta)).toEqual([]);
+});

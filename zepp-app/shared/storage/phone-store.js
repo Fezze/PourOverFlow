@@ -186,6 +186,7 @@ export function ensurePhoneStorage(settingsStorage, options = {}) {
         seedLocale: resolvedSeedLocale
       }),
       seedCatalogVersion: hasRecipeIndex ? 1 : SEED_LIBRARY_VERSION,
+      phoneStorageId: createGeneratedId("phone", seedTimestamp),
       seededAt: seedTimestamp
     });
   }
@@ -195,9 +196,10 @@ export function ensurePhoneStorage(settingsStorage, options = {}) {
     ? currentSyncMeta.seedLocale
     : (hasRecipeIndex ? DEFAULT_LOCALE : resolvedSeedLocale);
 
-  if (currentSyncMeta.seedLocale !== nextSeedLocale) {
+  if (currentSyncMeta.seedLocale !== nextSeedLocale || !currentSyncMeta.phoneStorageId) {
     writeSettingsJson(settingsStorage, PHONE_STORAGE_KEYS.syncMeta, {
       ...currentSyncMeta,
+      phoneStorageId: currentSyncMeta.phoneStorageId || createGeneratedId("phone", seedTimestamp),
       seedLocale: nextSeedLocale
     });
   }
@@ -241,7 +243,10 @@ export function readPhoneSyncMeta(settingsStorage) {
     seedCatalogVersion: Number.isFinite(syncMeta?.seedCatalogVersion)
       ? syncMeta.seedCatalogVersion
       : 1,
-    seedLocale: resolveSupportedLocale(syncMeta?.seedLocale, DEFAULT_LOCALE)
+    seedLocale: resolveSupportedLocale(syncMeta?.seedLocale, DEFAULT_LOCALE),
+    phoneStorageId: typeof syncMeta?.phoneStorageId === "string" && syncMeta.phoneStorageId
+      ? syncMeta.phoneStorageId
+      : undefined
   };
 }
 

@@ -594,6 +594,66 @@ describe("mocked Zepp runtime watch flow", () => {
     ).toBe(true);
   });
 
+  it("recovers every stale slice when a phone store changes at equal revisions, including after watch restart", () => {
+    const { catalogCache, recipeRecord, recipeSnapshot } = seedCachedCatalog();
+    connectWatchBridge();
+    const oldPhone = "previous-phone";
+    const newPhone = "replacement-phone";
+    const tools = { toolCatalogRevision: catalogCache.toolCatalogRevision, tools: catalogCache.tools };
+    const catalog = {
+      recipeCatalogRevision: catalogCache.recipeCatalogRevision,
+      recipesByTool: catalogCache.recipesByTool,
+      recipeSnapshotsById: catalogCache.recipeSnapshotsById
+    };
+
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG, { ...tools, phoneStorageId: oldPhone });
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT, { ...catalog, phoneStorageId: oldPhone });
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      phoneStorageId: oldPhone, historyRevision: 12, latestResult: null
+    });
+
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_TOOL_CATALOG, { ...tools, phoneStorageId: newPhone });
+    expect(readWatchSyncMeta()).toMatchObject({
+      phoneStorageId: newPhone, toolCatalogRevision: catalogCache.toolCatalogRevision,
+      recipeCatalogRevision: 0, historySnapshotApplied: false
+    });
+
+    const disk = getLocalStorageSnapshot();
+    destroyWatchSyncBridge();
+    resetZeppRuntime();
+    setLocalStorageState(disk);
+    connectWatchBridge();
+    expect(readSentSyncEnvelopes()[0].payload).toMatchObject({
+      knownPhoneStorageId: newPhone, knownToolCatalogRevision: catalogCache.toolCatalogRevision,
+      knownRecipeCatalogRevision: 0, knownHistoryRevision: -1
+    });
+
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_CATALOG_SNAPSHOT, {
+      ...catalog,
+      phoneStorageId: newPhone,
+      recipeSnapshotsById: { [recipeRecord.recipeId]: { ...recipeSnapshot, name: "Replacement phone recipe" } }
+    });
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      phoneStorageId: newPhone, historyRevision: 0, latestResult: null
+    });
+    expect(getRecipeSnapshotById(recipeRecord.recipeId)?.name).toBe("Replacement phone recipe");
+    expect(readWatchSyncMeta()).toMatchObject({
+      phoneStorageId: newPhone, recipeCatalogRevision: catalogCache.recipeCatalogRevision,
+      historyRevision: 0, historySnapshotApplied: true
+    });
+  });
+
+  it("accepts a lower history revision from a new phone store on an open connection", () => {
+    connectWatchBridge();
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      phoneStorageId: "old-phone", historyRevision: 8, latestResult: null
+    });
+    deliverSyncEnvelope(SYNC_MESSAGE_TYPES.PUSH_HISTORY_SNAPSHOT, {
+      phoneStorageId: "replacement-phone", historyRevision: 0, latestResult: null
+    });
+    expect(readWatchSyncMeta()).toMatchObject({ phoneStorageId: "replacement-phone", historyRevision: 0 });
+  });
+
   it("removes the registered BLE listener on destroy", () => {
     initWatchSyncBridge();
 

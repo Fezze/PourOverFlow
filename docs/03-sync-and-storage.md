@@ -77,6 +77,7 @@ interface PhoneSyncMeta {
   toolCatalogRevision: number
   recipeCatalogRevision: number
   pendingRecipeChange?: { operationId: string; recipeId: string; record: RecipeRecord | null }
+  phoneStorageId?: string
   historyRevision: number
   seedCatalogVersion: number
   seedLocale: string
@@ -96,6 +97,8 @@ interface WatchCatalogCache {
   tools: ToolDefinition[]
   recipesByTool: Record<string, RecipeSummary[]>
   recipeSnapshotsById: Record<string, RecipeSnapshot>
+  toolPhoneStorageId?: string
+  recipePhoneStorageId?: string
   cachedAt: number
 }
 ```
@@ -108,6 +111,7 @@ interface WatchSyncMeta {
   toolCatalogRevision: number
   recipeCatalogRevision: number
   historyRevision: number
+  phoneStorageId?: string
   historySnapshotApplied?: boolean
   lastBootstrapAt?: number
   lastAckedHistoryId?: string
@@ -187,7 +191,8 @@ When `app-side/` needs to send more than one slice in the same pass, it should u
 
 This simplifies watch bootstrap and `toolId` validation.
 
-`REQUEST_BOOTSTRAP` is revision-aware:
+`REQUEST_BOOTSTRAP` is revision-aware. Revisions belong to a phone storage instance. A missing or different storage ID triggers a full bootstrap, even when the numbers match. Each watch cache slice retains the ID of the phone that supplied it. An interrupted bootstrap can keep showing the previous catalog while requesting the remaining slices:
+
 
 - if the watch already has the current `toolCatalogRevision`, skip `PUSH_TOOL_CATALOG`,
 - if the watch already has the current `recipeCatalogRevision`, skip `PUSH_CATALOG_SNAPSHOT`,
@@ -207,6 +212,7 @@ Watch -> phone
 
 ```ts
 interface RequestBootstrapPayload {
+  knownPhoneStorageId?: string
   knownToolCatalogRevision: number
   knownRecipeCatalogRevision: number
   knownHistoryRevision: number
@@ -220,6 +226,7 @@ Phone -> watch
 
 ```ts
 interface PushToolCatalogPayload {
+  phoneStorageId?: string
   toolCatalogRevision: number
   tools: ToolDefinition[]
 }
@@ -231,6 +238,7 @@ Phone -> watch
 
 ```ts
 interface PushCatalogSnapshotPayload {
+  phoneStorageId?: string
   recipeCatalogRevision: number
   recipesByTool: Record<string, RecipeSummary[]>
   recipeSnapshotsById: Record<string, RecipeSnapshot>
@@ -245,6 +253,7 @@ This message does not carry the full history. V1 needs only the latest result an
 
 ```ts
 interface PushHistorySnapshotPayload {
+  phoneStorageId?: string
   historyRevision: number
   latestResult: LastResultSummary | null
 }
@@ -266,6 +275,7 @@ Phone -> watch
 
 ```ts
 interface AckHistoryEntryPayload {
+  phoneStorageId?: string
   historyId: string
   historyRevision: number
 }

@@ -130,6 +130,11 @@ test("normalize builds full phone bootstrap snapshots from seeded storage", () =
   const catalogSnapshot = buildPhoneCatalogSnapshot(settingsStorage, phoneSnapshot);
   const historySnapshot = buildPhoneHistorySnapshot(phoneSnapshot);
 
+  expect(phoneSnapshot.syncMeta.phoneStorageId).toMatch(/^phone_/);
+  for (const payload of [toolSnapshot, catalogSnapshot, historySnapshot]) {
+    expect(payload.phoneStorageId).toBe(phoneSnapshot.syncMeta.phoneStorageId);
+  }
+  expect(ensurePhoneStorage(settingsStorage).syncMeta.phoneStorageId).toBe(phoneSnapshot.syncMeta.phoneStorageId);
   expect(toolSnapshot.tools).toHaveLength(6);
   expect(catalogSnapshot.recipeCatalogRevision).toBe(1);
   expect(Object.keys(catalogSnapshot.recipeSnapshotsById)).toHaveLength(24);

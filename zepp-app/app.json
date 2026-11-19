@@ -5,8 +5,8 @@
     "appName": "PourOverFlow",
     "appType": "app",
     "version": {
-      "code": 17,
-      "name": "0.7.0"
+      "code": 18,
+      "name": "0.7.1"
     },
     "icon": "icon.png",
     "vender": "pouroverflow",

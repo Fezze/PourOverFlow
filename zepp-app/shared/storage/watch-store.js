@@ -200,8 +200,10 @@ function createDefaultRuntimeState() {
     catalogCache,
     syncMeta: {
       ...syncMeta,
-      toolCatalogRevision: catalogCache.toolCatalogRevision,
-      recipeCatalogRevision: catalogCache.recipeCatalogRevision
+      toolCatalogRevision: syncMeta.phoneStorageId && syncMeta.phoneStorageId !== catalogCache.toolPhoneStorageId
+        ? 0 : catalogCache.toolCatalogRevision,
+      recipeCatalogRevision: syncMeta.phoneStorageId && syncMeta.phoneStorageId !== catalogCache.recipePhoneStorageId
+        ? 0 : catalogCache.recipeCatalogRevision
     },
     catalogReady: Number.isFinite(catalogCache.cachedAt) && catalogCache.cachedAt > 0,
     connected: false
@@ -345,6 +347,22 @@ export function getRecipeSnapshotById(recipeId) {
   return catalogCache.recipeSnapshotsById ? catalogCache.recipeSnapshotsById[recipeId] || null : null;
 }
 
+function readSyncMetaForPhone(phoneStorageId) {
+  const syncMeta = readWatchSyncMeta();
+  if (typeof phoneStorageId !== "string" || !phoneStorageId || syncMeta.phoneStorageId === phoneStorageId) {
+    return syncMeta;
+  }
+
+  return {
+    ...syncMeta,
+    phoneStorageId,
+    toolCatalogRevision: 0,
+    recipeCatalogRevision: 0,
+    historyRevision: 0,
+    historySnapshotApplied: false
+  };
+}
+
 export function applyToolCatalogSnapshot(payload) {
   if (!isRevision(payload?.toolCatalogRevision) || !isToolCatalog(payload.tools)) {
     return null;
@@ -353,13 +371,14 @@ export function applyToolCatalogSnapshot(payload) {
   const nextCatalogCache = {
     ...currentCatalogCache,
     toolCatalogRevision: payload.toolCatalogRevision,
+    toolPhoneStorageId: payload.phoneStorageId || currentCatalogCache.toolPhoneStorageId,
     tools: payload.tools,
     cachedAt: Date.now()
   };
 
   writeCatalogCache(nextCatalogCache);
   writeWatchSyncMeta({
-    ...readWatchSyncMeta(),
+    ...readSyncMetaForPhone(payload.phoneStorageId),
     toolCatalogRevision: payload.toolCatalogRevision,
     lastBootstrapAt: Date.now()
   });
@@ -376,6 +395,7 @@ export function applyCatalogSnapshot(payload) {
   const nextCatalogCache = {
     ...currentCatalogCache,
     recipeCatalogRevision: payload.recipeCatalogRevision,
+    recipePhoneStorageId: payload.phoneStorageId || currentCatalogCache.recipePhoneStorageId,
     recipesByTool: payload.recipesByTool,
     recipeSnapshotsById: payload.recipeSnapshotsById,
     cachedAt: Date.now()
@@ -383,7 +403,7 @@ export function applyCatalogSnapshot(payload) {
 
   writeCatalogCache(nextCatalogCache);
   writeWatchSyncMeta({
-    ...readWatchSyncMeta(),
+    ...readSyncMetaForPhone(payload.phoneStorageId),
     recipeCatalogRevision: payload.recipeCatalogRevision,
     lastBootstrapAt: Date.now()
   });
@@ -396,7 +416,7 @@ export function applyHistorySnapshot(payload) {
       (payload.latestResult !== null && !normalizeLastResult(payload.latestResult))) {
     return null;
   }
-  const syncMeta = readWatchSyncMeta();
+  const syncMeta = readSyncMetaForPhone(payload.phoneStorageId);
   let latestResult = payload.latestResult || null;
 
   for (const entry of syncMeta.pendingHistoryQueue) {

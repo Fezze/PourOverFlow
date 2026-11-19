@@ -131,12 +131,12 @@ describe("app-side sync regressions", () => {
       const { updateHistoryEntryFeedback, readHistoryEntry, readPhoneSyncMeta } = await import("../zepp-app/shared/storage/phone-store.js");
       updateHistoryEntryFeedback(runtime.settingsStorage, entry.historyId, { userNote: "Sweeter with a finer grind", userRating: 5 });
       const saved = readHistoryEntry(runtime.settingsStorage, entry.historyId);
-      const revision = readPhoneSyncMeta(runtime.settingsStorage).historyRevision;
+      const { historyRevision: revision, phoneStorageId } = readPhoneSyncMeta(runtime.settingsStorage);
       runtime.receive("UPSERT_HISTORY_ENTRY", { entry });
       expect(readHistoryEntry(runtime.settingsStorage, entry.historyId)).toEqual(saved);
       expect(readPhoneSyncMeta(runtime.settingsStorage).historyRevision).toBe(revision);
       expect(runtime.messages().filter((message) => message.messageType === "ACK_HISTORY_ENTRY").at(-1).payload)
-        .toEqual({ historyId: entry.historyId, historyRevision: revision });
+        .toEqual({ phoneStorageId, historyId: entry.historyId, historyRevision: revision });
     } finally { runtime.destroy(); }
   });
 

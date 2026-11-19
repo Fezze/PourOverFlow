@@ -41,6 +41,7 @@ export function getStorageChangeSlices(key, oldValue, newValue) {
         return [];
       }
       return getBootstrapResponseSlices({
+        knownPhoneStorageId: before?.phoneStorageId,
         knownToolCatalogRevision: before?.toolCatalogRevision,
         knownRecipeCatalogRevision: before?.recipeCatalogRevision,
         knownHistoryRevision: before?.historyRevision
@@ -66,7 +67,8 @@ export function getStorageChangeSlices(key, oldValue, newValue) {
 }
 
 export function getBootstrapResponseSlices(requestPayload, phoneSyncMeta) {
-  if (!requestPayload || typeof requestPayload !== "object" || !phoneSyncMeta) {
+  if (!requestPayload || typeof requestPayload !== "object" || !phoneSyncMeta ||
+      (phoneSyncMeta.phoneStorageId && requestPayload.knownPhoneStorageId !== phoneSyncMeta.phoneStorageId)) {
     return [...PHONE_SYNC_SLICE_ORDER];
   }
 
